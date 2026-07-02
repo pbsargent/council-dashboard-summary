@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Unit Metric Compare - Council Dashboard Summary</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260701-service-area-hierarchy">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Unit metric dashboard navigation">
+      <div class="brand">
+        <img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council">
+      </div>
+      <nav>
+        <a href="index.html#overview">Summary</a>
+        <a href="index.html#training">Training</a>
+        <a href="index.html#syt">SYT</a>
+        <a href="index.html#monday">monday.com</a>
+        <a href="unit-metrics.html" class="active">Unit Metrics</a>
+        <a href="renewal-board/index.html">2026 Renewal Status</a>
+        <a href="index.html#commissioners">Coverage</a>
+        <a href="index.html#sources">Sources</a>
+        <a href="https://pbsargent.github.io/council-dashboard-summary/docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.pdf" target="_blank" rel="noreferrer">Help</a>
+      </nav>
+      <div class="sidebar-note">
+        <span id="generatedDate">Loading</span>
+        <strong>Council Dashboard Summary</strong>
+      </div>
+    </aside>
+
+    <main>
+      <header class="hero detail-hero">
+        <div>
+          <p class="eyebrow">Operational detail</p>
+          <h1>Unit Metric Compare <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">District and unit-type performance from the workbook Unit Metric Compare tab.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="detail-link" href="renewal-board/index.html">2026 Renewal Status</a>
+          <a class="detail-link" data-back-context data-summary-href="index.html#districts" href="index.html#districts">Back to Council Summary Dashboard</a>
+        </div>
+      </header>
+
+      <section class="kpi-grid" id="metricKpis" aria-label="Unit metric KPIs"></section>
+
+      <section class="detail-toolbar unit-metric-toolbar" aria-label="Unit metric filters">
+        <label class="control">
+          <span>Section</span>
+          <select id="sectionSelect"></select>
+        </label>
+        <label class="control">
+          <span>District</span>
+          <select id="districtSelect"></select>
+        </label>
+        <label class="control">
+          <span>Sort</span>
+          <select id="sortSelect">
+            <option value="risk">Most 0-2 units</option>
+            <option value="avg">Average metric</option>
+            <option value="healthy">Metric 4-5 rate</option>
+            <option value="trained">UL & CC trained</option>
+            <option value="outdoor">Outdoor</option>
+            <option value="retention">Retention</option>
+          </select>
+        </label>
+        <label class="control search">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="District or section">
+        </label>
+      </section>
+
+      <section class="dashboard-grid">
+        <section class="panel wide" aria-labelledby="compareTitle">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">Compare</p>
+              <div class="panel-title-row">
+                <h2 id="compareTitle">Metric Distribution by District</h2>
+                <button class="panel-help" type="button" aria-label="Metric Distribution by District source help" title="Source: Council dashboard workbook Unit Metric Compare tab. Shows unit metric band distribution and related operating rates for the selected section.">?</button>
+              </div>
+            </div>
+            <span class="count-pill" id="compareCount"></span>
+          </div>
+          <div class="chart-list" id="metricBars"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="signalsTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Signals</p>
+              <div class="panel-title-row">
+                <h2 id="signalsTitle">Operational Watch Points</h2>
+                <button class="panel-help" type="button" aria-label="Operational Watch Points source help" title="Source: computed from Unit Metric Compare rows after filters. Highlights districts with high low-score concentration, low training, or weak outdoor signals.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="signal-list" id="signals"></div>
+        </section>
+      </section>
+
+      <section class="panel detail-table" aria-labelledby="tableTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Workbook Unit Metric Compare tab</p>
+            <div class="panel-title-row">
+              <h2 id="tableTitle">Section Detail</h2>
+              <button class="panel-help" type="button" aria-label="Section Detail source help" title="Source: Council dashboard workbook Unit Metric Compare tab. Displays the selected section's district rows, including metric bands, training, outdoor, retention, and growth fields.">?</button>
+            </div>
+          </div>
+          <span class="count-pill" id="rowCount"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Section</th>
+                <th>District</th>
+                <th class="num">Units</th>
+                <th class="num">Avg Metric</th>
+                <th class="num">0-2</th>
+                <th class="num">3</th>
+                <th class="num">4-5</th>
+                <th class="num">UL & CC Trained</th>
+                <th class="num">Small Unit Threshold</th>
+                <th class="num">YoY Growth</th>
+                <th class="num">Rank Advancement</th>
+                <th class="num">Outdoor</th>
+                <th class="num">Retention</th>
+              </tr>
+            </thead>
+            <tbody id="metricRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="unit-metrics-detail.js?v=20260701-service-area-hierarchy"></script>
+  <script src="back-context.js?v=20260627-back-context"></script>
+</body>
+</html>

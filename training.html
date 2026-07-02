@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Training Detail - Council Dashboard Summary</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260701-service-area-hierarchy">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Training dashboard navigation">
+      <div class="brand">
+        <img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council">
+      </div>
+      <nav>
+        <a href="index.html#overview">Summary</a>
+        <a href="training.html" class="active">Training Detail</a>
+        <a href="index.html#syt">SYT</a>
+        <a href="index.html#monday">monday.com</a>
+        <a href="index.html#districts">Districts</a>
+        <a href="renewal-board/index.html">2026 Renewal Status</a>
+        <a href="index.html#commissioners">Coverage</a>
+        <a href="index.html#sources">Sources</a>
+        <a href="https://pbsargent.github.io/council-dashboard-summary/docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.pdf" target="_blank" rel="noreferrer">Help</a>
+      </nav>
+      <div class="sidebar-note">
+        <span id="generatedDate">Loading</span>
+        <strong>Council Dashboard Summary</strong>
+      </div>
+    </aside>
+
+    <main>
+      <header class="hero detail-hero">
+        <div>
+          <p class="eyebrow">Training detail</p>
+          <h1>All-Scouter Training <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">Person-level training status from the workbook Training tab, including direct-contact leader detection.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="detail-link" data-back-context data-summary-href="index.html#training" href="index.html#training">Back to Council Summary Dashboard</a>
+        </div>
+      </header>
+
+      <section class="kpi-grid" id="trainingKpis" aria-label="Training metrics"></section>
+
+      <section class="detail-toolbar" aria-label="Training filters">
+        <label class="control">
+          <span>District</span>
+          <select id="districtSelect"></select>
+        </label>
+        <label class="control">
+          <span>Direct Contact</span>
+          <select id="directContactSelect">
+            <option value="">All leaders</option>
+            <option value="yes">Direct contact only</option>
+            <option value="no">Not direct contact</option>
+          </select>
+        </label>
+        <label class="control">
+          <span>Training Status</span>
+          <select id="trainedSelect">
+            <option value="">All statuses</option>
+            <option value="no">Not trained</option>
+            <option value="yes">Trained</option>
+          </select>
+        </label>
+        <label class="control search">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="Name, unit, position, code">
+        </label>
+      </section>
+
+      <section class="dashboard-grid training-summary-grid">
+        <section class="panel training-chart-panel" aria-labelledby="trainingChartTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Filtered view</p>
+              <div class="panel-title-row">
+                <h2 id="trainingChartTitle">Trained vs Untrained</h2>
+                <button class="panel-help" type="button" aria-label="Trained vs Untrained source help" title="Source: person-level rows from the Council dashboard workbook Training tab. The chart reflects the active district, leader type, training status, and unit filters.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="donut-card" id="trainingDonut" aria-live="polite"></div>
+        </section>
+
+        <section class="panel wide training-rollup" aria-labelledby="districtRollupTitle">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">District and group rollup</p>
+              <div class="panel-title-row">
+                <h2 id="districtRollupTitle">Direct Contact and Training Completion</h2>
+                <button class="panel-help" type="button" aria-label="Direct Contact and Training Completion source help" title="Source: Training tab person rows grouped by district or source group. Direct-contact status comes from the workbook Direct Contact field; trained status comes from the training completion field.">?</button>
+              </div>
+            </div>
+            <span class="count-pill" id="districtCount"></span>
+          </div>
+          <div class="table-wrap short">
+            <table>
+              <thead>
+                <tr>
+                  <th>District</th>
+                  <th class="num">Leaders</th>
+                  <th class="num">Trained</th>
+                  <th class="num">Direct Contact</th>
+                  <th class="num">DC Trained</th>
+                  <th class="num">DC Not Trained</th>
+                </tr>
+              </thead>
+              <tbody id="districtRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="watchTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Watch list</p>
+              <div class="panel-title-row">
+                <h2 id="watchTitle">Training Signals</h2>
+                <button class="panel-help" type="button" aria-label="Training Signals source help" title="Source: computed from the filtered Training tab rows. Highlights direct-contact training gaps and expired or missing safety training where present.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="signal-list" id="signals"></div>
+        </section>
+      </section>
+
+      <section class="panel detail-table" aria-labelledby="peopleTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Workbook Training tab</p>
+            <div class="panel-title-row">
+              <h2 id="peopleTitle">Person-Level Training Detail</h2>
+              <button class="panel-help" type="button" aria-label="Person-Level Training Detail source help" title="Source: Council dashboard workbook Training tab. Shows each published leader row with district, unit, position, direct-contact flag, trained status, and available safety dates.">?</button>
+            </div>
+          </div>
+          <span class="count-pill" id="peopleCount"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>District</th>
+                <th>Unit</th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Trained</th>
+                <th>Direct Contact</th>
+                <th>Mandatory</th>
+                <th>Classroom</th>
+                <th>Online</th>
+                <th>SYT</th>
+                <th>Hazardous Weather</th>
+                <th>BALOO</th>
+              </tr>
+            </thead>
+            <tbody id="peopleRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="training-detail.js?v=20260701-service-area-hierarchy"></script>
+  <script src="back-context.js?v=20260627-back-context"></script>
+</body>
+</html>

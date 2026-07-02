@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>SYT Detail - Council Dashboard Summary</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260701-service-area-hierarchy">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="SYT dashboard navigation">
+      <div class="brand">
+        <img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council">
+      </div>
+      <nav>
+        <a href="index.html#overview">Summary</a>
+        <a href="index.html#training">Training</a>
+        <a href="syt.html" class="active">SYT Detail</a>
+        <a href="index.html#monday">monday.com</a>
+        <a href="index.html#districts">Districts</a>
+        <a href="renewal-board/index.html">2026 Renewal Status</a>
+        <a href="index.html#commissioners">Coverage</a>
+        <a href="index.html#sources">Sources</a>
+        <a href="https://pbsargent.github.io/council-dashboard-summary/docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.pdf" target="_blank" rel="noreferrer">Help</a>
+      </nav>
+      <div class="sidebar-note">
+        <span id="generatedDate">Loading</span>
+        <strong>Council Dashboard Summary</strong>
+      </div>
+    </aside>
+
+    <main>
+      <header class="hero detail-hero">
+        <div>
+          <p class="eyebrow">Direct-contact readiness</p>
+          <h1>Direct-Contact SYT and Outdoor Safety Detail <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">Direct-contact leader status from the workbook Training tab. This row-based detail view may differ from the official Membership-tab SYT percentage shown on the summary page.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="detail-link" data-back-context data-summary-href="index.html#syt" href="index.html#syt">Back to Council Summary Dashboard</a>
+        </div>
+      </header>
+
+      <section class="kpi-grid" id="sytKpis" aria-label="SYT and direct-contact metrics"></section>
+
+      <section class="detail-toolbar syt-toolbar" aria-label="SYT filters">
+        <label class="control">
+          <span>District</span>
+          <select id="districtSelect"></select>
+        </label>
+        <label class="control">
+          <span>Scope</span>
+          <select id="scopeSelect">
+            <option value="direct">Direct contact only</option>
+            <option value="all">All leaders</option>
+          </select>
+        </label>
+        <label class="control">
+          <span>Issue</span>
+          <select id="issueSelect">
+            <option value="">All statuses</option>
+            <option value="syt">SYT issue</option>
+            <option value="hazard">Hazardous Weather issue</option>
+            <option value="baloo">BALOO issue</option>
+            <option value="iols">IOLS issue</option>
+          </select>
+        </label>
+        <label class="control">
+          <span>Unit Type</span>
+          <select id="unitTypeSelect">
+            <option value="">All units</option>
+            <option value="Pack">Pack</option>
+            <option value="Troop">Troop</option>
+            <option value="Crew">Crew</option>
+            <option value="Ship">Ship</option>
+          </select>
+        </label>
+        <label class="control search">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="Name, unit, position, code">
+        </label>
+      </section>
+
+      <section class="dashboard-grid training-summary-grid">
+        <section class="panel training-chart-panel" aria-labelledby="sytChartTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Filtered view</p>
+              <div class="panel-title-row">
+                <h2 id="sytChartTitle">Ready vs Needs Review</h2>
+                <button class="panel-help" type="button" aria-label="Ready vs Needs Review source help" title="Source: Training tab person rows plus Training Codes lookup. Shows the share of leaders matching the active filters that are current versus needing review for the selected SYT or outdoor safety issue.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="donut-card" id="sytDonut" aria-live="polite"></div>
+        </section>
+
+        <section class="panel wide training-rollup" aria-labelledby="rollupTitle">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">District and group rollup</p>
+              <div class="panel-title-row">
+                <h2 id="rollupTitle">Direct-Contact Readiness</h2>
+                <button class="panel-help" type="button" aria-label="Direct-Contact Readiness source help" title="Source: Council dashboard workbook Training tab. Groups direct-contact leaders and evaluates SYT, Hazardous Weather, BALOO, and IOLS based on unit type and available date fields.">?</button>
+              </div>
+            </div>
+            <span class="count-pill" id="rollupCount"></span>
+          </div>
+          <div class="table-wrap short">
+            <table>
+              <thead>
+                <tr>
+                  <th>District</th>
+                  <th class="num">DC Leaders</th>
+                  <th class="num">Needs Review</th>
+                  <th class="num">SYT Current</th>
+                  <th class="num">HW Current</th>
+                  <th class="num">BALOO Issues</th>
+                  <th class="num">IOLS Issues</th>
+                </tr>
+              </thead>
+              <tbody id="rollupRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="watchTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Watch list</p>
+              <div class="panel-title-row">
+                <h2 id="watchTitle">Direct-Contact Signals</h2>
+                <button class="panel-help" type="button" aria-label="Direct-Contact Signals source help" title="Source: computed from filtered Training tab rows. Calls out the largest SYT and outdoor safety gaps among leaders currently in view.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="signal-list" id="signals"></div>
+        </section>
+      </section>
+
+      <section class="panel detail-table" aria-labelledby="peopleTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Workbook Training tab</p>
+            <div class="panel-title-row">
+              <h2 id="peopleTitle">Direct-Contact Leader Detail</h2>
+              <button class="panel-help" type="button" aria-label="Direct-Contact Leader Detail source help" title="Source: Council dashboard workbook Training tab with Training Codes for course labels. Lists the filtered leader rows and their SYT, Hazardous Weather, BALOO, and IOLS status.">?</button>
+            </div>
+          </div>
+          <span class="count-pill" id="peopleCount"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>District</th>
+                <th>Unit</th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Direct Contact</th>
+                <th>SYT</th>
+                <th>Hazardous Weather</th>
+                <th>BALOO</th>
+                <th>IOLS</th>
+                <th>Issues</th>
+              </tr>
+            </thead>
+            <tbody id="peopleRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="syt-detail.js?v=20260701-service-area-hierarchy"></script>
+  <script src="back-context.js?v=20260627-back-context"></script>
+</body>
+</html>

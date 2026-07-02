@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Membership Intelligence - Council Dashboard Summary</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260701-service-area-hierarchy">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Membership intelligence navigation">
+      <div class="brand">
+        <img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council">
+      </div>
+      <nav>
+        <a href="index.html#overview">Summary</a>
+        <a href="index.html#training">Training</a>
+        <a href="index.html#syt">SYT</a>
+        <a href="monday.html">monday.com</a>
+        <a href="membership.html" class="active">Membership</a>
+        <a href="unit-metrics.html">Unit Metrics</a>
+        <a href="renewal-board/index.html">2026 Renewal Status</a>
+        <a href="index.html#commissioners">Coverage</a>
+        <a href="index.html#sources">Sources</a>
+        <a href="https://pbsargent.github.io/council-dashboard-summary/docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.pdf" target="_blank" rel="noreferrer">Help</a>
+      </nav>
+      <div class="sidebar-note">
+        <span id="generatedDate">Loading</span>
+        <strong>Council Dashboard Summary</strong>
+      </div>
+    </aside>
+
+    <main>
+      <header class="hero detail-hero">
+        <div>
+          <p class="eyebrow">Membership intelligence</p>
+          <h1>Membership Intelligence <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">District-level membership, market opportunity, unit health, pipeline, and renewal signals.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="detail-link" data-back-context data-summary-href="index.html#districtChartTitle" href="index.html#districtChartTitle">Back to Council Summary Dashboard</a>
+        </div>
+      </header>
+
+      <section class="kpi-grid" id="membershipKpis" aria-label="Membership intelligence metrics"></section>
+
+      <section class="detail-toolbar membership-toolbar" aria-label="Membership intelligence filters">
+        <label class="control">
+          <span>District</span>
+          <select id="districtSelect"></select>
+        </label>
+        <label class="control">
+          <span>Status</span>
+          <select id="statusSelect"></select>
+        </label>
+        <label class="control">
+          <span>Sort</span>
+          <select id="sortSelect">
+            <option value="focus">Priority signal</option>
+            <option value="members">Youth membership</option>
+            <option value="tay">Youth / TAY</option>
+            <option value="yoy">YoY movement</option>
+            <option value="risk">At-risk units</option>
+            <option value="pipeline">Hot prospects</option>
+            <option value="renewal">Renewal follow-up</option>
+          </select>
+        </label>
+        <label class="control search">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="District, status, signal">
+        </label>
+      </section>
+
+      <section class="dashboard-grid">
+        <section class="panel wide" aria-labelledby="opportunityTitle">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">Opportunity and risk</p>
+              <div class="panel-title-row">
+                <h2 id="opportunityTitle">District Membership Priority</h2>
+                <button class="panel-help" type="button" aria-label="District Membership Priority source help" title="Source: Council dashboard workbook Membership and Unit Metrics tabs plus monday.com school, prospect, and renewal rows. Priority score is a dashboard-created aid for spotting opportunity and risk.">?</button>
+              </div>
+            </div>
+            <span class="count-pill" id="priorityCount"></span>
+          </div>
+          <div class="chart-list" id="priorityBars"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="signalsTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Signals</p>
+              <div class="panel-title-row">
+                <h2 id="signalsTitle">Where to Look First</h2>
+                <button class="panel-help" type="button" aria-label="Where to Look First source help" title="Source: computed from membership, unit health, school/TAY, prospect, and renewal data. Highlights the strongest current follow-up opportunities.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="signal-list" id="signals"></div>
+        </section>
+      </section>
+
+      <section class="dashboard-grid">
+        <section class="panel wide" aria-labelledby="tayTitle">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">Market context</p>
+              <div class="panel-title-row">
+                <h2 id="tayTitle">Youth Membership as Percent of TAY</h2>
+                <button class="panel-help" type="button" aria-label="Youth Membership as Percent of TAY source help" title="Source: official district youth from the Membership tab divided by attributed TAY from the monday.com Schools export. Multi-district school rows contribute full TAY to each listed district.">?</button>
+              </div>
+            </div>
+            <span class="count-pill" id="tayCount"></span>
+          </div>
+          <div class="chart-list" id="tayBars"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="pipelineTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Operating follow-up</p>
+              <div class="panel-title-row">
+                <h2 id="pipelineTitle">Pipeline and Renewal Signals</h2>
+                <button class="panel-help" type="button" aria-label="Pipeline and Renewal Signals source help" title="Source: monday.com prospects and renewal sheets joined to official district membership context. Shows pipeline and renewal conditions that may affect membership outcomes.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="signal-list" id="pipelineSignals"></div>
+        </section>
+      </section>
+
+      <section class="panel detail-table membership-detail-table" aria-labelledby="tableTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">District intelligence table</p>
+            <div class="panel-title-row">
+              <h2 id="tableTitle">Membership Opportunity Detail</h2>
+              <button class="panel-help" type="button" aria-label="Membership Opportunity Detail source help" title="Source: official district rows from the Council dashboard workbook enriched with monday.com school/TAY, prospect, and renewal rollups. One row per official district after filters.">?</button>
+            </div>
+          </div>
+          <span class="count-pill" id="rowCount"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>District</th>
+                <th>Status</th>
+                <th class="num">Youth</th>
+                <th class="num">YoY</th>
+                <th class="num">Youth / TAY</th>
+                <th class="num">Schools</th>
+                <th class="num">No Unit</th>
+                <th class="num">Units</th>
+                <th class="num">At Risk</th>
+                <th class="num">Healthy</th>
+                <th class="num">Hot Prospects</th>
+                <th class="num">Stuck</th>
+                <th class="num">Renewal Follow-Up</th>
+                <th>Signal</th>
+              </tr>
+            </thead>
+            <tbody id="districtRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="membership-detail.20260626.js?v=20260701-service-area-hierarchy"></script>
+  <script src="back-context.js?v=20260627-back-context"></script>
+</body>
+</html>

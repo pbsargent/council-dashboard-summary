@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>2026 Renewal Status</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="rail" aria-label="Dashboard navigation">
+    <div class="brand">
+      <img src="assets/cac-logo.png" alt="Scouting America Capitol Area Council">
+    </div>
+    <nav>
+      <a href="../index.html">Council Summary</a>
+      <a class="active" href="#board">2026 Renewal Status</a>
+      <a href="#events">Renew/New/Drop</a>
+      <a href="#detail">Unit Detail</a>
+    </nav>
+    <div class="source-card">
+      <span>Generated</span>
+      <strong id="generatedAt">Loading</strong>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Local workbook reconstruction</p>
+        <h1>2026 Renewal Status</h1>
+        <p class="lede">Daily monday.com renewal rows joined to dashboard workbook unit detail.</p>
+      </div>
+      <div class="source-stack">
+        <div><span>monday export</span><strong id="mondayWorkbook">Loading</strong></div>
+        <div><span>dashboard workbook</span><strong id="dashboardWorkbook">Loading</strong></div>
+        <div><span>service hierarchy</span><strong id="hierarchySource">Loading</strong></div>
+      </div>
+    </header>
+
+    <section class="kpis" id="kpis" aria-label="Renewal summary"></section>
+
+    <section class="toolbar" aria-label="Board controls">
+      <label>
+        <span>District</span>
+        <select id="districtFilter"></select>
+      </label>
+      <label>
+        <span>Workflow status</span>
+        <select id="statusFilter"></select>
+      </label>
+      <label>
+        <span>Dashboard match</span>
+        <select id="matchFilter">
+          <option value="">All units</option>
+          <option value="matched">Matched to Units tab</option>
+          <option value="unmatched">Needs dashboard match</option>
+        </select>
+      </label>
+      <label class="search-control">
+        <span>Search</span>
+        <input id="searchInput" type="search" placeholder="Unit, owner, commissioner, charter org">
+      </label>
+    </section>
+
+    <section class="board-layout">
+      <section id="board" class="board-panel" aria-labelledby="boardTitle">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Service Area / District hierarchy</p>
+            <h2 id="boardTitle">District Renewal Workflow</h2>
+          </div>
+          <div class="board-actions">
+            <button id="collapseAll" class="icon-button" type="button" title="Collapse all districts" aria-label="Collapse all districts">Collapse all</button>
+            <button id="expandAll" class="icon-button" type="button" title="Expand all districts" aria-label="Expand all districts">Expand all</button>
+            <span id="visibleCount" class="pill">0 units</span>
+          </div>
+        </div>
+        <div class="board-header" aria-hidden="true">
+          <span>District</span>
+          <span>Progress</span>
+          <span>Drop/Renew</span>
+          <span>Initiated</span>
+          <span>Submitted</span>
+          <span>Pending Acceptance</span>
+          <span>Posted</span>
+        </div>
+        <div id="groupRows" class="group-rows"></div>
+      </section>
+
+      <aside id="detail" class="detail-panel" aria-labelledby="detailTitle">
+        <div class="panel-head compact">
+          <div>
+            <p class="eyebrow">Selected unit</p>
+            <h2 id="detailTitle">Unit Detail</h2>
+          </div>
+        </div>
+        <div id="unitDetail" class="unit-detail empty-state">
+          Select a unit row to see dashboard workbook enrichment.
+        </div>
+      </aside>
+    </section>
+
+    <section id="events" class="events-panel" aria-labelledby="eventsTitle">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Dashboard workbook cross-check</p>
+          <h2 id="eventsTitle">Renew/New/Drop Event Lists</h2>
+        </div>
+        <span class="pill">Report may lag daily refresh</span>
+      </div>
+      <div id="eventLists" class="event-lists"></div>
+    </section>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

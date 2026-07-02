@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Council Dashboard Summary</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260701-service-area-hierarchy">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Membership dashboard navigation">
+      <div class="brand">
+        <img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council">
+      </div>
+      <nav>
+        <a href="#overview" class="active">Overview</a>
+        <a href="#training">Training</a>
+        <a href="#syt">SYT</a>
+        <a href="#monday">monday.com</a>
+        <a href="#districts">Districts</a>
+        <a href="#health">Health Funnel</a>
+        <a href="#priority">Priority Units</a>
+        <a href="renewal-board/index.html">2026 Renewal Status</a>
+        <a href="#quality">Quality</a>
+        <a href="#territory">CST7</a>
+        <a href="#commissioners">Coverage</a>
+        <a href="#sources">Sources</a>
+        <a href="https://pbsargent.github.io/council-dashboard-summary/docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.pdf" target="_blank" rel="noreferrer">Help</a>
+      </nav>
+      <div class="sidebar-note">
+        <span id="generatedDate">Loading</span>
+        <strong>Council Dashboard Summary</strong>
+      </div>
+    </aside>
+
+    <main>
+      <header id="overview" class="hero">
+        <div>
+          <p class="eyebrow">Capitol Area Council (CAC)</p>
+          <h1>Council Dashboard Summary <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">A web-first council view for youth, units, district health, training, SYT, and assignment coverage.</p>
+        </div>
+      </header>
+
+      <section class="kpi-grid" id="kpiGrid" aria-label="Council metrics"></section>
+
+      <section class="focus-grid">
+        <section id="training" class="panel focus-panel" aria-labelledby="trainingTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Training</p>
+              <div class="panel-title-row">
+                <h2 id="trainingTitle">All-Scouter Training</h2>
+                <button class="panel-help" type="button" aria-label="All-Scouter Training source help" title="Source: Council dashboard workbook Training Dive and Training tabs. Shows current training completion and links to person-level rows, including direct-contact leader detection.">?</button>
+              </div>
+            </div>
+            <div class="panel-actions">
+              <a class="detail-link" href="training.html">More info</a>
+              <span class="count-pill" id="trainingStatus"></span>
+            </div>
+          </div>
+          <div id="trainingPanel"></div>
+        </section>
+
+        <section id="syt" class="panel focus-panel" aria-labelledby="sytTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">SYT</p>
+              <div class="panel-title-row">
+                <h2 id="sytTitle">Safeguarding Youth Training</h2>
+                <button class="panel-help" type="button" aria-label="Safeguarding Youth Training source help" title="Source: Council dashboard workbook Membership and Training tabs. Summary uses official district SYT percentages; detail page evaluates person-level SYT and outdoor safety dates.">?</button>
+              </div>
+            </div>
+            <div class="panel-actions">
+              <a class="detail-link" href="syt.html">More info</a>
+              <span class="count-pill" id="sytStatus"></span>
+            </div>
+          </div>
+          <div id="sytPanel"></div>
+        </section>
+      </section>
+
+      <section id="monday" class="panel monday-panel" aria-labelledby="mondayTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Monday.com operating view</p>
+            <div class="panel-title-row">
+              <h2 id="mondayTitle">Prospects, Renewals, and Schools</h2>
+              <button class="panel-help" type="button" aria-label="monday.com operating view source help" title="Source: daily monday.com export workbook, with API fallback for board-level counts. Summarizes hot prospects, renewals, and school/TAY context for membership follow-up.">?</button>
+            </div>
+          </div>
+          <div class="panel-actions">
+            <span class="source-line" id="mondayUpdated"></span>
+            <a class="detail-link" href="monday.html">More info</a>
+          </div>
+        </div>
+        <div class="monday-summary" id="mondaySummary"></div>
+        <div class="monday-grid">
+          <section class="monday-card" aria-labelledby="prospectTitle">
+            <div class="monday-card-head">
+              <h3 id="prospectTitle">Hot Prospects</h3>
+              <a id="prospectLink" href="#" target="_blank" rel="noreferrer">Open board [requires monday.com access]</a>
+            </div>
+            <div id="mondayProspects"></div>
+          </section>
+          <section class="monday-card" aria-labelledby="renewalTitle">
+            <div class="monday-card-head">
+              <h3 id="renewalTitle">2026 Unit Renewal</h3>
+              <a id="renewalLink" href="#" target="_blank" rel="noreferrer">Open board [requires monday.com access]</a>
+            </div>
+            <div id="mondayRenewals"></div>
+          </section>
+          <section class="monday-card" aria-labelledby="schoolTitle">
+            <div class="monday-card-head">
+              <h3 id="schoolTitle">Schools</h3>
+              <a id="schoolLink" href="#" target="_blank" rel="noreferrer">Open board [requires monday.com access]</a>
+            </div>
+            <div id="mondaySchools"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="dashboard-grid">
+        <section class="panel wide" aria-labelledby="districtChartTitle">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">Membership intelligence</p>
+              <div class="panel-title-row">
+                <h2 id="districtChartTitle">District Membership and Unit Health</h2>
+                <button class="panel-help" type="button" aria-label="District Membership and Unit Health source help" title="Source: Council dashboard workbook Membership, Unit Metrics, Training Dive, and monday.com Schools export. Compares district youth, unit health, training, SYT, and Youth/TAY context.">?</button>
+              </div>
+            </div>
+            <div class="panel-actions">
+              <div class="segmented" role="group" aria-label="Chart metric">
+                <button class="active" data-chart-metric="members">Youth</button>
+                <button data-chart-metric="at_risk_rate">At Risk</button>
+                <button data-chart-metric="assigned_pct">Assigned</button>
+                <button data-chart-metric="training_pct">Training</button>
+              </div>
+              <a class="detail-link" href="membership.html">More info</a>
+            </div>
+          </div>
+          <div class="chart-list" id="districtChart"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="readTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Today&apos;s read</p>
+              <div class="panel-title-row">
+                <h2 id="readTitle">Signals to Watch</h2>
+                <button class="panel-help" type="button" aria-label="Signals to Watch source help" title="Source: computed from published dashboard JSON. Flags districts and units with low training, low SYT, negative youth movement, or high at-risk unit concentration.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="signal-list" id="signals"></div>
+        </section>
+      </section>
+
+      <section id="districts" class="panel table-panel" aria-labelledby="districtTableTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">District scorecard</p>
+            <div class="panel-title-row">
+              <h2 id="districtTableTitle">Operational Detail</h2>
+              <button class="panel-help" type="button" aria-label="Operational Detail source help" title="Source: Council dashboard workbook Membership, Unit Metric Compare, Glance, and commissioner tabs. One official district row with youth, units, health, training, SYT, and commissioner fields.">?</button>
+            </div>
+          </div>
+          <div class="panel-actions">
+            <a class="detail-link" href="unit-metrics.html">More info</a>
+            <select id="statusSelect" aria-label="Filter status">
+              <option value="">All statuses</option>
+              <option value="Needs Attention">Needs Attention</option>
+              <option value="Monitor">Monitor</option>
+              <option value="On Track">On Track</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>District</th>
+                <th>Status</th>
+                <th class="num">Youth</th>
+                <th class="num">YoY</th>
+                <th class="num">Avg Metric</th>
+                <th class="num">At Risk</th>
+                <th class="num">Assigned</th>
+                <th class="num">SYT</th>
+                <th class="num">Training</th>
+                <th>Commissioner</th>
+              </tr>
+            </thead>
+            <tbody id="districtRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="health" class="dashboard-grid">
+        <section class="panel wide" aria-labelledby="healthTitle">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">Funnel and cohort insights</p>
+              <div class="panel-title-row">
+                <h2 id="healthTitle">Unit Health Funnel</h2>
+                <button class="panel-help" type="button" aria-label="Unit Health Funnel source help" title="Source: Council dashboard workbook Unit Metrics tab. Groups units by metric score bands so at-risk, middle, and healthy unit counts can be scanned quickly.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="funnel" id="healthFunnel"></div>
+        </section>
+
+        <section id="quality" class="panel" aria-labelledby="qualityTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Anomaly and quality checks</p>
+              <div class="panel-title-row">
+                <h2 id="qualityTitle">Exceptions</h2>
+                <button class="panel-help" type="button" aria-label="Exceptions source help" title="Source: dashboard validation checks over the published JSON. Highlights missing assignments, low unit metrics, expired training, or other rows needing review.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="quality-list" id="qualityChecks"></div>
+        </section>
+      </section>
+
+      <section class="dashboard-grid">
+        <section id="priority" class="panel wide table-panel" aria-labelledby="priorityTitle">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">Unit follow-up</p>
+              <div class="panel-title-row">
+                <h2 id="priorityTitle">Priority Units</h2>
+                <button class="panel-help" type="button" aria-label="Priority Units source help" title="Source: Council dashboard workbook Unit Metrics tab plus assignment lookups. Lists the lowest-scoring units, sorted by metric risk and youth impact.">?</button>
+              </div>
+            </div>
+            <span class="count-pill" id="priorityCount"></span>
+          </div>
+          <div class="table-wrap short">
+            <table>
+              <thead>
+                <tr>
+                  <th>District</th>
+                  <th>Unit</th>
+                  <th class="num">Metric</th>
+                  <th class="num">Youth</th>
+                  <th>Commissioners</th>
+                  <th>PIN</th>
+                </tr>
+              </thead>
+              <tbody id="priorityRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="commissioners" class="panel" aria-labelledby="commissionerTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Coverage support</p>
+              <div class="panel-title-row">
+                <h2 id="commissionerTitle">Coverage Snapshot</h2>
+                <button class="panel-help" type="button" aria-label="Coverage Snapshot source help" title="Source: Council dashboard workbook Objectives - Commissioners, Assigned, and Commissioners tabs. Shows unit commissioner staffing, assignment coverage, and training readiness.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="coverage" id="coverage"></div>
+        </section>
+      </section>
+
+      <section class="panel table-panel" aria-labelledby="commissionerRosterTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Coverage roster</p>
+            <div class="panel-title-row">
+              <h2 id="commissionerRosterTitle">Commissioner Coverage Roster</h2>
+              <button class="panel-help" type="button" aria-label="Commissioner Coverage Roster source help" title="Source: Council dashboard workbook Commissioners tab. Shows commissioner roster rows, assignments, training status, and SYT expiration where provided.">?</button>
+            </div>
+          </div>
+          <span class="count-pill" id="commissionerCount"></span>
+        </div>
+        <div class="table-wrap short">
+          <table>
+            <thead>
+              <tr>
+                <th>District</th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Trained</th>
+                <th>SYT</th>
+                <th>Assigned Units</th>
+                <th>Unit Health</th>
+              </tr>
+            </thead>
+            <tbody id="commissionerRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="territory" class="panel" aria-labelledby="territoryTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Service Territory 07</p>
+            <div class="panel-title-row">
+              <h2 id="territoryTitle">Council Comparison</h2>
+              <button class="panel-help" type="button" aria-label="Council Comparison source help" title="Source: CST comparison workbook Membership, Unit Metric Compare, and Glance tabs. Compares Capitol Area Council with other Service Territory 07 councils.">?</button>
+            </div>
+          </div>
+        </div>
+        <div class="table-wrap territory-table" id="territoryGrid"></div>
+      </section>
+
+      <section id="sources" class="panel" aria-labelledby="sourcesTitle">
+        <div class="panel-head compact">
+          <div>
+            <p class="section-kicker">Sources</p>
+            <div class="panel-title-row">
+              <h2 id="sourcesTitle">Dashboard Source Workbooks</h2>
+              <button class="panel-help" type="button" aria-label="Dashboard Source Workbooks help" title="Lists the source workbooks, hot links, and monday.com access note used to produce the published JSON and dashboard panels.">?</button>
+            </div>
+          </div>
+        </div>
+        <div class="source-grid">
+          <article class="source-card">
+            <strong>Detailed Council Dashboard</strong>
+            <p>Live workbook source for the council dashboard.</p>
+            <a href="https://1drv.ms/x/c/da89e4b29f338fb5/EYU-672WoZtHkyWzWB6vFqEBjckPXkYjo6sFkspf9YIjfg?e=POdShQ" target="_blank" rel="noreferrer">Open Detailed Council Dashboard</a>
+          </article>
+          <article class="source-card">
+            <strong>Council Service Territory Comparison Data</strong>
+            <p>Live workbook source for the CST comparison panel.</p>
+            <a href="https://1drv.ms/x/c/da89e4b29f338fb5/Eb1mFJDjNkxBsVfGsmdK-SwB9sDiPo_CuwElSJURTuamqw?e=9htRE3" target="_blank" rel="noreferrer">Open Council Service Territory Comparison Data</a>
+          </article>
+          <article class="source-card">
+            <strong>monday.com Detailed Data</strong>
+            <p>For monday.com access to detailed data please contact Bill Kohl.</p>
+          </article>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="council-dashboard-summary.20260626-tay-kpi.js?v=20260701-masthead-cleanup"></script>
+</body>
+</html>
