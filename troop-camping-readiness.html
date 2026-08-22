@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Troop Camping Readiness - Council Dashboard Summary</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
+  <link rel="stylesheet" href="camping-readiness.css?v=20260813-camping-readiness-1">
+  <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
+</head>
+<body data-page="troop-camping-readiness">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Troop camping readiness navigation">
+      <div class="brand">
+        <img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council">
+      </div>
+      <nav aria-label="Council dashboard"><a href="index.html">Overview</a></nav>
+      <a class="report-problem" data-report-problem href="mailto:scouting@imetpetersargent.com">Report a problem</a>
+      <div class="sidebar-note">
+        <span id="generatedDate">Loading</span>
+        <strong>Troop Camping Readiness</strong>
+      </div>
+    </aside>
+
+    <main>
+      <header class="hero detail-hero">
+        <div>
+          <p class="eyebrow">People &amp; Readiness</p>
+          <h1>Troop Camping Readiness <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">Troops without recorded leadership coverage for IOLS, current Hazardous Weather training, or both.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="detail-link" href="training.html">Open Leader Training Detail</a>
+          <a class="detail-link" href="unit-level.html">Open Unit-Level Detail</a>
+          <a class="detail-link" href="people.html">Back to People &amp; Readiness</a>
+        </div>
+      </header>
+
+      <section class="readiness-policy" aria-label="Troop training readiness context">
+        <div>
+          <p class="section-kicker">Troop leadership readiness</p>
+          <strong>Scoutmasters and Assistant Scoutmasters require IOLS to be position-trained, and at least one attending leader must have current Hazardous Weather training.</strong>
+          <p>This page treats a Troop as roster-ready when at least one direct-contact leader has no outstanding S11 IOLS requirement and at least one has current Hazardous Weather training. It is not campout approval.</p>
+        </div>
+        <div class="readiness-policy-links">
+          <a href="https://www.scouting.org/wp-content/uploads/2025/10/Position-Trained-Requirements-Oct2025.pdf" target="_blank" rel="noreferrer">Position-Trained Requirements <span aria-hidden="true">↗</span></a>
+          <a href="https://www.scouting.org/health-and-safety/gss/gss03/" target="_blank" rel="noreferrer">Guide to Safe Scouting <span aria-hidden="true">↗</span></a>
+        </div>
+      </section>
+
+      <section class="kpi-grid" id="readinessKpis" aria-label="Camping readiness KPIs"></section>
+
+      <section class="detail-toolbar camping-readiness-toolbar" aria-label="Camping readiness filters">
+        <label class="control">
+          <span>District</span>
+          <select id="districtSelect"></select>
+        </label>
+        <label class="control">
+          <span>Training gap</span>
+          <select id="gapSelect">
+            <option value="">Any missing requirement</option>
+            <option value="both">Both missing</option>
+            <option value="iols">IOLS gap</option>
+            <option value="hazard">Hazardous Weather gap</option>
+          </select>
+        </label>
+        <label class="control">
+          <span>Sort</span>
+          <select id="sortSelect">
+            <option value="severity">Most training missing</option>
+            <option value="district">District and troop</option>
+            <option value="leaders">Fewest registered leaders</option>
+          </select>
+        </label>
+        <label class="control search">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="Troop number, district, or leader">
+        </label>
+      </section>
+
+      <section class="panel detail-table camping-readiness-table" aria-labelledby="readinessTableTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Troop-level action list</p>
+            <div class="panel-title-row">
+              <h2 id="readinessTableTitle">Troops Missing Camping Leadership Coverage</h2>
+              <button class="panel-help" type="button" aria-label="Troop camping readiness source help" title="Source: Council dashboard workbook Training tab. IOLS coverage is inferred for direct-contact Troop leaders when mandatory code S11 is no longer outstanding. Hazardous Weather coverage uses current dates published for direct-contact leaders. Troops are flagged when either roster-level signal has no recorded coverage.">?</button>
+            </div>
+          </div>
+          <span class="count-pill" id="troopCount" aria-live="polite"></span>
+        </div>
+        <p class="subtle readiness-source-note">IOLS is inferred from the absence of mandatory code S11, and Hazardous Weather is published as a direct-contact-only field. Confirm attending leaders' records before treating a flag as final.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>District</th>
+                <th>Troop</th>
+                <th>Missing</th>
+                <th>IOLS Coverage</th>
+                <th>Hazardous Weather Coverage</th>
+                <th>Recommended Action</th>
+              </tr>
+            </thead>
+            <tbody id="troopRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="site-navigation.js?v=20260813-readiness-nav-1"></script>
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="report-problem.js?v=20260712"></script>
+  <script src="troop-camping-readiness.js?v=20260813-troop-readiness-1"></script>
+</body>
+</html>

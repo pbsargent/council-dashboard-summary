@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Council Overview</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
+  <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
+</head>
+<body data-page="overview">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Council dashboard navigation">
+      <div class="brand"><img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council"></div>
+      <nav aria-label="Council dashboard"><a href="index.html">Overview</a></nav>
+      <a class="report-problem" data-report-problem href="mailto:scouting@imetpetersargent.com">Report a problem</a>
+      <div class="sidebar-note"><span id="generatedDate">Loading</span><strong>Council Dashboard Summary</strong></div>
+    </aside>
+
+    <main>
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Capitol Area Council (CAC)</p>
+          <h1>Council Overview <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">Council-level KPIs, current operating signals, and direct paths to each operating dashboard.</p>
+        </div>
+      </header>
+
+      <section class="kpi-grid" id="kpiGrid" aria-label="Council metrics"></section>
+
+      <section class="overview-priority-grid" aria-label="Council priorities and dashboard areas">
+        <section class="panel" aria-labelledby="readTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Council priorities</p>
+              <div class="panel-title-row">
+                <h2 id="readTitle">Signals to Watch</h2>
+                <button class="panel-help" type="button" aria-label="Signals to Watch source help" title="Source: computed from published dashboard JSON. Flags districts and units with low training, low SYT, negative youth movement, or high at-risk unit concentration.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="signal-list" id="signals"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="exploreTitle">
+          <div class="panel-head compact">
+            <div><p class="section-kicker">Explore</p><h2 id="exploreTitle">Council Dashboard Areas</h2></div>
+          </div>
+          <div class="overview-paths">
+            <a class="overview-path" href="comparison.html"><strong>Council Comparison</strong><span>Service Territory 07 benchmarks</span></a>
+            <a class="overview-path" href="districts.html"><strong>District Performance</strong><span>Service areas and district scorecard</span></a>
+            <a class="overview-path" href="membership.html"><strong>Membership &amp; Growth</strong><span>Trends, TAY, pipeline, recruitment, and popcorn</span></a>
+            <a class="overview-path" href="unit-health.html"><strong>Unit Health &amp; Renewal</strong><span>Health funnel, exceptions, priorities, and renewal</span></a>
+            <a class="overview-path" href="people.html"><strong>People &amp; Readiness</strong><span>Commissioner coverage, training, and SYT</span></a>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="site-navigation.js?v=20260813-readiness-nav-1"></script>
+  <script src="program-filter.js?v=20260717-master-filter-3"></script>
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="report-problem.js?v=20260712"></script>
+  <script src="council-dashboard-summary.20260626-tay-kpi.js?v=20260813-retention-kpi-1"></script>
+</body>
+</html>

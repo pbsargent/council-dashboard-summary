@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Council Comparison</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
+  <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
+</head>
+<body data-page="comparison">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Council dashboard navigation">
+      <div class="brand"><img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council"></div>
+      <nav aria-label="Council dashboard"><a href="index.html">Overview</a></nav>
+      <a class="report-problem" data-report-problem href="mailto:scouting@imetpetersargent.com">Report a problem</a>
+      <div class="sidebar-note"><span id="generatedDate">Loading</span><strong>Council Comparison</strong></div>
+    </aside>
+
+    <main>
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Overview · Service Territory 07</p>
+          <h1>Council Comparison <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">Council-level membership, unit, growth, and unit-health benchmarks across Service Territory 07.</p>
+        </div>
+      </header>
+
+      <section class="panel" aria-labelledby="territoryTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Benchmark view</p>
+            <div class="panel-title-row">
+              <h2 id="territoryTitle">Service Territory Council Comparison</h2>
+              <button class="panel-help" type="button" aria-label="Council Comparison source help" title="Source: CST comparison workbook Membership, Unit Metric Compare, and Glance tabs. Compares Capitol Area Council with other Service Territory 07 councils.">?</button>
+            </div>
+          </div>
+          <a class="detail-link" href="index.html">Return to Overview</a>
+        </div>
+        <div class="table-wrap territory-table" id="territoryGrid"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="site-navigation.js?v=20260813-readiness-nav-1"></script>
+  <script src="program-filter.js?v=20260717-master-filter-3"></script>
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="report-problem.js?v=20260712"></script>
+  <script src="council-dashboard-summary.20260626-tay-kpi.js?v=20260813-comparison-retention-1"></script>
+</body>
+</html>

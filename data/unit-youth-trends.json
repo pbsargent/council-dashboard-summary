@@ -1,0 +1,55 @@
+{
+  "source_sheet": "Units-Youth",
+  "source_note": "Manual workbook tab. Freshness can vary by block, so each series carries its own latest filled month.",
+  "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+  "ytd": {
+    "current_period": "Jun-26",
+    "prior_period": "Jun-25",
+    "new_units": 6,
+    "prior_new_units": 9,
+    "new_units_delta": -3,
+    "new_youth": 421,
+    "prior_new_youth": 747,
+    "new_youth_delta": -326
+  },
+  "series": {
+    "new_units": {
+      "label": "New Units",
+      "freshness_month": "Jun",
+      "values": {
+        "2026": [1, 1, 1, 1, 0, 2, null, null, null, null, null, null],
+        "2025": [0, 2, 0, 1, 2, 4, 1, 3, 3, 2, 1, 2],
+        "2024": [0, 0, 2, 2, 2, 1, 0, 1, 2, 2, 0, 3]
+      },
+      "delta_vs_prior_year": [1, -1, 1, 0, -2, -2, null, null, null, null, null, null]
+    },
+    "new_youth": {
+      "label": "New Youth",
+      "freshness_month": "May",
+      "values": {
+        "2026": [89, 104, 98, 69, 61, null, null, null, null, null, null, null],
+        "2025": [80, 97, 97, 112, 119, 242, 88, 470, 864, 289, 113, 64],
+        "2024": [82, 154, 114, 137, 148, 51, 49, 482, 831, 270, 121, 86]
+      },
+      "delta_vs_prior_year": [9, 7, 1, -43, -58, null, null, null, null, null, null, null]
+    },
+    "total_youth": {
+      "label": "Total Youth",
+      "freshness_month": "Jul",
+      "values": {
+        "2026": [8789, 8869, 7914, 7952, 7966, 7938, 7852, null, null, null, null, null],
+        "2025": [9509, 9488, 9662, 7767, 7845, 8018, 8035, 8418, 9290, 9581, 9289, 8925],
+        "2024": [8539, 8035, 7905, 8054, 8197, 8250, 8293, 8794, 9693, 9988, 10095, 9408]
+      }
+    },
+    "total_units": {
+      "label": "Total Units",
+      "freshness_month": "Jul",
+      "values": {
+        "2026": [312, 312, 290, 293, 292, 294, 295, null, null, null, null, null],
+        "2025": [304, 310, 304, 294, 295, 299, 300, 303, 306, 308, 309, 311],
+        "2024": [305, 305, 291, 293, 295, 296, 296, 297, 300, 302, 302, 304]
+      }
+    }
+  }
+}

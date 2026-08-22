@@ -1,0 +1,5 @@
+__pycache__/
+update_daily*.log
+.DS_Store
+
+work/

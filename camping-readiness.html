@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Pack Camping Readiness - Council Dashboard Summary</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
+  <link rel="stylesheet" href="camping-readiness.css?v=20260813-camping-readiness-1">
+  <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
+</head>
+<body data-page="camping-readiness">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Camping readiness navigation">
+      <div class="brand">
+        <img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council">
+      </div>
+      <nav aria-label="Council dashboard"><a href="index.html">Overview</a></nav>
+      <a class="report-problem" data-report-problem href="mailto:scouting@imetpetersargent.com">Report a problem</a>
+      <div class="sidebar-note">
+        <span id="generatedDate">Loading</span>
+        <strong>Pack Camping Readiness</strong>
+      </div>
+    </aside>
+
+    <main>
+      <header class="hero detail-hero">
+        <div>
+          <p class="eyebrow">People &amp; Readiness</p>
+          <h1>Pack Camping Readiness <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">Packs without recorded leadership coverage for BALOO, current Hazardous Weather training, or both.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="detail-link" href="training.html">Open Leader Training Detail</a>
+          <a class="detail-link" href="unit-level.html">Open Unit-Level Detail</a>
+          <a class="detail-link" href="people.html">Back to People &amp; Readiness</a>
+        </div>
+      </header>
+
+      <section class="readiness-policy" aria-label="Camping readiness policy context">
+        <div>
+          <p class="section-kicker">Unit-coordinated overnight camping</p>
+          <strong>At least one attending leader must be BALOO trained, and at least one attending leader must have current Hazardous Weather training.</strong>
+          <p>This is a roster-readiness flag, not campout approval. Council- or district-organized events may provide leadership differently.</p>
+        </div>
+        <a href="https://www.scouting.org/health-and-safety/gss/gss03/" target="_blank" rel="noreferrer">Guide to Safe Scouting <span aria-hidden="true">↗</span></a>
+      </section>
+
+      <section class="kpi-grid" id="readinessKpis" aria-label="Camping readiness KPIs"></section>
+
+      <section class="detail-toolbar camping-readiness-toolbar" aria-label="Camping readiness filters">
+        <label class="control">
+          <span>District</span>
+          <select id="districtSelect"></select>
+        </label>
+        <label class="control">
+          <span>Training gap</span>
+          <select id="gapSelect">
+            <option value="">Any missing requirement</option>
+            <option value="both">Both missing</option>
+            <option value="baloo">BALOO gap</option>
+            <option value="hazard">Hazardous Weather gap</option>
+          </select>
+        </label>
+        <label class="control">
+          <span>Sort</span>
+          <select id="sortSelect">
+            <option value="severity">Most training missing</option>
+            <option value="district">District and pack</option>
+            <option value="leaders">Fewest registered leaders</option>
+          </select>
+        </label>
+        <label class="control search">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="Pack number, district, or leader">
+        </label>
+      </section>
+
+      <section class="panel detail-table camping-readiness-table" aria-labelledby="readinessTableTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Pack-level action list</p>
+            <div class="panel-title-row">
+              <h2 id="readinessTableTitle">Packs Missing Camping Leadership Coverage</h2>
+              <button class="panel-help" type="button" aria-label="Camping readiness source help" title="Source: Council dashboard workbook Training tab. BALOO coverage uses any registered Pack leader with BALOO recorded. Hazardous Weather coverage uses current dates published for direct-contact leaders. Packs are flagged when either roster-level requirement has no recorded coverage.">?</button>
+            </div>
+          </div>
+          <span class="count-pill" id="packCount" aria-live="polite"></span>
+        </div>
+        <p class="subtle readiness-source-note">Hazardous Weather is published as a direct-contact-only field. Confirm other attending leaders' records before treating a Hazardous Weather-only flag as final.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>District</th>
+                <th>Pack</th>
+                <th>Missing</th>
+                <th>BALOO Coverage</th>
+                <th>Hazardous Weather Coverage</th>
+                <th>Recommended Action</th>
+              </tr>
+            </thead>
+            <tbody id="packRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="site-navigation.js?v=20260813-readiness-nav-1"></script>
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="report-problem.js?v=20260712"></script>
+  <script src="camping-readiness.js?v=20260813-camping-readiness-1"></script>
+</body>
+</html>

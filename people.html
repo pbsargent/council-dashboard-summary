@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>People &amp; Readiness</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
+  <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
+</head>
+<body data-page="people">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Council dashboard navigation">
+      <div class="brand"><img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council"></div>
+      <nav aria-label="Council dashboard"><a href="index.html">Overview</a></nav>
+      <a class="report-problem" data-report-problem href="mailto:scouting@imetpetersargent.com">Report a problem</a>
+      <div class="sidebar-note"><span id="generatedDate">Loading</span><strong>People &amp; Readiness</strong></div>
+    </aside>
+
+    <main>
+      <header class="hero">
+        <div>
+          <p class="eyebrow">People &amp; readiness</p>
+          <h1>People &amp; Readiness <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">Review training, safeguarding readiness, and commissioner coverage before opening person-level detail.</p>
+        </div>
+      </header>
+
+      <section class="focus-grid">
+        <section class="panel focus-panel" aria-labelledby="trainingTitle">
+          <div class="panel-head compact">
+            <div><p class="section-kicker">Training</p><div class="panel-title-row"><h2 id="trainingTitle">All-Scouter Training</h2><button class="panel-help" type="button" aria-label="All-Scouter Training source help" title="Source: Council dashboard workbook Training Dive and Training tabs.">?</button></div></div>
+            <div class="panel-actions"><a class="detail-link" href="training.html">View training gaps</a><span class="count-pill" id="trainingStatus"></span></div>
+          </div>
+          <div id="trainingPanel"></div>
+        </section>
+
+        <section class="panel focus-panel" aria-labelledby="sytTitle">
+          <div class="panel-head compact">
+            <div><p class="section-kicker">SYT</p><div class="panel-title-row"><h2 id="sytTitle">Safeguarding Youth Training</h2><button class="panel-help" type="button" aria-label="Safeguarding Youth Training source help" title="Source: Council dashboard workbook Membership and SYT tabs.">?</button></div></div>
+            <div class="panel-actions"><a class="detail-link" href="syt.html">View SYT expirations</a><span class="count-pill" id="sytStatus"></span></div>
+          </div>
+          <div id="sytPanel"></div>
+        </section>
+      </section>
+
+      <section class="dashboard-grid people-support-grid">
+        <section class="panel table-panel" aria-labelledby="commissionerRosterTitle">
+          <div class="panel-head">
+            <div><p class="section-kicker">Coverage roster</p><div class="panel-title-row"><h2 id="commissionerRosterTitle">Commissioner Coverage Roster</h2><button class="panel-help" type="button" aria-label="Commissioner Coverage Roster source help" title="Source: Council dashboard workbook Commissioners tab.">?</button></div></div>
+            <span class="count-pill" id="commissionerCount"></span>
+          </div>
+          <div class="table-wrap short">
+            <table>
+              <thead><tr><th>District</th><th>Name</th><th>Position</th><th>Trained</th><th>SYT</th><th>Assigned Units</th><th>Unit Health</th></tr></thead>
+              <tbody id="commissionerRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="commissionerTitle">
+          <div class="panel-head compact">
+            <div><p class="section-kicker">Coverage support</p><div class="panel-title-row"><h2 id="commissionerTitle">Coverage Snapshot</h2><button class="panel-help" type="button" aria-label="Coverage Snapshot source help" title="Source: Council dashboard workbook Objectives - Commissioners, Assigned, and Commissioners tabs.">?</button></div></div>
+          </div>
+          <div class="coverage" id="coverage"></div>
+          <a class="detail-link" href="https://pbsargent.github.io/council-commissioner-dashboard/" target="_blank" rel="noreferrer">Open Commissioner Portal</a>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="site-navigation.js?v=20260813-readiness-nav-1"></script>
+  <script src="program-filter.js?v=20260717-master-filter-3"></script>
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="report-problem.js?v=20260712"></script>
+  <script src="council-dashboard-summary.20260626-tay-kpi.js?v=20260813-retention-kpi-1"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Cub Scout JSN Dashboard - Capitol Area Council</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
+  <link rel="stylesheet" href="fall-recruitment.css?v=20260817-monday-layout-1">
+  <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
+</head>
+<body data-page="fall-recruitment">
+  <div class="page-shell">
+    <aside class="site-nav" aria-label="Council dashboard navigation">
+      <a class="brand" href="index.html" aria-label="Council Dashboard Summary home">
+        <img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council">
+      </a>
+      <nav aria-label="Council dashboard"><a href="index.html">Overview</a></nav>
+      <div class="nav-note">
+        <span>Live operating snapshot</span>
+        <strong>Field Service</strong>
+      </div>
+    </aside>
+
+    <main>
+      <header class="dashboard-header">
+        <div>
+          <p class="eyebrow">2026 recruiting operations</p>
+          <h1>Cub Scout JSN Dashboard</h1>
+          <p class="lede">Join Scout Night scheduling, materials, and district activity mirrored from the Cub Scout JSN Dashboard in monday.com.</p>
+        </div>
+        <div class="header-actions">
+          <a class="source-link" href="https://capitolareacouncil564.monday.com/overviews/32299792" target="_blank" rel="noreferrer">Open Cub Scout JSN Dashboard in monday.com</a>
+          <p id="freshness">Loading live snapshot…</p>
+        </div>
+      </header>
+
+      <section class="control-strip" aria-label="Dashboard summary and filters">
+        <div class="connected-board"><span class="board-icon" aria-hidden="true"></span> 1 connected board: 2026 Fall Recruitment Tracking</div>
+        <label>
+          <span>District</span>
+          <select id="districtFilter" aria-label="Filter graphics by district"></select>
+        </label>
+        <button id="resetFilter" type="button">Reset filter</button>
+        <div class="summary-stat"><strong id="scheduledTotal">—</strong><span>JSNs scheduled</span></div>
+        <div class="summary-stat"><strong id="schoolTotal">—</strong><span>Core + Partial targets</span></div>
+      </section>
+
+      <section class="dashboard-grid two-up material-grid" aria-label="Recruitment material production totals and fliers">
+        <article class="widget compact-widget material-total">
+          <div class="widget-head"><h2>Total JSN Materials Submitted (Fliers, Stickers, P2P Cards)</h2></div>
+          <strong id="materialTotal">—</strong>
+          <span>Fliers + stickers + P2P cards</span>
+        </article>
+        <article class="widget compact-widget">
+          <div class="widget-head"><h2>Flier Production Count</h2></div>
+          <div id="flierGauge" class="production-gauge"></div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid two-up material-grid" aria-label="Sticker and P2P production">
+        <article class="widget compact-widget">
+          <div class="widget-head"><h2>Sticker Production Count</h2></div>
+          <div id="stickerGauge" class="production-gauge"></div>
+        </article>
+        <article class="widget compact-widget">
+          <div class="widget-head"><h2>P2P Production Count</h2></div>
+          <div id="p2pGauge" class="production-gauge"></div>
+        </article>
+      </section>
+
+      <section class="widget wide" aria-labelledby="district-title">
+        <div class="widget-head">
+          <h2 id="district-title">JSNs Scheduled by District</h2>
+          <span class="live-chip">Daily snapshot</span>
+        </div>
+        <div id="districtChart" class="chart chart-district" role="img" aria-label="Join Scout Nights scheduled by district"></div>
+      </section>
+
+      <section class="dashboard-grid two-up planning-grid" aria-label="Schools needing recruitment support">
+        <article class="widget" aria-labelledby="no-pack-title">
+          <div class="widget-head"><h2 id="no-pack-title">School with no Cub Packs</h2></div>
+          <div id="noPackChart" class="pie-widget" role="img" aria-label="Schools with no connected Cub packs by district"></div>
+        </article>
+        <article class="widget" aria-labelledby="no-plans-title">
+          <div class="widget-head"><h2 id="no-plans-title">Schools with no Recruitment Plans</h2></div>
+          <div id="noPlansChart" class="pie-widget" role="img" aria-label="Schools with no recruitment plans by district"></div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid two-up activity-grid">
+        <article class="widget" aria-labelledby="location-title">
+          <div class="widget-head"><h2 id="location-title">Join Scout Nights by Location Type</h2></div>
+          <div id="locationChart" class="chart" role="img" aria-label="Join Scout Nights by location type"></div>
+        </article>
+        <article class="widget" aria-labelledby="time-title">
+          <div class="widget-head"><h2 id="time-title">Join Scout Night By Times</h2></div>
+          <div id="timeChart" class="chart" role="img" aria-label="Join Scout Nights by start time"></div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid two-up calendar-grid">
+        <article class="widget" aria-labelledby="week-title">
+          <div class="widget-head"><h2 id="week-title">Join Scout Nights by Week</h2></div>
+          <div id="weekChart" class="chart" role="img" aria-label="Join Scout Nights by week"></div>
+        </article>
+        <article class="widget" aria-labelledby="month-title">
+          <div class="widget-head"><h2 id="month-title">Join Scout Nights by Month</h2></div>
+          <div id="monthChart" class="chart" role="img" aria-label="Join Scout Nights by month"></div>
+        </article>
+      </section>
+
+      <section class="widget wide" aria-labelledby="day-title">
+        <div class="widget-head"><h2 id="day-title">Join Scout Nights by Day</h2></div>
+        <div id="dayChart" class="chart chart-day" role="img" aria-label="Join Scout Nights by date"></div>
+      </section>
+
+      <p class="footnote">Widget scopes mirror the Cub Scout JSN Dashboard in monday.com: the district graphic uses Core or Partial targets without No Recruitment Plans; the scheduling detail graphics use monday.com’s selected Scouting Districts; material gauges sum the full connected board. Weeks begin Monday, and dates and times are shown in Central Time.</p>
+    </main>
+  </div>
+  <script src="site-navigation.js?v=20260813-readiness-nav-1"></script>
+  <script src="data/fall-recruitment-latest.js?v=20260814-monday-match-1"></script>
+  <script src="fall-recruitment.js?v=20260817-monday-pies-1"></script>
+</body>
+</html>

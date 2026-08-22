@@ -1,0 +1,107 @@
+.readiness-policy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 16px 0;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--orange);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgba(8, 43, 97, .05);
+}
+
+.readiness-policy strong {
+  display: block;
+  max-width: 920px;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.readiness-policy p:last-child {
+  margin: 7px 0 0;
+  color: var(--muted);
+}
+
+.readiness-policy > a,
+.readiness-policy-links a {
+  flex: 0 0 auto;
+  color: var(--blue-700);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.readiness-policy > a:hover,
+.readiness-policy > a:focus-visible,
+.readiness-policy-links a:hover,
+.readiness-policy-links a:focus-visible {
+  text-decoration: underline;
+}
+
+.readiness-policy-links {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 8px;
+  text-align: right;
+}
+
+.camping-readiness-table table {
+  min-width: 1240px;
+}
+
+.readiness-source-note {
+  margin: -4px 0 12px;
+}
+
+.pack-identity strong,
+.troop-identity strong,
+.coverage-cell strong {
+  display: block;
+  color: var(--ink);
+}
+
+.pack-identity span,
+.troop-identity span,
+.coverage-cell span.coverage-people,
+.action-copy {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.readiness-missing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 210px;
+}
+
+.coverage-cell {
+  min-width: 230px;
+}
+
+.coverage-cell .status {
+  margin-bottom: 2px;
+}
+
+.action-copy {
+  min-width: 230px;
+  margin-top: 0;
+  color: var(--ink);
+}
+
+@media (max-width: 820px) {
+  .readiness-policy {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .readiness-policy-links {
+    text-align: left;
+  }
+}

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Popcorn Commitments - Council Dashboard Summary</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
+  <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
+</head>
+<body data-page="popcorn">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Popcorn dashboard navigation">
+      <div class="brand">
+        <img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council">
+      </div>
+      <nav aria-label="Council dashboard"><a href="index.html">Overview</a></nav>
+      <a class="report-problem" data-report-problem href="mailto:scouting@imetpetersargent.com">Report a problem</a>
+      <div class="sidebar-note">
+        <span id="generatedDate">Loading</span>
+        <strong>Council Dashboard Summary</strong>
+      </div>
+    </aside>
+
+    <main>
+      <header class="hero detail-hero">
+        <div>
+          <p class="eyebrow">2026 unit participation and readiness</p>
+          <h1>Popcorn Commitments <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">Committed participation, goal context, and onboarding readiness in a collapsible Service Area, District, and Unit hierarchy.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="detail-link" href="districts.html">Back to District Performance</a>
+          <a class="detail-link" id="boardLink" href="#" target="_blank" rel="noreferrer">Open monday.com board</a>
+        </div>
+      </header>
+
+      <section class="kpi-grid" id="popcornKpis" aria-label="Popcorn commitment metrics"></section>
+
+      <section class="detail-toolbar" aria-label="Popcorn filters">
+        <label class="control">
+          <span>Service Area</span>
+          <select id="serviceAreaSelect"></select>
+        </label>
+        <label class="control">
+          <span>District</span>
+          <select id="districtSelect"></select>
+        </label>
+        <label class="control">
+          <span>Commitment</span>
+          <select id="commitmentSelect"></select>
+        </label>
+        <label class="control search">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="Unit, district, commitment, onboarding">
+        </label>
+      </section>
+
+      <section class="panel table-panel popcorn-rollup-table" aria-labelledby="rollupTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Service Area → District → Unit</p>
+            <div class="panel-title-row">
+              <h2 id="rollupTitle">Participation, Readiness, and Unit Follow-up</h2>
+              <button class="panel-help" type="button" aria-label="Participation and Readiness source help" title="Source: published Popcorn Committments snapshot, normally from the daily monday.com workbook with API fallback. Participation is committed units divided by all units in the selected population. Service Area comes from the dashboard's authoritative Service Areas hierarchy. Unit contact names, email addresses, and phone numbers are intentionally excluded.">?</button>
+            </div>
+          </div>
+          <span class="count-pill" id="rollupCount"></span>
+        </div>
+        <p class="subtle rollup-disclosure-note">Expand a Service Area to see Districts, then expand a District to see its Units. Both levels start collapsed.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Service Area / District / Unit</th>
+                <th class="num">Participation / Commitment</th>
+                <th class="num">Committed</th>
+                <th class="num">All Units</th>
+                <th class="num">Committed Goal</th>
+                <th class="num">2025 Sales</th>
+                <th class="num">Goal vs 2025</th>
+                <th class="num">Onboarded</th>
+                <th class="num">Unit Trained</th>
+              </tr>
+            </thead>
+            <tbody id="rollupRows"></tbody>
+          </table>
+        </div>
+        <p class="subtle">Participation denominator: every unit row in the selected population. Numerator: rows whose commitment status is “Committed.”</p>
+      </section>
+    </main>
+  </div>
+
+  <script src="site-navigation.js?v=20260813-readiness-nav-1"></script>
+  <script src="program-filter.js?v=20260717-master-filter-3"></script>
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="report-problem.js?v=20260712"></script>
+  <script src="popcorn-detail.js?v=20260717-master-program-filter-3"></script>
+</body>
+</html>

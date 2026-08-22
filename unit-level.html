@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Unit Level Dashboard - Council Dashboard Summary</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
+  <link rel="stylesheet" href="unit-level-dashboard.css?v=20260821-scrollable-tables-v1">
+  <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
+</head>
+<body data-page="unit-level">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Unit dashboard navigation">
+      <div class="brand"><img src="assets/cac-logo.png" alt="Scouting America Capitol Area Council"></div>
+      <nav aria-label="Council dashboard"><a href="index.html">Overview</a></nav>
+      <div class="sidebar-note"><span id="generatedDate">Loading</span><strong>Unit Level Dashboard</strong></div>
+    </aside>
+
+    <main>
+      <header class="hero detail-hero unit-hero">
+        <div>
+          <p class="eyebrow">Unit operating view</p>
+          <h1 id="unitTitle">Unit Level Dashboard</h1>
+          <p class="lede" id="unitSubtitle">Choose a district and unit to see its scorecard.</p>
+        </div>
+        <div class="unit-hero-score" aria-label="Unit metric score">
+          <span>Unit metric</span><strong id="heroMetric">–</strong><small id="heroStatus">Loading</small>
+        </div>
+      </header>
+
+      <section class="detail-toolbar unit-level-toolbar" aria-label="Unit selection">
+        <label class="control"><span>District</span><select id="districtSelect"></select></label>
+        <label class="control search"><span>Unit</span><select id="unitSelect"></select></label>
+        <button class="detail-link unit-print-button" id="printButton" type="button">Print Unit Scorecard</button>
+      </section>
+
+      <section class="kpi-grid" id="unitKpis" aria-label="Unit summary metrics"></section>
+
+      <section class="unit-dashboard-grid">
+        <section class="panel unit-drivers" aria-labelledby="driversTitle">
+          <div class="panel-head"><div><p class="section-kicker">Unit metric</p><h2 id="driversTitle">Five Drivers</h2></div><span class="count-pill" id="driverCount"></span></div>
+          <div id="driverRows" class="driver-list"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="trainingTitle">
+          <div class="panel-head"><div><p class="section-kicker">Leadership</p><h2 id="trainingTitle">Training Readiness</h2></div></div>
+          <div id="trainingRows" class="metric-list"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="renewalTitle">
+          <div class="panel-head"><div><p class="section-kicker">Retention</p><h2 id="renewalTitle">Renewal Watch</h2></div><span class="count-pill" id="renewalCount"></span></div>
+          <div id="renewalBody"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="contextTitle">
+          <div class="panel-head"><div><p class="section-kicker">Commissioner context</p><h2 id="contextTitle">Unit Profile</h2></div></div>
+          <dl id="unitProfile" class="profile-list"></dl>
+        </section>
+      </section>
+
+      <section class="panel print-notes" aria-labelledby="notesTitle">
+        <div class="panel-head"><div><p class="section-kicker">Follow-up</p><h2 id="notesTitle">Unit Action Notes</h2></div></div>
+        <div class="note-lines" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </section>
+
+      <footer class="print-footer">
+        <span id="printSource"></span>
+        <span id="printGenerated"></span>
+      </footer>
+    </main>
+  </div>
+  <script src="site-navigation.js?v=20260813-readiness-nav-1"></script>
+  <script src="program-filter.js?v=20260717-master-filter-3"></script>
+  <script src="data/unit-level-latest.js?v=20260714-unit-level"></script>
+  <script src="unit-level-dashboard.js?v=20260803-retention-whole"></script>
+</body>
+</html>

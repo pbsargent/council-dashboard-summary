@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>SYT Detail - Council Dashboard Summary</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
+  <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
+</head>
+<body data-page="syt">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="SYT dashboard navigation">
+      <div class="brand">
+        <img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council">
+      </div>
+      <nav aria-label="Council dashboard"><a href="index.html">Overview</a></nav>
+      <a class="report-problem" data-report-problem href="mailto:scouting@imetpetersargent.com">Report a problem</a>
+      <div class="sidebar-note">
+        <span id="generatedDate">Loading</span>
+        <strong>Council Dashboard Summary</strong>
+      </div>
+    </aside>
+
+    <main>
+      <header class="hero detail-hero">
+        <div>
+          <p class="eyebrow">Safeguarding Youth Training</p>
+          <h1>SYT Expiration Detail <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">Workbook SYT tab detail for expired, 0-30 day, and 31-90 day Safeguarding Youth Training follow-up.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="detail-link" data-back-context data-summary-href="index.html#syt" href="index.html#syt">Back to Council Summary Dashboard</a>
+        </div>
+      </header>
+
+      <section class="kpi-grid" id="sytKpis" aria-label="SYT and direct-contact metrics"></section>
+
+      <section class="detail-toolbar syt-toolbar" aria-label="SYT filters">
+        <label class="control">
+          <span>District</span>
+          <select id="districtSelect"></select>
+        </label>
+        <label class="control">
+          <span>Status</span>
+          <select id="issueSelect">
+            <option value="">All statuses</option>
+            <option value="expired">Expired</option>
+            <option value="next30">Expires in 0-30 days</option>
+            <option value="next90">Expires in 31-90 days</option>
+            <option value="review">Needs review</option>
+          </select>
+        </label>
+        <label class="control">
+          <span>Unit Type</span>
+          <select id="unitTypeSelect">
+            <option value="">All units</option>
+            <option value="Pack">Pack</option>
+            <option value="Troop">Troop</option>
+            <option value="Crew">Crew</option>
+            <option value="Ship">Ship</option>
+          </select>
+        </label>
+        <label class="control search">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="Name, unit, position, code">
+        </label>
+      </section>
+
+      <section class="dashboard-grid training-summary-grid">
+        <section class="panel training-chart-panel" aria-labelledby="sytChartTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Workbook SYT tab</p>
+              <div class="panel-title-row">
+                <h2 id="sytChartTitle">90-Day Follow-Up Readiness</h2>
+                <button class="panel-help" type="button" aria-label="90-Day Follow-Up Readiness source help" title="Source: Council dashboard workbook SYT tab. Separates rows with no action due within 90 days from expired, 0-30 day, and 31-90 day follow-up rows using the workbook's explicit flags.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="donut-card" id="sytDonut" aria-live="polite"></div>
+        </section>
+
+        <section class="panel wide training-rollup" aria-labelledby="rollupTitle">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">District and group rollup</p>
+              <div class="panel-title-row">
+                <h2 id="rollupTitle">SYT Expiration Rollup</h2>
+                <button class="panel-help" type="button" aria-label="SYT Expiration Rollup source help" title="Source: Council dashboard workbook SYT tab. Groups rows by Service Area and district, including expired and upcoming expiration buckets.">?</button>
+              </div>
+            </div>
+            <span class="count-pill" id="rollupCount"></span>
+          </div>
+          <div class="table-wrap short">
+            <table>
+              <thead>
+                <tr>
+                  <th>District</th>
+                  <th class="num">Rows</th>
+                  <th class="num">Needs Review</th>
+                  <th class="num">Current</th>
+                  <th class="num">Expired</th>
+                  <th class="num">0-30</th>
+                  <th class="num">31-90</th>
+                </tr>
+              </thead>
+              <tbody id="rollupRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="watchTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Watch list</p>
+              <div class="panel-title-row">
+                <h2 id="watchTitle">SYT Signals</h2>
+                <button class="panel-help" type="button" aria-label="SYT Signals source help" title="Source: computed from filtered SYT tab rows. Calls out expired, near-term, and 31-90 day Safeguarding Youth Training follow-up.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="signal-list" id="signals"></div>
+        </section>
+      </section>
+
+      <section class="panel detail-table" aria-labelledby="peopleTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Workbook SYT tab</p>
+            <div class="panel-title-row">
+              <h2 id="peopleTitle">SYT Expiration Detail</h2>
+              <button class="panel-help" type="button" aria-label="SYT Expiration Detail source help" title="Source: Council dashboard workbook SYT tab. Lists the filtered rows with workbook status, expiration date, Y01 completion date, member ID, and key.">?</button>
+            </div>
+          </div>
+          <span class="count-pill" id="peopleCount"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>District</th>
+                <th>Unit</th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Direct Contact</th>
+                <th>SYT</th>
+                <th>Hazardous Weather</th>
+                <th>BALOO</th>
+                <th>IOLS</th>
+                <th>Issues</th>
+              </tr>
+            </thead>
+            <tbody id="peopleRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel detail-table" aria-labelledby="safetyTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Workbook Training tab</p>
+            <div class="panel-title-row">
+              <h2 id="safetyTitle">Outdoor Safety Readiness</h2>
+              <button class="panel-help" type="button" aria-label="Outdoor Safety Readiness source help" title="Source: Council dashboard workbook Training tab with Training Codes. Lists direct-contact leaders with Hazardous Weather, BALOO, and IOLS status by unit type.">?</button>
+            </div>
+          </div>
+          <span class="count-pill" id="safetyCount"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>District</th>
+                <th>Unit</th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Hazardous Weather</th>
+                <th>BALOO</th>
+                <th>IOLS</th>
+                <th>Issues</th>
+              </tr>
+            </thead>
+            <tbody id="safetyRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="site-navigation.js?v=20260813-readiness-nav-1"></script>
+  <script src="program-filter.js?v=20260717-master-filter-3"></script>
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="report-problem.js?v=20260712"></script>
+  <script src="syt-detail.js?v=20260717-master-program-filter-3"></script>
+  <script src="back-context.js?v=20260627-back-context"></script>
+</body>
+</html>

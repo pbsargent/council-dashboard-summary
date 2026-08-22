@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Unit Health &amp; Renewal</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
+  <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
+</head>
+<body data-page="unit-health">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Council dashboard navigation">
+      <div class="brand"><img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council"></div>
+      <nav aria-label="Council dashboard"><a href="index.html">Overview</a></nav>
+      <a class="report-problem" data-report-problem href="mailto:scouting@imetpetersargent.com">Report a problem</a>
+      <div class="sidebar-note"><span id="generatedDate">Loading</span><strong>Unit Health &amp; Renewal</strong></div>
+    </aside>
+
+    <main>
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Unit health &amp; renewal</p>
+          <h1>Unit Health &amp; Renewal <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">Monitor unit-health cohorts, exceptions, and the priority-unit work queue before moving into unit-level or renewal detail.</p>
+        </div>
+      </header>
+
+      <section class="dashboard-grid">
+        <section class="panel wide" aria-labelledby="healthTitle">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">Funnel and cohort insights</p>
+              <div class="panel-title-row">
+                <h2 id="healthTitle">Unit Health Funnel</h2>
+                <button class="panel-help" type="button" aria-label="Unit Health Funnel source help" title="Source: Council dashboard workbook Unit Metrics tab. Groups units by metric score bands.">?</button>
+              </div>
+            </div>
+            <a class="detail-link" href="unit-metrics.html">Open Unit Metrics</a>
+          </div>
+          <div class="funnel" id="healthFunnel"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="qualityTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-kicker">Anomaly and quality checks</p>
+              <div class="panel-title-row">
+                <h2 id="qualityTitle">Exceptions</h2>
+                <button class="panel-help" type="button" aria-label="Exceptions source help" title="Source: dashboard validation checks over the published JSON.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="quality-list" id="qualityChecks"></div>
+        </section>
+      </section>
+
+      <section class="panel table-panel" aria-labelledby="priorityTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Unit follow-up</p>
+            <div class="panel-title-row">
+              <h2 id="priorityTitle">Priority Units</h2>
+              <button class="panel-help" type="button" aria-label="Priority Units source help" title="Source: Council dashboard workbook Unit Metrics tab plus assignment lookups.">?</button>
+            </div>
+          </div>
+          <div class="panel-actions">
+            <span class="count-pill" id="priorityCount"></span>
+            <a class="detail-link" href="renewal-board/index.html">Open Renewal Status</a>
+          </div>
+        </div>
+        <div class="table-wrap short">
+          <table>
+            <thead><tr><th>District</th><th>Unit</th><th class="num">Metric</th><th class="num">Youth</th><th>Commissioners</th><th>PIN</th></tr></thead>
+            <tbody id="priorityRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="site-navigation.js?v=20260813-readiness-nav-1"></script>
+  <script src="program-filter.js?v=20260717-master-filter-3"></script>
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="report-problem.js?v=20260712"></script>
+  <script src="council-dashboard-summary.20260626-tay-kpi.js?v=20260813-retention-kpi-1"></script>
+</body>
+</html>
