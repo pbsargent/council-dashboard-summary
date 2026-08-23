@@ -40,7 +40,7 @@ deployer; force pushes and parentless commits are prohibited.
 
 For manual site-only publishing after HTML/CSS/JS/data edits, use `publish_site_only.zsh` or double-click `Publish Council Dashboard.command`. This path does not rebuild source workbooks.
 
-Service Area filtering is based on Bill Kohl's authoritative 2026-06-30 `Districts and Service Area` email. The mapping is applied during JSON generation and is available alongside District filters across the major dashboard pages.
+Service Area filtering and district volunteer leadership are refreshed from the authoritative monday.com `Field Service / Service Areas` board. The run-specific hierarchy is applied during JSON generation and is available alongside District filters across the major dashboard pages; board leadership values, including intentional blanks, override workbook values.
 
 Popcorn Commitments is included as a home-page participation KPI and as a dedicated operational page with a collapsed-by-default Service Area → District → Unit hierarchy. Its rows refresh from the normal daily monday.com workbook, with the API retained as a fallback. The public Popcorn snapshot contains unit-level commitment, goal, sales, onboarding, and training fields but excludes contact names, email addresses, and phone numbers.
 

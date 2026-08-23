@@ -1,6 +1,6 @@
 # Council Dashboard Summary Data Dictionary
 
-Last reviewed: 2026-07-12
+Last reviewed: 2026-08-23
 
 This document explains where the Council Dashboard Summary gets its data and how the displayed values are computed. It is based on the current implementation in the static site repository, especially:
 
@@ -19,13 +19,15 @@ For environment setup, data acquisition requirements, automation installation, v
 
 ## Current Source Inventory
 
-As of the 2026-07-11 extract:
+As of the 2026-08-23 extract:
 
 | Source | Current File / Feed | Current Count / Coverage |
 | --- | --- | --- |
-| Council dashboard workbook | `2026-07-11_Dashboard - CAC.xlsx` | 12 official districts, 30 priority units, 5,396 training rows, 5,235 SYT rows, Unit & Youth trend history |
-| CST comparison workbook | `2026-07-11_CST7.xlsx` | Service Territory comparison data |
-| monday.com daily workbook | `2026-07-16_Membership-Hub-Field-Service-monday-export.xlsx` | 203 prospects, 311 renewals, 738 schools, 308 Popcorn commitment rows |
+| Council dashboard workbook | `2026-08-23_Dashboard - CAC.xlsx` | 12 official districts, 296 units, 5,672 training/SYT rows, Unit & Youth trend history |
+| CST comparison workbook | `2026-08-23_CST7.xlsx` | Service Territory comparison data |
+| monday.com daily workbook | `2026-08-23_Membership-Hub-Field-Service-monday-export.xlsx` | 208 prospects, 311 renewals, 738 schools, 281 Popcorn commitment rows |
+| Unit Level Metrics workbook | `2026-08-23_CAC - Unit Metric Scorecard.xlsx` | Unit, member-due-to-renew, and program-specific operating detail |
+| Cub Scout JSN board | monday.com board `18420720719` | 731 source items, 340 eligible items, and 143 scheduled recruitments in the current published snapshot |
 | Service Area hierarchy | monday.com `Field Service / Service Areas` board | Authoritative Service Area > District mapping, Field Director names, district professionals, Volunteer Chairs, and District Commissioners; board values override workbook leadership fields, including intentional blanks |
 | Published dashboard data | `data/latest.json` | Main source for home, training, SYT, unit metrics, coverage, and CST views |
 | Published monday.com data | `data/monday-latest.json` | Source for monday.com and membership market context views |
@@ -197,6 +199,18 @@ Top-level fields:
 | `boards.popcorn` | Popcorn commitment counts, participation rate, readiness/financial rollups, and privacy-safe unit rows |
 
 The monday.com export timestamp normally includes an explicit UTC marker. The dashboard formats it in the viewer browser's local timezone.
+
+### `data/unit-level-latest.json` and `data/unit-level-latest.js`
+
+These equivalent bundles are generated from the newest `*_CAC - Unit Metric Scorecard.xlsx` workbook. They publish the source workbook metadata and one compact record per unit from `Unit_Metrics`, `Units`, and `MembersDueToRenew`. The Unit-Level Detail page uses the direct `unit_type` field and unit/member records to support program-aware health, growth, training, SYT, assignment, and renewal views.
+
+### `data/fall-recruitment-latest.js`
+
+This JavaScript bundle is generated from monday.com board `18420720719` for the Cub Scout JSN page. It includes source and eligible item counts, scheduled recruitment counts, district/date/location distributions, uncovered-school rollups, and material totals. Widget-specific scope metadata is published with the data so the page does not replace monday.com's per-widget filters with one page-wide approximation.
+
+### `renewal-board/data.js`
+
+The Renewal Status bundle joins the monday.com `2026 Unit Renewal` sheet to Council dashboard unit, renewal, metric, commissioner-assignment, and Service Area hierarchy data. It publishes source metadata, council and hierarchy summaries, unit workflow rows, and event tables. The page uses the authoritative monday.com Service Areas capture for the same district hierarchy and volunteer-leadership values used by the Council dashboard.
 
 ## Main Dashboard Formulas
 
@@ -420,6 +434,29 @@ Unit Metrics KPI formulas:
 
 Retention is calculated as `(current members - members new in the prior 12 months) / same-month prior-year members`. The workbook stores it as an Excel ratio, so values above `1.0` are valid results above 100% and must not be divided by 100 again or capped. The exact ratio is retained in JSON for calculations and sorting; dashboard displays round retention to the nearest whole percent to match the source workbook.
 
+## Unit-Level Detail Page
+
+The Unit-Level Detail page reads `data/unit-level-latest.js`, generated from the newest Unit Level Metrics workbook. Its direct `unit_type` field is the source of truth for the master program filter. Unit records expose the selected unit's health and growth metrics plus the published member-due-to-renew detail; long member tables remain inside a bounded, scrollable region on desktop and mobile and expand fully only for print.
+
+The Unit Level Metrics workbook is a separate source from the main `Dashboard - CAC.xlsx` workbook. The two filename selectors must remain distinct even though both files live in the Council Dashboard Reports shared drive.
+
+## Renewal Status Detail Page
+
+The Renewal Status page reads `renewal-board/data.js`. The builder joins monday.com renewal workflow rows with Council dashboard unit, `RenewNewDrop`, unit-metric, commissioner-assignment, and chartered-organization context. Program filtering is parsed from standardized unit names. Service Area and district leadership come from the same run-specific monday.com hierarchy capture used by the main dashboard.
+
+Workflow rows scroll inside `.board-scroll`, and renewal event tables scroll inside `.event-table-wrap`. All event rows remain available; the page must not truncate them to an arbitrary first-row subset.
+
+## Cub Scout JSN Detail Page
+
+The Cub Scout JSN page reads `data/fall-recruitment-latest.js`, generated from monday.com board `18420720719`. The authenticated monday.com dashboard is the source of truth for each widget's chart type, labels, filters, stacking, date buckets, and gauge scales.
+
+- District recruitment is a horizontal stacked chart by recruitment date and includes `No Date`.
+- `School with no Cub Packs` is a pie chart for Cub Recruiting Target `Core` or `Partial`, blank Unit Associated, and No Recruitment Plans not checked. Its current widget scope excludes North Shore and Waterloo.
+- Location, time-of-day, week, month, and day charts use the selected scouting-district scope; Waterloo and Exploring are excluded, and week buckets start on Monday.
+- Materials gauges sum the entire board. Their fixed maxima are 63,000 fliers, 40,000 stickers, and 11,000 peer-to-peer cards.
+- `Schools with no Recruitment Plans` is a district pie chart for Cub Recruiting Target `Core` or `Partial`, blank Unit Associated, and No Recruitment Plans checked; Waterloo and Exploring are excluded.
+- The current source dashboard has no expenses gauge, so the public page must not restore it unless it returns to monday.com.
+
 ## monday.com Detail Page
 
 The monday.com page reads both `data/monday-latest.json` and `data/latest.json`.
@@ -577,7 +614,7 @@ The Sources panel on the home page is intentionally visible and includes:
 - monday.com source metadata from `data/monday-latest.json`, when available
 - Manual source links added in the HTML for the Detailed Council Dashboard, Council Service Territory Comparison Data, and Unit Level Metrics
 - Contact text for monday.com detailed access
-- Service Area mapping source note, based on Bill Kohl's 2026-06-30 email
+- Service Area hierarchy and leadership source note from the run-specific monday.com `Field Service / Service Areas` capture
 
 ## Current Workbook Error Caveat
 

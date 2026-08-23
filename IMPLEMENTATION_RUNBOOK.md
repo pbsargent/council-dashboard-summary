@@ -1,6 +1,6 @@
 # Council Dashboard Summary Implementation Runbook
 
-Last reviewed: 2026-08-13
+Last reviewed: 2026-08-23
 
 This runbook is for a technical handoff. It explains what another analyst or engineer needs to acquire data, recreate a similar static dashboard, run the daily refresh, validate outputs, and publish through GitHub Pages.
 

@@ -420,11 +420,11 @@ def build_doc():
     add_heading(doc, "1. What The Dashboard Is", 1)
     add_body(
         doc,
-        "The Council Dashboard Summary is a static web dashboard for Capitol Area Council operating review. It brings together membership, retention, unit health, training, camping readiness, safeguarding, commissioner coverage, Service Area context, CST comparison, and monday.com operating context.",
+        "The Council Dashboard Summary is a static web dashboard for Capitol Area Council operating review. It brings together membership, retention, unit health, renewal, training, camping readiness, safeguarding, commissioner coverage, Service Area context, CST comparison, recruitment, and monday.com operating context.",
     )
     add_body(
         doc,
-        "The website itself is static. It does not connect directly to Google Drive or monday.com when someone opens it. Instead, a daily local refresh process creates compact JSON data files, commits those files to GitHub, and GitHub Pages publishes the updated dashboard.",
+        "The website itself is static. It does not connect directly to Google Drive or monday.com when someone opens it. Instead, a daily local refresh process creates compact JSON and JavaScript data bundles in an isolated staging tree, verifies the payload, and deploys it through GitHub Pages Actions. Generated daily data is not committed to the source repository.",
     )
     add_body(
         doc,
@@ -459,7 +459,7 @@ def build_doc():
     )
 
     add_heading(doc, "2. Where The Data Comes From", 1)
-    add_body(doc, "The dashboard has four main source lanes.")
+    add_body(doc, "The dashboard has six main source lanes.")
     add_table(
         doc,
         ["Source lane", "Used for", "Published as"],
@@ -467,7 +467,9 @@ def build_doc():
             ["Council dashboard workbook", "Membership, unit health, district training rates, commissioner objectives, person-level training, and commissioner roster.", "`data/latest.json`"],
             ["CST comparison workbook", "Service Territory comparison metrics and Capitol Area Council comparison fields.", "`data/latest.json`"],
             ["monday.com daily workbook", "Hot prospects, 2026 renewal status, schools, Total Available Youth, and Popcorn commitments/readiness.", "`data/monday-latest.json`"],
-            ["Service Area mapping", "District-to-Service-Area assignments and Field Director ownership from Bill Kohl's authoritative Districts and Service Area email.", "`data/latest.json`"],
+            ["Unit Level Metrics workbook", "Unit-level youth, health, growth, training, SYT, and commissioner-assignment detail by program.", "`data/unit-level-latest.*`"],
+            ["Cub Scout JSN board", "School recruiting plans, scheduled recruitments, location and date patterns, and recruiting-material totals.", "`data/fall-recruitment-latest.js`"],
+            ["Service Areas board", "Authoritative Service Area hierarchy, Field Directors, district professionals, Volunteer Chairs, and District Commissioners.", "`data/latest.json`"],
         ],
         [2200, 5000, 2160],
     )
@@ -479,19 +481,21 @@ def build_doc():
     add_heading(doc, "3. How The Daily Refresh Works", 1)
     add_body(
         doc,
-        "The scheduled macOS LaunchAgents refresh the source workbooks first, then publish the two dashboard sites from their active working copies. The Council Summary site runs /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/update_daily.zsh and uses /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary as its active GitHub Pages repo. The Commissioner Dashboard is a separate GitHub Pages portal that reads the same canonical Council Summary JSON, so it is updated without replacing or merging into the Council Summary site.",
+        "The consolidated CAC Dashboard Platform is the sole production writer. One scheduled macOS LaunchAgent runs the platform orchestrator, which refreshes source data and publishes the Council Summary and Commissioner sites from their active working copies. The Commissioner Dashboard remains a separate portal that reads the same canonical Council Summary data.",
     )
     for step in [
+        "Capture the current monday.com Service Areas hierarchy and district leadership fields for this run.",
         "Find the newest `*_Dashboard - CAC.xlsx` Council dashboard workbook in the Council Dashboard Reports shared drive.",
         "Ignore `*_CAC - Unit Metric Scorecard.xlsx` for the CAC dashboard source selection, even if that Unit Level Metrics workbook is the newest workbook in the same shared drive.",
         "Find the newest CST7 workbook in the Council Metric Reports shared drive.",
-        "Build `data/latest.json`, including Service Area rollups and a dated archive JSON file.",
+        "Build `data/latest.json`, including Service Area rollups and a dated working archive outside the Pages source tree.",
         "Find the newest monday.com export workbook in the Council monday.com Reports shared drive.",
         "Build `data/monday-latest.json`, falling back to the monday.com API only if needed.",
-        "Copy the refreshed JSON files to the local preview site.",
+        "Rebuild Unit-Level Detail, Renewal Status, Units-Youth history, and the Cub Scout JSN data bundle.",
+        "Run the site-structure validator and stage the complete static site in an isolated Pages tree.",
         "Deploy the Council Summary site tree as a checksum-verified GitHub Pages artifact without committing generated data.",
         "Deploy the Commissioner Dashboard as a verified Pages artifact only when its static payload changed.",
-        "Let GitHub Pages publish the updated dashboard.",
+        "Verify the GitHub Pages deployment and report the refresh result.",
     ]:
         add_step(doc, step)
     add_callout(
@@ -512,13 +516,13 @@ def build_doc():
     add_callout(
         doc,
         "Automation paths",
-        "The active Council Summary repo is /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary. The sole LaunchAgent is /Users/petersargent/Library/LaunchAgents/com.cac.dashboard.macpro-daily.plist. The active Commissioner worktree is /Users/petersargent/CACDashboardPlatform/sites/council-commissioner-dashboard, and the shared publisher is /Users/petersargent/CACDashboardPlatform/work/commissioner_site/update_and_publish_github.zsh.",
+        "The active platform root is /Users/petersargent/CACDashboardPlatform. The sole LaunchAgent is /Users/petersargent/Library/LaunchAgents/com.cac.dashboard.macpro-daily.plist. The platform orchestrator is tools/daily_build_publish.zsh; the Council Summary updater is sites/council-dashboard-summary/update_daily.zsh.",
     )
 
     add_heading(doc, "4. Build And Data Acquisition Requirements", 1)
     add_body(
         doc,
-        "A technical maintainer can rebuild a similar dashboard if they have the source workbooks, a Python environment with the workbook/document libraries, a GitHub Pages repository, and a daily automation path that can read the local Google Drive files and push JSON outputs.",
+        "A technical maintainer can rebuild a similar dashboard if they have the source workbooks, monday.com read access, a Python environment with the workbook/document libraries, a GitHub Pages repository, and an automation path that can build and deploy a verified static payload.",
     )
     add_table(
         doc,
@@ -529,8 +533,8 @@ def build_doc():
             ["Workbook patterns", "Use `*_Dashboard - CAC.xlsx` only for the council dashboard source, `*_CAC - Unit Metric Scorecard.xlsx` only for Unit Level detail, `*_CST7.xlsx` for CST metrics, and `*monday-export.xlsx` for monday.com detail."],
             ["monday.com access", "Daily export workbook preferred; API token fallback requires read access to the configured boards."],
             ["Publishing", "GitHub Pages repository on main branch with static HTML, CSS, JavaScript, assets, and JSON data."],
-            ["Automation", "One LaunchAgent that refreshes source workbooks, builds changed JSON, and publishes the current site trees with ordinary linear Git commits."],
-            ["Service Area mapping", "Authoritative district-to-Service-Area mapping source and a maintained mapping table in the builder."],
+            ["Automation", "One LaunchAgent that refreshes source data and deploys generated data as verified Pages artifacts. Ordinary linear Git commits are reserved for source changes."],
+            ["Service Area hierarchy", "Read access to monday.com board 18420160563 for Service Areas and district leadership."],
             ["Panel help", "Shared `panel-help.js` and dashboard CSS provide active hover, focus, and click/tap help popovers for the ? controls."],
         ],
         [2400, 6960],
@@ -552,10 +556,28 @@ def build_doc():
             ["Average Metric", "District average metrics weighted by the number of units in each district."],
             ["Assigned", "Assigned units divided by total units. Assigned units come from the Assigned tab."],
             ["Training", "District all-scouter training rates weighted by units."],
-            ["Youth / TAY", "Council youth membership divided by the raw sum of Total Available Youth from monday.com school rows."],
+            ["Youth / TAY", "Council: council youth divided by raw school-row TAY. Program view: actual program youth divided by estimated grade/age-eligible school TAY."],
             ["Popcorn Participation", "Units marked Committed divided by every unit row in the published Popcorn snapshot."],
         ],
         [2300, 7060],
+    )
+
+    add_heading(doc, "Master program filter", 2)
+    add_body(
+        doc,
+        "The masthead filter carries Council, Packs, Troops, Crews, Ships, or Posts across linked pages. It uses direct unit-type fields where available and standardized unit names where a source does not publish a separate type field.",
+    )
+    add_table(
+        doc,
+        ["Source or panel", "Program-view behavior"],
+        [
+            ["Unit Level Metrics", "Uses the direct unit_type field to rebuild youth, units, health, growth, training, SYT, and assignment rollups."],
+            ["Training and SYT", "Uses each published person's direct unit_type field."],
+            ["Prospects", "Uses Potential Unit Type(s); a multi-type prospect can appear in more than one program view."],
+            ["Renewal and Popcorn", "Parses program from standardized unit names; Posts are excluded from the published Popcorn population."],
+            ["Units-Youth and CST", "Remain council-only except for source-native Pack/Troop connection fields."],
+        ],
+        [2600, 6760],
     )
 
     add_heading(doc, "District status", 2)
@@ -571,19 +593,28 @@ def build_doc():
         [2100, 7260],
     )
 
-    add_heading(doc, "6. What Each Detail Page Adds", 1)
+    add_heading(doc, "6. What Each Dashboard Page Adds", 1)
     add_table(
         doc,
         ["Page", "What it answers"],
         [
+            ["Overview", "What the Council's current KPI picture is and which operating areas need attention first."],
+            ["Council Comparison", "How Capitol Area Council compares with other Service Territory 07 councils."],
+            ["District Performance", "Which districts lead or lag across membership, unit health, training, SYT, and commissioner coverage."],
+            ["Membership & Growth", "Where membership opportunity, TAY penetration, unit health risk, prospects, and renewals combine into priority signals."],
+            ["Unit Health & Renewal", "Where unit health, assignment, and renewal follow-up require action."],
+            ["People & Readiness", "Where leader training, safeguarding, and camping-readiness gaps are concentrated."],
             ["Training", "Which people are trained, which leaders are direct-contact, and where direct-contact training gaps exist."],
             ["SYT", "Whether direct-contact leaders have current SYT, Hazardous Weather, BALOO, and IOLS-related requirements."],
             ["Pack Camping Readiness", "Which Packs lack roster-level BALOO or current Hazardous Weather coverage and therefore need follow-up before overnight camping."],
             ["Troop Camping Readiness", "Which Troops lack the published IOLS signal or current Hazardous Weather coverage and therefore need follow-up before overnight camping."],
-            ["monday.com", "Where prospect, renewal, and school operating follow-up is concentrated."],
+            ["Recruitment Pipeline", "Where prospect, renewal, and school operating follow-up is concentrated."],
+            ["Cub Scout JSN", "How school recruiting plans, dates, locations, materials, and uncovered schools compare with the monday.com source dashboard."],
             ["Popcorn", "How unit commitments, goals, prior sales, onboarding, and training roll up from Service Area to District to Unit."],
             ["Unit Metrics", "How districts and unit sections compare across unit health, training, outdoor, advancement, and the current workbook retention metric."],
-            ["Membership Intelligence", "Where membership opportunity, TAY penetration, unit health risk, prospects, and renewals combine into priority signals."],
+            ["Unit-Level Detail", "Which individual units and members drive program-specific youth, growth, training, SYT, health, and assignment results."],
+            ["Renewal Status", "Which units are initiated, submitted, pending acceptance, posted, or otherwise need renewal follow-up."],
+            ["Data & Help", "Which source workbooks are current, how values are calculated, and where to report a problem."],
         ],
         [2100, 7260],
     )
@@ -591,6 +622,16 @@ def build_doc():
         doc,
         "Detail pages that compare district records also expose Service Area filters. District filters remain available inside the selected Service Area, and official district views exclude operational labels that are not part of the 12-district Council dashboard structure.",
     )
+
+    add_heading(doc, "Cub Scout JSN interpretation", 2)
+    add_body(
+        doc,
+        "The Cub Scout JSN page is rebuilt directly from monday.com board 18420720719. Its charts preserve the source dashboard's widget-specific filters rather than applying one page-wide population to every graphic.",
+    )
+    add_bullet(doc, "District recruitment includes dated recruitments and a No Date category.")
+    add_bullet(doc, "School-planning gaps remain pie charts with their documented Cub-target, unit-association, plan-status, and district scopes.")
+    add_bullet(doc, "Materials gauges total the full board and retain the source dashboard's fixed gauge maxima.")
+    add_bullet(doc, "The former expenses gauge is not part of the current monday.com dashboard and is not published.")
 
     add_heading(doc, "Retention metric", 2)
     add_table(
@@ -607,7 +648,7 @@ def build_doc():
     add_heading(doc, "7. Service Area And District Filtering", 1)
     add_body(
         doc,
-        "Service Area is not inferred from workbook formulas. It is a maintained mapping based on the authoritative Districts and Service Area email. The builder attaches Service Area and Field Director values to district rows, priority units, training people, commissioner records, Unit Metric Compare rows, and monday.com district contexts where an official district can be identified.",
+        "Service Area is not inferred from workbook formulas. The daily build captures the authoritative hierarchy from monday.com board 18420160563. That board also supplies Field Directors, district professionals, Volunteer Chairs, and District Commissioners; its leadership values replace workbook values, including intentional blanks. The builder attaches the hierarchy to district rows, priority units, training people, commissioner records, Unit Metric Compare rows, renewal data, and monday.com contexts where an official district can be identified.",
     )
     add_table(
         doc,
@@ -657,8 +698,26 @@ def build_doc():
     )
     add_bullet(doc, "Council Youth / TAY uses raw school-row TAY once per school row.")
     add_bullet(doc, "District Youth / TAY attributes a school's full TAY to each official Scouting District listed for that school.")
+    add_bullet(doc, "Program Youth / TAY uses actual youth from units of the selected type and estimates eligible TAY by allocating each school's total evenly across its published grade or age span.")
     add_bullet(doc, "This means district TAY context is useful for district comparison, but district TAY values should not be summed and treated as the council total.")
     add_bullet(doc, "Official district views exclude non-official labels such as Unassigned when comparing districts.")
+    add_table(
+        doc,
+        ["Program view", "Published eligibility basis"],
+        [
+            ["Packs", "Grades K-5 or ages 5-10"],
+            ["Troops", "Grades 6-12 or ages 11-17"],
+            ["Crews", "Grades 9-12 or ages 14-20"],
+            ["Ships", "Grades 9-12 or ages 14-20"],
+            ["Posts", "Grades 9-12 or ages 14-20"],
+        ],
+        [2600, 6760],
+    )
+    add_callout(
+        doc,
+        "Program TAY is an estimate",
+        "School sources do not publish enrollment by individual grade. The dashboard assumes even enrollment across each published span. Program populations overlap; fifth-grade and age-13 exceptions cannot be isolated; Exploring Clubs are not represented in Posts; and most school rows do not cover ages 18-20. Do not add program TAY estimates together.",
+    )
 
     add_heading(doc, "9. Training And Safeguarding Logic", 1)
     add_table(
@@ -713,8 +772,8 @@ def build_doc():
         ["Signal input", "How it is counted"],
         [
             ["Schools", "School rows whose Scouting District includes the district."],
-            ["TAY", "Sum of TAY for those attributed school rows."],
-            ["Schools without unit", "Attributed school rows with a blank Unit Associated field."],
+            ["TAY", "Council view sums attributed school TAY; program views sum the estimated grade/age-eligible portion."],
+            ["Schools without unit", "Council view uses blank Unit Associated; program views require an eligible school without an associated unit matching the selected program."],
             ["Hot prospects", "Prospect rows whose District includes the district."],
             ["Stuck prospects", "Prospect rows where Step 1 status is Stuck."],
             ["Renewal follow-up", "Renewal rows where Posted is not Completed."],
@@ -752,13 +811,13 @@ def build_doc():
         "The published dashboard is only as current as the most recent successful local refresh and GitHub Pages deployment.",
         "The ? buttons provide quick panel context in the website. They are not a replacement for this guide or the Markdown data dictionary.",
         "Workbook labels and sheet names matter. If a source workbook changes structure, the refresh may need a code update.",
-        "The July 1 Council dashboard workbook is broadly usable, but a small number of real Excel error cells exist, concentrated in Renewal Prep and some Objectives - Commissioners fields. Those fields should be treated cautiously until the workbook formulas are repaired.",
         "Expiration checks on the Training and SYT pages use the viewer browser's current date.",
         "Freshness timestamps are displayed in the viewer browser's local timezone, so the same data snapshot can show different clock times to viewers in different timezones.",
         "The SYT detail page flags SYT for all leaders. It flags Hazardous Weather, BALOO, and IOLS only when they are required by the leader's role and unit type.",
         "The Pack and Troop Camping Readiness pages evaluate roster-level training signals from the published snapshot; they do not confirm campout attendance or approval.",
         "monday.com district labels can include operational labels that are not official dashboard districts; official district charts filter those out.",
-        "Service Area filters are based on the maintained district mapping, not on source workbook columns.",
+        "Service Area filters and district leadership are based on the run-specific monday.com Service Areas capture, not on source workbook columns.",
+        "Program TAY values are dashboard estimates based on published school grade or age spans and must not be added together.",
         "Popcorn participation counts every published unit row in the denominator and only rows marked Committed in the numerator.",
         "Popcorn contact names, email addresses, and phone numbers are excluded from the public JSON and dashboard.",
         "The Markdown data dictionary remains the best place for exact formulas and implementation details.",
@@ -778,13 +837,14 @@ def build_doc():
             ["Council SYT %", "District SYT rates weighted by district members."],
             ["Council Youth / TAY", "Council youth divided by raw school-row TAY total."],
             ["District Youth / TAY", "District youth divided by school TAY attributed to that district."],
+            ["Program Youth / TAY", "Actual youth from units of the selected program divided by estimated grade/age-eligible school TAY."],
             ["Retention", "(Current members - members new in the prior 12 months) divided by same-month prior-year members; results above 100% are valid, and displayed values round to the nearest whole percent."],
             ["Pack camping readiness", "At least one Pack leader with BALOO recorded and at least one direct-contact Pack leader with current Hazardous Weather."],
             ["Troop camping readiness", "At least one direct-contact Troop leader without S11 outstanding and at least one direct-contact Troop leader with current Hazardous Weather."],
             ["Popcorn Participation", "Committed Popcorn unit rows divided by all Popcorn unit rows."],
             ["Registered commissioners", "Unique normalized commissioner names."],
             ["Unit commissioners", "Unique normalized people with at least one Unit Commissioner role."],
-            ["Service Area", "Maintained district-to-Service-Area mapping applied after official district normalization."],
+            ["Service Area", "Run-specific monday.com Service Areas hierarchy applied after official district normalization."],
         ],
         [2700, 6660],
     )
@@ -795,6 +855,9 @@ def build_doc():
     add_reference_bullet(doc, "`update_daily.zsh` documents the automation order.")
     add_reference_bullet(doc, "`panel-help.js` documents the website's active ? help popover behavior.")
     add_reference_bullet(doc, "`refresh_monday_data.py` documents the monday.com workbook/API extraction.")
+    add_reference_bullet(doc, "`tools/build_unit_level_dashboard.py` documents the Unit-Level Detail data build.")
+    add_reference_bullet(doc, "`tools/build_fall_recruitment_dashboard.py` documents the Cub Scout JSN data build.")
+    add_reference_bullet(doc, "`work/renewal_recreation/build_renewal_board_data.py` documents the Renewal Status data build.")
     add_reference_bullet(doc, "`work/commissioner_site/build_site.py` documents the source workbook parsing and `latest.json` formulas.")
 
     OUT_DIR.mkdir(exist_ok=True)
