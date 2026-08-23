@@ -1,0 +1,83 @@
+name: Deploy verified Pages payload
+run-name: Deploy Pages payload ${{ inputs.payload_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      asset_name:
+        description: Rolling release asset containing the static site
+        required: true
+        type: string
+      payload_sha256:
+        description: Expected SHA-256 digest
+        required: true
+        type: string
+      payload_id:
+        description: Unique identifier shown in deployment history
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download rolling site payload
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSET_NAME: ${{ inputs.asset_name }}
+        run: |
+          set -euo pipefail
+          case "$ASSET_NAME" in
+            *-site.tar.gz) ;;
+            *) echo "Unexpected asset name: $ASSET_NAME" >&2; exit 1 ;;
+          esac
+          mkdir -p payload
+          gh release download pages-payload --repo "$GITHUB_REPOSITORY" --pattern "$ASSET_NAME" --dir payload
+
+      - name: Verify and unpack payload
+        env:
+          ASSET_NAME: ${{ inputs.asset_name }}
+          PAYLOAD_SHA256: ${{ inputs.payload_sha256 }}
+        run: |
+          set -euo pipefail
+          case "$PAYLOAD_SHA256" in
+            ''|*[!0-9a-f]*) echo "Invalid SHA-256 input" >&2; exit 1 ;;
+            *) ;;
+          esac
+          test "${#PAYLOAD_SHA256}" -eq 64
+          printf '%s  %s\n' "$PAYLOAD_SHA256" "payload/$ASSET_NAME" | sha256sum --check --strict
+          mkdir -p _site
+          tar -xzf "payload/$ASSET_NAME" -C _site
+          test -f _site/index.html
+          if find _site -type l -print -quit | grep -q .; then
+            echo "Payload contains a symbolic link" >&2
+            exit 1
+          fi
+          if find _site \( -name .git -o -name .github -o -name .env \) -print -quit | grep -q .; then
+            echo "Payload contains forbidden metadata" >&2
+            exit 1
+          fi
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload verified Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

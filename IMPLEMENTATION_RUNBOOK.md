@@ -38,7 +38,7 @@ The active publishing repository is:
 https://github.com/pbsargent/council-dashboard-summary
 ```
 
-GitHub Pages publishes from the `main` branch. The browser-facing site is static HTML, CSS, JavaScript, images, and JSON.
+GitHub Pages deploys a verified artifact through `.github/workflows/deploy-pages-payload.yml`. The `main` branch retains source code; the browser-facing artifact contains static HTML, CSS, JavaScript, images, and current JSON.
 
 Minimum static files for a similar dashboard:
 
@@ -81,7 +81,7 @@ This is enforced in `tools/validate_site_structure.py` through `DETAIL_PAGES`, `
 
 ## 2. Data Acquisition Requirements
 
-The dashboard does not read Google Drive, OneDrive, or monday.com from the browser. Data is acquired by local scripts, converted to JSON, committed by the consolidated single writer, and served by GitHub Pages.
+The dashboard does not read Google Drive, OneDrive, or monday.com from the browser. Data is acquired by local scripts, converted to JSON in an isolated staging tree, checksum-verified, and served through a GitHub Pages artifact.
 
 ### Google Shared Drive Access
 
@@ -232,10 +232,10 @@ The operational order is:
 14. Copy refreshed JSON and Unit Level data to the local preview site when present.
 15. Rebuild `renewal-board/data.js` when the renewal board subpage exists.
 16. Copy the renewal-board data bundle to the local preview site when present.
-17. Fetch `origin/main` and align the automation-owned checkout to it.
-18. Stage changed JSON files, the Unit Level data bundle, and `renewal-board/data.js`.
-19. Create one ordinary child commit from the staged changes.
-20. Push it to GitHub Pages without force.
+17. Fetch `origin/main`, require a clean source checkout, and fast-forward it.
+18. Revalidate the isolated staged site and confirm no second writer changed `origin/main`.
+19. Package the current static tree and calculate its SHA-256 checksum.
+20. Replace the rolling payload and deploy it through the repository's GitHub Pages workflow.
 
 The website code is not regenerated daily. JSON data files and the renewal-board data bundle update unless a human commits HTML/CSS/JS changes.
 
@@ -257,8 +257,8 @@ The Commissioner Dashboard portal is published by:
 ```
 
 The sole 8:30 AM platform job invokes this publisher after the Council site. It
-writes the portal only when shared code or assets changed and publishes an
-ordinary linear commit without force.
+writes an isolated portal staging tree and deploys it as a verified Pages
+artifact. An unchanged payload is skipped automatically.
 
 ## 4. Manual Refresh
 
@@ -349,15 +349,17 @@ tail -50 "/Users/petersargent/Documents/Codex/Daily Uodate/outputs/council-dashb
 
 ## 6. Publication and Cache Behavior
 
-Publishing occurs when the active repo pushes to:
+Source changes are pushed normally to:
 
 ```text
 origin main
 ```
 
-The Pages repositories use normal linear history. The consolidated publisher
-starts from the current remote commit, verifies that no second writer changed
-GitHub during generation, and pushes without force.
+The Pages repositories use normal linear source history. Daily generated data
+does not enter Git history. The consolidated publisher starts from the current
+remote source commit, verifies that no second writer changed GitHub during
+generation, replaces one rolling payload, and waits for the Pages workflow to
+succeed.
 
 Public site:
 
@@ -388,7 +390,7 @@ Or double-click:
 /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/Publish Council Dashboard.command
 ```
 
-This path stages and commits the current repo state and pushes to GitHub Pages. It does not rebuild Council/CST workbooks, refresh monday.com, or regenerate renewal-board data unless those files are already changed locally.
+This path rejects generated-data changes, commits and pushes source changes, then invokes the normal refresh so the source update is combined with current data in a verified Pages artifact.
 
 ## 7. Validation Checklist
 
@@ -437,7 +439,7 @@ curl -I https://pbsargent.github.io/council-dashboard-summary/data/monday-latest
 | monday.com page is stale | monday workbook missing and API fallback failed | Export workbook, token path, API access |
 | 18 monday.com districts appear | Operational labels included | Official-district filtering logic and source labels |
 | School market context is blank | Schools rows missing or district labels do not match official districts | `boards.schools.rows`, `scouting_district`, official district list |
-| Git push fails | Auth, network, or a second writer changed GitHub | `git status`, `git fetch`, GitHub credentials, remote `origin/main` |
+| Pages artifact deployment fails | GitHub authentication, checksum mismatch, workflow failure, or a second source writer | `gh auth status`, Actions run, rolling release assets, remote `origin/main` |
 | Page still shows old code | Browser or CDN cached JavaScript | Bump script query string and republish |
 | `?` help does not open | Missing/stale `panel-help.js` or cached CSS | Confirm `panel-help.js` is loaded, CSS has `.panel-help-tooltip`, and query strings were bumped |
 | Future-looking timestamp | Source timezone interpreted incorrectly | Check whether timestamp has `Z`/offset or should be treated as America/Chicago |
@@ -468,4 +470,4 @@ For a similar council or organization:
 - Do not commit monday.com API tokens.
 - Do not expose private Google Drive local paths in browser-facing data unless acceptable for the audience.
 - Do not put sensitive person-level fields into public JSON unless the dashboard audience is authorized for them.
-- Treat the published `data/` directory as public once pushed to GitHub Pages.
+- Treat every file in the staged Pages artifact, including `data/`, as public once deployed.

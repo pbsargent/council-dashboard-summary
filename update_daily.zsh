@@ -4,8 +4,11 @@ set -euo pipefail
 ROOT="${CAC_DASHBOARD_ROOT:-/Users/petersargent/CACDashboardPlatform}"
 PYTHON="${AUTOMATION_PYTHON:-${ROOT}/.venv/bin/python}"
 SUMMARY_REPO="${COUNCIL_DASHBOARD_SUMMARY_REPO:-${ROOT}/sites/council-dashboard-summary}"
+SITE_STAGE="${ROOT}/outputs/pages-stage/council-dashboard-summary"
 PREVIEW_SITE="${ROOT}/outputs/council-commissioner-dashboard-site"
 BUILD_DIR="${ROOT}/outputs/council-dashboard-summary-refresh"
+SITE_STAGER="${ROOT}/tools/stage_static_site.zsh"
+PAGES_DEPLOYER="${ROOT}/tools/deploy_github_pages_artifact.zsh"
 BUILDER="${ROOT}/work/commissioner_site/build_site.py"
 RENEWAL_BUILDER="${ROOT}/work/renewal_recreation/build_renewal_board_data.py"
 MONDAY_REFRESHER="${SUMMARY_REPO}/refresh_monday_data.py"
@@ -31,8 +34,9 @@ UNIT_LEVEL_STATUS="not started"
 RENEWAL_STATUS="not started"
 PREVIEW_STATUS="not checked"
 PUBLISH_STATUS="not started"
-PUBLISHED_COMMIT="not published"
+PUBLISHED_COMMIT="not deployed"
 PUBLIC_URL="https://pbsargent.github.io/council-dashboard-summary/"
+GITHUB_REPOSITORY="pbsargent/council-dashboard-summary"
 REPORT_FILE="/tmp/council-dashboard-summary-refresh-email.$$"
 
 log() {
@@ -71,7 +75,7 @@ send_refresh_email() {
     print -r -- ""
     print -r -- "Preview copy: ${PREVIEW_STATUS}"
     print -r -- "GitHub Pages publish: ${PUBLISH_STATUS}"
-    print -r -- "Published commit: ${PUBLISHED_COMMIT}"
+    print -r -- "Source code commit: ${PUBLISHED_COMMIT}"
     print -r -- "Public dashboard: ${PUBLIC_URL}"
     print -r -- ""
     print -r -- "Repository: ${SUMMARY_REPO}"
@@ -138,6 +142,8 @@ require_file "$UNIT_YOUTH_INJECTOR"
 require_file "$UNIT_LEVEL_BUILDER"
 require_file "$FALL_RECRUITMENT_BUILDER"
 require_file "$SITE_STRUCTURE_VALIDATOR"
+require_file "$SITE_STAGER"
+require_file "$PAGES_DEPLOYER"
 require_dir "$SUMMARY_REPO/.git"
 require_dir "$MONDAY_SOURCE_DIR"
 require_dir "$UNIT_LEVEL_SOURCE_DIR"
@@ -151,18 +157,22 @@ if [[ -n "$(git_repo status --porcelain --untracked-files=no)" ]]; then
   exit 1
 fi
 
-# This checkout is automation-owned and disposable. Always begin from the
-# authoritative remote tree so an earlier historyless commit or a merged code
-# change can never strand the daily publisher on a divergent local root.
+# The repository now contains source code only. Daily data is generated in an
+# isolated staging tree and deployed as a verified GitHub Pages artifact.
 if [[ "$(git_repo rev-parse HEAD)" != "$(git_repo rev-parse "origin/${BRANCH}")" ]]; then
-  log "Aligning the production checkout with origin/${BRANCH}"
-  git_repo reset --hard "origin/${BRANCH}"
+  log "Fast-forwarding production source to origin/${BRANCH}"
+  git_repo merge --ff-only "origin/${BRANCH}"
 fi
 BASE_REMOTE_SHA="$(git_repo rev-parse "origin/${BRANCH}")"
+PUBLISHED_COMMIT="$BASE_REMOTE_SHA"
 
 LAST_STEP="validate discrete dashboard page structure"
 log "Validating required dashboard pages, routes, and branded assets"
 "$PYTHON" "$SITE_STRUCTURE_VALIDATOR" "$SUMMARY_REPO"
+
+LAST_STEP="stage source-only GitHub Pages site"
+log "Preparing isolated GitHub Pages staging tree"
+"$SITE_STAGER" "$SUMMARY_REPO" "$SITE_STAGE" >/dev/null
 
 LAST_STEP="build council and CST data snapshot"
 log "Building fresh council and CST data snapshot"
@@ -177,19 +187,18 @@ SNAPSHOT_DATE="$("$PYTHON" -c 'import json,sys; print(json.load(open(sys.argv[1]
 ARCHIVE_JSON="${BUILD_DIR}/data/${SNAPSHOT_DATE}.json"
 require_file "$ARCHIVE_JSON"
 
-LAST_STEP="copy dashboard JSON to summary repo"
-log "Updating standalone Council Dashboard Summary repo data"
-mkdir -p "${SUMMARY_REPO}/data"
-copy_file "${BUILD_DIR}/data/latest.json" "${SUMMARY_REPO}/data/latest.json"
-copy_file "$ARCHIVE_JSON" "${SUMMARY_REPO}/data/${SNAPSHOT_DATE}.json"
-"$PYTHON" "$UNIT_YOUTH_INJECTOR" "${SUMMARY_REPO}/data/latest.json" "${SUMMARY_REPO}/data/${SNAPSHOT_DATE}.json"
-COUNCIL_STATUS="updated data/latest.json and data/${SNAPSHOT_DATE}.json"
+LAST_STEP="copy dashboard JSON to staged site"
+log "Updating staged Council Dashboard Summary data"
+mkdir -p "${SITE_STAGE}/data"
+copy_file "${BUILD_DIR}/data/latest.json" "${SITE_STAGE}/data/latest.json"
+"$PYTHON" "$UNIT_YOUTH_INJECTOR" "${SITE_STAGE}/data/latest.json" "$ARCHIVE_JSON"
+COUNCIL_STATUS="updated staged data/latest.json; dated source retained outside Git history"
 
 LAST_STEP="refresh monday.com data snapshot"
 log "Refreshing monday.com data snapshot"
-if "$PYTHON" "$MONDAY_REFRESHER" --token-file "$MONDAY_TOKEN_FILE" --source-dir "$MONDAY_SOURCE_DIR" --output "${SUMMARY_REPO}/data/monday-latest.json"; then
+if "$PYTHON" "$MONDAY_REFRESHER" --token-file "$MONDAY_TOKEN_FILE" --source-dir "$MONDAY_SOURCE_DIR" --output "${SITE_STAGE}/data/monday-latest.json"; then
   log "Updated data/monday-latest.json"
-  MONDAY_SUMMARY="$("$PYTHON" -c 'import json,sys; data=json.load(open(sys.argv[1])); boards=data["boards"]; popcorn=boards["popcorn"]; print("source={} prospects={} renewals={} schools={} popcorn={}/{}".format(data.get("source_workbook", data.get("generated_from")), boards["prospects"]["items"], boards["renewals"]["items"], boards["schools"]["items"], popcorn["committed"], popcorn["items"]))' "${SUMMARY_REPO}/data/monday-latest.json")"
+  MONDAY_SUMMARY="$("$PYTHON" -c 'import json,sys; data=json.load(open(sys.argv[1])); boards=data["boards"]; popcorn=boards["popcorn"]; print("source={} prospects={} renewals={} schools={} popcorn={}/{}".format(data.get("source_workbook", data.get("generated_from")), boards["prospects"]["items"], boards["renewals"]["items"], boards["schools"]["items"], popcorn["committed"], popcorn["items"]))' "${SITE_STAGE}/data/monday-latest.json")"
   MONDAY_STATUS="updated data/monday-latest.json"
   print -r -- "[monday] ${MONDAY_SUMMARY}"
 else
@@ -201,7 +210,7 @@ LAST_STEP="build Cub Scout JSN Dashboard data"
 log "Building Cub Scout JSN Dashboard data from monday.com"
 if "$PYTHON" "$FALL_RECRUITMENT_BUILDER" \
   --token-file "$MONDAY_TOKEN_FILE" \
-  --output "${SUMMARY_REPO}/data/fall-recruitment-latest.js"; then
+  --output "${SITE_STAGE}/data/fall-recruitment-latest.js"; then
   FALL_RECRUITMENT_STATUS="updated data/fall-recruitment-latest.js"
 else
   FALL_RECRUITMENT_STATUS="failed; previous data bundle retained if available"
@@ -212,36 +221,36 @@ LAST_STEP="build Unit Level Dashboard data"
 UNIT_LEVEL_SOURCE="$(latest_valid_workbook "$UNIT_LEVEL_SOURCE_DIR" "*_CAC - Unit Metric Scorecard.xlsx")"
 log "Building Unit Level Dashboard data from ${UNIT_LEVEL_SOURCE}"
 "$PYTHON" "$UNIT_LEVEL_BUILDER" "$UNIT_LEVEL_SOURCE" \
-  --output "${SUMMARY_REPO}/data/unit-level-latest.json" \
-  --js-output "${SUMMARY_REPO}/data/unit-level-latest.js"
+  --output "${SITE_STAGE}/data/unit-level-latest.json" \
+  --js-output "${SITE_STAGE}/data/unit-level-latest.js"
 UNIT_LEVEL_STATUS="updated from ${UNIT_LEVEL_SOURCE:t}"
 
 if [[ -d "$PREVIEW_SITE" ]]; then
   LAST_STEP="copy refreshed JSON to local preview"
   log "Updating local preview copy"
   mkdir -p "${PREVIEW_SITE}/data"
-  copy_file "${BUILD_DIR}/data/latest.json" "${PREVIEW_SITE}/data/latest.json"
+  copy_file "${SITE_STAGE}/data/latest.json" "${PREVIEW_SITE}/data/latest.json"
   copy_file "$ARCHIVE_JSON" "${PREVIEW_SITE}/data/${SNAPSHOT_DATE}.json"
-  if [[ -f "${SUMMARY_REPO}/data/monday-latest.json" ]]; then
-    copy_file "${SUMMARY_REPO}/data/monday-latest.json" "${PREVIEW_SITE}/data/monday-latest.json"
+  if [[ -f "${SITE_STAGE}/data/monday-latest.json" ]]; then
+    copy_file "${SITE_STAGE}/data/monday-latest.json" "${PREVIEW_SITE}/data/monday-latest.json"
   fi
-  if [[ -f "${SUMMARY_REPO}/data/fall-recruitment-latest.js" ]]; then
-    copy_file "${SUMMARY_REPO}/data/fall-recruitment-latest.js" "${PREVIEW_SITE}/data/fall-recruitment-latest.js"
+  if [[ -f "${SITE_STAGE}/data/fall-recruitment-latest.js" ]]; then
+    copy_file "${SITE_STAGE}/data/fall-recruitment-latest.js" "${PREVIEW_SITE}/data/fall-recruitment-latest.js"
   fi
-  copy_file "${SUMMARY_REPO}/data/unit-level-latest.json" "${PREVIEW_SITE}/data/unit-level-latest.json"
-  copy_file "${SUMMARY_REPO}/data/unit-level-latest.js" "${PREVIEW_SITE}/data/unit-level-latest.js"
+  copy_file "${SITE_STAGE}/data/unit-level-latest.json" "${PREVIEW_SITE}/data/unit-level-latest.json"
+  copy_file "${SITE_STAGE}/data/unit-level-latest.js" "${PREVIEW_SITE}/data/unit-level-latest.js"
   PREVIEW_STATUS="updated ${PREVIEW_SITE}/data"
 else
   PREVIEW_STATUS="skipped; preview site not found"
 fi
 
 LAST_STEP="refresh renewal board data bundle"
-if [[ -d "${SUMMARY_REPO}/renewal-board" ]]; then
+if [[ -d "${SITE_STAGE}/renewal-board" ]]; then
   log "Refreshing renewal board data bundle"
-  "$PYTHON" "$RENEWAL_BUILDER" --output "${SUMMARY_REPO}/renewal-board/data.js"
+  "$PYTHON" "$RENEWAL_BUILDER" --output "${SITE_STAGE}/renewal-board/data.js"
   RENEWAL_STATUS="updated renewal-board/data.js"
   if [[ -d "${PREVIEW_SITE}/renewal-board" ]]; then
-    copy_file "${SUMMARY_REPO}/renewal-board/data.js" "${PREVIEW_SITE}/renewal-board/data.js"
+    copy_file "${SITE_STAGE}/renewal-board/data.js" "${PREVIEW_SITE}/renewal-board/data.js"
     RENEWAL_STATUS="${RENEWAL_STATUS}; preview copy updated"
   fi
 else
@@ -260,24 +269,12 @@ fi
 
 LAST_STEP="revalidate discrete dashboard page structure before publication"
 log "Revalidating dashboard structure before publication"
-"$PYTHON" "$SITE_STRUCTURE_VALIDATOR" "$SUMMARY_REPO"
+"$PYTHON" "${SITE_STAGE}/tools/validate_site_structure.py" "$SITE_STAGE"
 
-LAST_STEP="stage refreshed dashboard data"
-git_repo add data/latest.json "data/${SNAPSHOT_DATE}.json" data/monday-latest.json data/fall-recruitment-latest.js data/unit-level-latest.json data/unit-level-latest.js renewal-board/data.js
-
-if git_repo diff --cached --quiet; then
-  log "No dashboard data changes to commit"
-  RUN_RESULT="NO DATA CHANGES"
-  PUBLISH_STATUS="skipped; refreshed JSON matched published data"
-  exit 0
-fi
-
-LAST_STEP="publish refreshed dashboard data"
-log "Publishing linear dashboard data update for ${SNAPSHOT_DATE}"
-git_repo commit -m "Update dashboard data ${SNAPSHOT_DATE}"
-git_repo push origin "HEAD:${BRANCH}"
-PUBLISHED_COMMIT="$(git_repo rev-parse HEAD)"
-PUBLISH_STATUS="published linear update"
+LAST_STEP="deploy verified GitHub Pages artifact"
+log "Deploying verified dashboard artifact for ${SNAPSHOT_DATE}"
+"$PAGES_DEPLOYER" "$GITHUB_REPOSITORY" "$SITE_STAGE" "$PUBLIC_URL" "$SNAPSHOT_DATE"
+PUBLISH_STATUS="deployed verified Pages artifact; Git history unchanged"
 if [[ "$MONDAY_STATUS" == failed* || "$FALL_RECRUITMENT_STATUS" == failed* ]]; then
   RUN_RESULT="SUCCESS WITH MONDAY WARNING"
 else

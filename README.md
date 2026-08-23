@@ -33,9 +33,10 @@ The Unit Level Dashboard uses the latest dated Unit Level Metrics workbook, stor
 
 The scheduled Council Summary publisher uses the `CACDashboardAutomation/.venv` Python environment and does not require the Codex application or a Codex-managed runtime to be running.
 
-Both the Council Summary and Commissioner portal now use ordinary linear Git
-commits. The consolidated platform is their sole production writer; force
-pushes and parentless commits are prohibited.
+Both the Council Summary and Commissioner portal deploy daily data as verified
+GitHub Pages artifacts. Their repositories retain ordinary linear history for
+source changes only. The consolidated platform is their sole production
+deployer; force pushes and parentless commits are prohibited.
 
 For manual site-only publishing after HTML/CSS/JS/data edits, use `publish_site_only.zsh` or double-click `Publish Council Dashboard.command`. This path does not rebuild source workbooks.
 

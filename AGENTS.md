@@ -41,6 +41,8 @@ Before publishing a Cub Scout JSN Dashboard change:
 
 The Cub Scout JSN data refresh is part of the normal Council web refresh. The active production checkout is `/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary`; `/Users/petersargent/CACDashboardPlatform/tools/daily_build_publish.zsh` invokes its `update_daily.zsh` during the regular dashboard build.
 
+Daily generated data must be written to the platform's isolated Pages staging tree and deployed through `.github/workflows/deploy-pages-payload.yml`. Do not commit daily JSON, create orphan commits, or force-push. Source-code changes remain ordinary linear commits on `main`.
+
 That updater fetches and fast-forwards `main`, queries monday.com board `18420720719`, regenerates `data/fall-recruitment-latest.js`, runs `tools/validate_site_structure.py`, publishes the refreshed data, and reports the Cub Scout JSN status with the other web dashboards. The validator fails closed unless both `School with no Cub Packs` and `Schools with no Recruitment Plans` remain monday.com-style pie charts. The refresh must not modify monday.com.
 
 The older standalone Codex task `daily-fall-recruitment-dashboard-refresh` is redundant after this consolidation and should remain paused or be removed so two jobs do not publish the same data independently.

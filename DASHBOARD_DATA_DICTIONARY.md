@@ -40,21 +40,21 @@ The scheduled macOS LaunchAgent runs the refresh through `/Users/petersargent/CA
 1. The script runs `work/commissioner_site/build_site.py`.
 2. The builder finds the newest `*Dashboard - CAC*.xlsx` file in the Council Dashboard Reports shared drive.
 3. The builder finds the newest `*_CST7.xlsx` file in the Council Metric Reports shared drive.
-4. The builder writes a fresh `data/latest.json` and a dated archive file such as `data/YYYY-MM-DD.json`.
+4. The builder writes a fresh `data/latest.json` and a dated working archive such as `data/YYYY-MM-DD.json` outside the Pages source tree.
 5. The script runs `tools/inject_unit_youth_trends.py` against the fresh JSON files so `dashboard.unit_youth_trends` is regenerated from the workbook `Units-Youth` tab.
 6. The script runs `refresh_monday_data.py`.
 7. The monday.com refresher first looks for the newest `*monday-export.xlsx` workbook in the Council monday.com Reports shared drive.
 8. If no workbook is available or parsing fails, it falls back to the monday.com API using the local token file.
 9. The script copies refreshed data into the local preview site.
 10. The script rebuilds `renewal-board/data.js` from the newest monday.com renewal export and Council dashboard workbook.
-11. If the data files changed, the consolidated single writer publishes one ordinary linear commit to GitHub Pages.
+11. The consolidated platform packages the current static tree, verifies its checksum, and deploys it through GitHub Pages Actions without creating a generated-data commit.
 The dashboard pages are static HTML, CSS, and JavaScript. They do not query Google Drive or monday.com directly in the browser. They read only the published JSON files.
 
 The Commissioner Dashboard at `https://pbsargent.github.io/council-commissioner-dashboard/` is a separate GitHub Pages portal that reads the same canonical Council Dashboard Summary JSON. The consolidated platform updates it only when its code or shared assets change.
 
 Most major dashboard panels include a circular `?` help control. The button text is stored in each page's HTML, and the shared `panel-help.js` script turns those descriptions into active hover, focus, and click/tap popovers. These popovers provide brief panel-level source and meaning notes; this data dictionary remains the source of exact formulas and implementation detail.
 
-Production publishing uses normal linear Git history without force. The platform aligns its automation-owned checkout with the current remote commit and refuses to publish if another writer changes GitHub during generation.
+Production source changes use normal linear Git history without force. Daily generated data is deployed from an isolated staging tree as a verified Pages artifact. The platform refuses deployment if another writer changes the source repository during generation.
 
 ## Source Workbook Tabs
 
@@ -605,7 +605,7 @@ The active behavior is implemented by `panel-help.js` and shared CSS. The script
 
 - Daily values update only when the shared-drive source workbooks are updated, the local daily automation runs, and the resulting JSON changes are published.
 - Existing HTML, CSS, and JavaScript logic is not regenerated daily unless code changes are committed. The renewal-board data bundle is regenerated daily when the renewal board subpage exists.
-- GitHub Pages publishing is owned exclusively by the consolidated platform and uses ordinary linear commits without force.
+- GitHub Pages publishing is owned exclusively by the consolidated platform. Generated data is artifact-deployed; source changes use ordinary linear commits without force.
 - The pages use `fetch(..., { cache: "no-store" })` for JSON data files, but browser caching of HTML and JavaScript can still make cache-busted script filenames useful after code changes.
 - The lower-left sidebar timestamp and detail-page freshness timestamps are rendered in the viewer browser's local timezone. No-offset Council dashboard timestamps are first interpreted as America/Chicago source time; explicit UTC/offset timestamps are used as-is.
 

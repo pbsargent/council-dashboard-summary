@@ -489,8 +489,8 @@ def build_doc():
         "Find the newest monday.com export workbook in the Council monday.com Reports shared drive.",
         "Build `data/monday-latest.json`, falling back to the monday.com API only if needed.",
         "Copy the refreshed JSON files to the local preview site.",
-        "Publish the Council Summary site tree to GitHub Pages with one ordinary linear commit.",
-        "Publish the Commissioner Dashboard only when its site tree changed, using an ordinary linear commit.",
+        "Deploy the Council Summary site tree as a checksum-verified GitHub Pages artifact without committing generated data.",
+        "Deploy the Commissioner Dashboard as a verified Pages artifact only when its static payload changed.",
         "Let GitHub Pages publish the updated dashboard.",
     ]:
         add_step(doc, step)
@@ -502,7 +502,7 @@ def build_doc():
     add_callout(
         doc,
         "Single-writer publishing",
-        "The consolidated CAC Dashboard Platform is the only production writer. It starts from the current remote commit and pushes ordinary linear commits without force.",
+        "The consolidated CAC Dashboard Platform is the only production deployer. Source changes use ordinary linear commits; daily generated data uses verified Pages artifacts without force pushes.",
     )
     add_callout(
         doc,
