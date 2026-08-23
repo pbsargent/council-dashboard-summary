@@ -459,10 +459,9 @@ function renderPeopleRows() {
       const direct = Number(yes(b.direct_contact)) - Number(yes(a.direct_contact));
       const trained = Number(yes(a.trained)) - Number(yes(b.trained));
       return direct || trained || String(a.district || "").localeCompare(String(b.district || "")) || String(a.name || "").localeCompare(String(b.name || ""));
-    })
-    .slice(0, 500);
+    });
 
-  document.getElementById("peopleCount").textContent = `${n(currentPeople().length)} shown, table limited to ${n(rows.length)}`;
+  document.getElementById("peopleCount").textContent = `${n(rows.length)} rows`;
   document.getElementById("peopleRows").innerHTML = rows.map((row) => `
     <tr>
       <td>${esc(row.district || "")}</td>

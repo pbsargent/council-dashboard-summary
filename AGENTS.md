@@ -58,6 +58,18 @@ Preserve the nested scrolling behavior added on 2026-08-21. Long tables must rem
 - Do not remove the table height limit at the mobile breakpoint. Mobile tables must retain internal vertical and horizontal scrolling.
 - Unit-level member tables must use the same contained scrolling pattern, except in print styles where the full table is intentionally visible.
 - Renewal workflow rows must scroll inside `.board-scroll`; renewal event tables must scroll inside `.event-table-wrap` and render all rows rather than an arbitrary first-row subset.
+- Training person-level detail, SYT expiration detail, Outdoor Safety Readiness, and monday.com Operating Detail tables must render every row matching the active filters. Do not restore fixed `slice()` row caps; use the bounded scroll containers to manage their on-screen size.
 - When shared table CSS or renewal table JavaScript changes, bump the corresponding cache-busting query string on every page that loads the asset.
 
 `tools/validate_site_structure.py` fails closed on these requirements. Before publishing, run that validator, exercise a genuinely long table at desktop and mobile widths, and verify the cache-busted assets on the live GitHub Pages site after the consolidated daily build.
+
+## Dashboard help guide maintenance
+
+Treat `help.html` as part of the public product contract. Whenever the website's navigation, page structure, page purpose, filters, controls, metric names or definitions, status language, source behavior, privacy guidance, or troubleshooting behavior changes, review and update the corresponding help content in the same source change.
+
+- Keep the page directory in `help.html` aligned with `site-navigation.js`, including parent/child placement and user-facing labels.
+- Keep Quick Start, controls, measures, responsible-use guidance, and troubleshooting text consistent with actual dashboard behavior.
+- Preserve live freshness rendering through `help.js`, responsive and print behavior through `help.css`, and the link from `sources.html`.
+- Update the help asset cache-busting versions whenever `help.css` or `help.js` changes, and update every navigation cache-busting reference whenever `site-navigation.js` changes.
+- Extend `tools/validate_site_structure.py` when a structural help requirement changes so scheduled publication fails closed on regressions.
+- Before publishing any structural or content change, include `help.html` in the review and verify the live help page after deployment.

@@ -374,6 +374,16 @@ def main() -> int:
         if "rows.slice(0, 12)" in renewal_script:
             errors.append("renewal-board/app.js: renewal event rows must not be truncated to 12")
 
+    forbidden_detail_caps = {
+        "training-detail.js": ".slice(0, 500)",
+        "syt-detail.js": ".slice(0, 500)",
+        "monday-detail.js": ".slice(0, 700)",
+    }
+    for relative, forbidden in forbidden_detail_caps.items():
+        path = root / relative
+        if path.is_file() and forbidden in path.read_text(encoding="utf-8"):
+            errors.append(f"{relative}: scrollable detail rows must not be artificially truncated")
+
     if errors:
         print("Dashboard structure validation FAILED:", file=sys.stderr)
         for error in errors:

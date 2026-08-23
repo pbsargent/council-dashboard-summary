@@ -473,9 +473,9 @@ function renderSafetyRows() {
         || String(a.district || "").localeCompare(String(b.district || ""))
         || String(a.name || "").localeCompare(String(b.name || ""));
     });
-  const rows = allRows.slice(0, 500);
+  const rows = allRows;
 
-  document.getElementById("safetyCount").textContent = `${n(allRows.length)} issue rows, table limited to ${n(rows.length)}`;
+  document.getElementById("safetyCount").textContent = `${n(rows.length)} issue rows`;
   document.getElementById("safetyRows").innerHTML = rows.map((row) => {
     const readiness = safetyReadiness(row);
     return `
@@ -504,7 +504,7 @@ function renderPeopleRows() {
         || String(a.district || "").localeCompare(String(b.district || ""))
         || String(a.name || "").localeCompare(String(b.name || ""));
     });
-  const rows = allRows.slice(0, 500);
+  const rows = allRows;
 
   document.getElementById("peopleTitle").textContent = "SYT Expiration Detail";
   document.querySelector(".detail-table thead tr").innerHTML = `
@@ -518,7 +518,7 @@ function renderPeopleRows() {
     <th>Member ID</th>
     <th>Key</th>
   `;
-  document.getElementById("peopleCount").textContent = `${n(allRows.length)} shown, table limited to ${n(rows.length)}`;
+  document.getElementById("peopleCount").textContent = `${n(rows.length)} rows`;
   document.getElementById("peopleRows").innerHTML = rows.map((row) => {
     const status = sytStatus(row);
     return `

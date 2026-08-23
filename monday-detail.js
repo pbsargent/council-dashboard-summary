@@ -499,9 +499,9 @@ function renderDetailRows() {
         || rowStatus(a).localeCompare(rowStatus(b))
         || String(a.name || "").localeCompare(String(b.name || ""));
     });
-  const rows = allRows.slice(0, 700);
+  const rows = allRows;
 
-  document.getElementById("rowCount").textContent = `${n(allRows.length)} shown, table limited to ${n(rows.length)}`;
+  document.getElementById("rowCount").textContent = `${n(rows.length)} rows`;
   document.getElementById("detailRows").innerHTML = rows.map((row) => `
     <tr>
       <td>${esc(boardName(row.board))}</td>
