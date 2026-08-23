@@ -57,6 +57,7 @@
       label: "Data & Help",
       path: "sources.html",
       items: [
+        { key: "help", label: "Using the Dashboard", path: "help.html" },
         { key: "guide", label: "Calculation Guide", path: "docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.pdf", external: true },
         { key: "report-problem", label: "Report a Problem", href: "mailto:scouting@imetpetersargent.com" },
       ],

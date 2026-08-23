@@ -23,6 +23,8 @@ The normal web refresh also rebuilds `data/fall-recruitment-latest.js` from mond
 
 Global navigation is defined once in `site-navigation.js`. Major navigation selections open focused summary pages: `index.html` (Overview), `comparison.html`, `districts.html`, `membership.html`, `unit-health.html`, `people.html`, and `sources.html`. Existing operational detail pages remain indented beneath their parent summaries. CAC typography, color tokens, approved logo treatment, topo pattern usage, responsive navigation, and Overview action-path styling are defined in `cac-theme.css`.
 
+Reader help is layered across the panel-level `?` controls, the print-friendly `help.html` dashboard guide, and the deeper source and calculation material linked from `sources.html`. The guide reads current refresh metadata from the published JSON bundles so its freshness label advances with the normal daily data deployment.
+
 The approved People & Readiness navigation contract is: Training, SYT, Pack Camping Readiness, Troop Camping Readiness, and Commissioner Portal. Pack Camping Readiness must remain at `camping-readiness.html`; Troop Camping Readiness must remain at `troop-camping-readiness.html`. Both pages read the daily `dashboard.training_people` data and must survive data-only refreshes and all future site publishes.
 
 The scheduled updater runs `tools/validate_site_structure.py` after synchronizing with GitHub and again immediately before publication. The refresh fails closed if a required summary/detail page, discrete route, parent/child hierarchy, page identity, shared branded asset, or cache-versioned navigation/theme reference is missing, or if legacy in-page hash navigation returns.

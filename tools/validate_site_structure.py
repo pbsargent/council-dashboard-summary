@@ -60,6 +60,7 @@ SUMMARY_PAGES = {
     "unit-health.html": ("unit-health", ("Unit Health & Renewal", "Unit Health Funnel", "Exceptions", "Priority Units")),
     "people.html": ("people", ("People & Readiness", "All-Scouter Training", "Safeguarding Youth Training", "Commissioner Coverage Roster", "Coverage Snapshot")),
     "sources.html": ("sources", ("Sources, Freshness & Help", "Dashboard Source Workbooks", "Calculation Guide", "Report a Problem")),
+    "help.html": ("help", ("How to Use the CAC Dashboard", "Quick Start", "Choose the Right Dashboard Page", "Common Measures", "Troubleshooting")),
 }
 
 DETAIL_PAGES = {
@@ -97,6 +98,7 @@ NAVIGATION_ROUTES = {
     "training": "training.html",
     "syt": "syt.html",
     "sources": "sources.html",
+    "help": "help.html",
 }
 
 NAVIGATION_HIERARCHY = {
@@ -107,7 +109,7 @@ NAVIGATION_HIERARCHY = {
     # Persistent user-approved placement: both camping readiness pages belong
     # under People & Readiness and must survive every scheduled build/publish.
     "people": ("training", "syt", "camping-readiness", "troop-camping-readiness", "commissioner-portal"),
-    "sources": ("guide", "report-problem"),
+    "sources": ("help", "guide", "report-problem"),
 }
 
 REQUIRED_ASSETS = (
@@ -119,6 +121,11 @@ REQUIRED_ASSETS = (
     "assets/fonts/RobotoSlab-Variable.ttf",
 )
 
+HELP_ASSETS = (
+    "help.css",
+    "help.js",
+)
+
 SCROLL_ASSET_VERSION = "20260821-scrollable-tables-v1"
 SHARED_TABLE_STYLE_PAGES = (
     "index.html",
@@ -128,6 +135,7 @@ SHARED_TABLE_STYLE_PAGES = (
     "unit-health.html",
     "people.html",
     "sources.html",
+    "help.html",
     "monday.html",
     "popcorn.html",
     "unit-metrics.html",
@@ -169,6 +177,11 @@ def main() -> int:
         if not path.is_file() or path.stat().st_size == 0:
             errors.append(f"missing required dashboard asset: {relative}")
 
+    for relative in HELP_ASSETS:
+        path = root / relative
+        if not path.is_file() or path.stat().st_size == 0:
+            errors.append(f"missing required help asset: {relative}")
+
     for relative, (page_key, required_headings) in SUMMARY_PAGES.items():
         path = root / relative
         if not path.is_file():
@@ -182,8 +195,20 @@ def main() -> int:
                 errors.append(f"{relative}: missing required heading {heading!r}")
         if not any("cac-theme.css?v=20260812-discrete-pages-1" in href for href in parsed.stylesheets):
             errors.append(f"{relative}: missing discrete-page CAC theme reference")
-        if not any("site-navigation.js?v=20260813-readiness-nav-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20260823-help-nav-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
+
+    help_page_path = root / "help.html"
+    if help_page_path.is_file():
+        help_page = parse_page(help_page_path)
+        if not any("help.css?v=20260823-help-1" in href for href in help_page.stylesheets):
+            errors.append("help.html: missing cache-busted help stylesheet")
+        if not any("help.js?v=20260823-help-1" in src for src in help_page.scripts):
+            errors.append("help.html: missing cache-busted help script")
+        help_source = help_page_path.read_text(encoding="utf-8")
+        for href in ("sources.html", "docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.pdf"):
+            if f'href="{href}"' not in help_source:
+                errors.append(f"help.html: missing required documentation link {href!r}")
 
     for relative, page_key in DETAIL_PAGES.items():
         path = root / relative
@@ -193,7 +218,7 @@ def main() -> int:
         parsed = parse_page(path)
         if parsed.body_page != page_key:
             errors.append(f"{relative}: expected data-page={page_key!r}, found {parsed.body_page!r}")
-        if not any("site-navigation.js?v=20260813-readiness-nav-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20260823-help-nav-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
         if relative in REQUIRED_PARENT_LINKS:
             expected_href, expected_label = REQUIRED_PARENT_LINKS[relative]
@@ -359,7 +384,7 @@ def main() -> int:
         "Dashboard structure validation passed: "
         f"{len(SUMMARY_PAGES)} summary pages, {len(DETAIL_PAGES)} detail pages, "
         f"{len(NAVIGATION_ROUTES)} routes, {len(NAVIGATION_HIERARCHY)} hierarchy groups, "
-        f"{len(REQUIRED_ASSETS)} shared assets, Cub Scout JSN pie-chart parity, "
+        f"{len(REQUIRED_ASSETS)} shared assets, {len(HELP_ASSETS)} help assets, Cub Scout JSN pie-chart parity, "
         "and scroll-table safeguards."
     )
     return 0

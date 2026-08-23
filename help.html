@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Plain-language guide to using the Capitol Area Council dashboard, including navigation, filters, metrics, privacy, and troubleshooting.">
+  <title>Using the Dashboard</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
+  <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
+  <link rel="stylesheet" href="help.css?v=20260823-help-1">
+</head>
+<body data-page="help">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Council dashboard navigation">
+      <div class="brand"><img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council"></div>
+      <nav aria-label="Council dashboard"><a href="index.html">Overview</a></nav>
+      <a class="report-problem" data-report-problem href="mailto:scouting@imetpetersargent.com">Report a problem</a>
+      <div class="sidebar-note"><span id="helpFreshness">Loading refresh date</span><strong>Using the Dashboard</strong></div>
+    </aside>
+
+    <main>
+      <header class="hero help-hero">
+        <div>
+          <p class="eyebrow">Dashboard guide</p>
+          <h1>How to Use the CAC Dashboard <span class="title-data-date" id="titleDataDate">Checking data freshness</span></h1>
+          <p class="lede">A plain-language guide to choosing the right page, using filters and tables, interpreting common measures, and resolving common problems.</p>
+        </div>
+        <div class="help-actions" aria-label="Help page actions">
+          <a class="help-action" href="index.html">Back to Overview</a>
+          <button class="help-action help-print-button" id="printHelp" type="button">Print or Save as PDF</button>
+        </div>
+      </header>
+
+      <section class="panel help-section help-quick-start" aria-labelledby="quickStartTitle">
+        <div class="panel-head compact"><div><p class="section-kicker">Start here</p><h2 id="quickStartTitle">Quick Start</h2></div></div>
+        <ol class="help-steps">
+          <li><strong>Check the refresh date.</strong><span>The dashboard is a published snapshot, not a live connection to every source system.</span></li>
+          <li><strong>Choose a program.</strong><span>The masthead filter can carry Council, Packs, Troops, Crews, Ships, or Posts across supported pages.</span></li>
+          <li><strong>Start broad, then narrow.</strong><span>Use Overview for the council picture, then select a Service Area, district, or detail page for follow-up.</span></li>
+          <li><strong>Use the controls above each table.</strong><span>Search, filters, and sorting change the visible view; they do not change the source data.</span></li>
+          <li><strong>Verify consequential decisions.</strong><span>Confirm important records in the linked workbook, monday.com board, my.Scouting, or other system of record.</span></li>
+        </ol>
+      </section>
+
+      <section class="help-topic-grid" aria-label="Dashboard help topics">
+        <article class="panel help-section">
+          <div class="panel-head compact"><div><p class="section-kicker">Controls</p><h2>Filters, Search, and Tables</h2></div></div>
+          <ul class="help-list">
+            <li>The program filter persists across linked pages where that breakdown is supported.</li>
+            <li>Service Area and District controls narrow the current page. Council or All restores the broadest view.</li>
+            <li>Page-specific controls may filter by status, unit type, training state, expiration window, or workflow stage.</li>
+            <li>Search is not case-sensitive. Clear the search and filters if expected records are missing.</li>
+            <li>Long tables scroll inside their panel in both directions. Headers remain visible while scrolling.</li>
+          </ul>
+        </article>
+
+        <article class="panel help-section">
+          <div class="panel-head compact"><div><p class="section-kicker">Interpretation</p><h2>Status, Color, and Missing Values</h2></div></div>
+          <dl class="help-definitions compact-definitions">
+            <div><dt>On Track or Ready</dt><dd>The strongest current combination of the measures available to that page.</dd></div>
+            <div><dt>Monitor</dt><dd>A mixed signal worth watching or confirming.</dd></div>
+            <div><dt>Needs Attention</dt><dd>One or more dashboard follow-up thresholds were triggered.</dd></div>
+            <div><dt>n/a</dt><dd>The value is missing, unavailable, or cannot be calculated. It does not mean zero.</dd></div>
+          </dl>
+          <p class="help-caution">Colors and labels are review cues, not official performance or personnel determinations.</p>
+        </article>
+      </section>
+
+      <section class="panel help-section" aria-labelledby="pageGuideTitle">
+        <div class="panel-head compact"><div><p class="section-kicker">Navigation</p><h2 id="pageGuideTitle">Choose the Right Dashboard Page</h2></div></div>
+        <div class="help-page-groups">
+          <article class="help-page-group">
+            <h3>Council picture</h3>
+            <a href="index.html"><strong>Overview</strong><span>Council KPIs, signals to watch, and routes into the dashboard.</span></a>
+            <a href="comparison.html"><strong>Council Comparison</strong><span>Service Territory council benchmarks and CAC comparison fields.</span></a>
+          </article>
+          <article class="help-page-group">
+            <h3>District performance</h3>
+            <a href="districts.html"><strong>District Performance</strong><span>Membership, unit health, readiness, and operating detail by district.</span></a>
+            <a href="popcorn.html"><strong>Popcorn</strong><span>Commitment, goal, sales, onboarding, and training follow-up.</span></a>
+          </article>
+          <article class="help-page-group">
+            <h3>Membership and growth</h3>
+            <a href="membership.html"><strong>Membership Intelligence</strong><span>Membership trends, TAY context, opportunity, and priority signals.</span></a>
+            <a href="monday.html"><strong>Recruitment Pipeline</strong><span>Prospects, renewals, schools, workflow load, and follow-up watch points.</span></a>
+            <a href="fall-recruitment.html"><strong>Cub Scout JSN</strong><span>Recruiting plans, dates, locations, materials, and uncovered schools.</span></a>
+          </article>
+          <article class="help-page-group">
+            <h3>Unit health and renewal</h3>
+            <a href="unit-health.html"><strong>Unit Health &amp; Renewal</strong><span>Health funnel, exceptions, and priority units.</span></a>
+            <a href="unit-metrics.html"><strong>Unit Metrics</strong><span>District and unit-section comparisons across workbook health measures.</span></a>
+            <a href="unit-level.html"><strong>Unit-Level Detail</strong><span>Unit scorecards, performance history, and member-level detail where published.</span></a>
+            <a href="renewal-board/index.html"><strong>Renewal Status</strong><span>Service Area, district, and unit renewal workflow.</span></a>
+          </article>
+          <article class="help-page-group">
+            <h3>People and readiness</h3>
+            <a href="people.html"><strong>People &amp; Readiness</strong><span>Training, SYT, commissioner coverage, and readiness rollups.</span></a>
+            <a href="training.html"><strong>Training</strong><span>All-Scouter completion and position-level training follow-up.</span></a>
+            <a href="syt.html"><strong>SYT</strong><span>Safeguarding Youth Training expiration and exception detail.</span></a>
+            <a href="camping-readiness.html"><strong>Pack Camping Readiness</strong><span>Published BALOO and Hazardous Weather roster signals.</span></a>
+            <a href="troop-camping-readiness.html"><strong>Troop Camping Readiness</strong><span>Published IOLS and Hazardous Weather roster signals.</span></a>
+          </article>
+          <article class="help-page-group">
+            <h3>Data and support</h3>
+            <a href="sources.html"><strong>Sources &amp; Freshness</strong><span>Authoritative workbooks, methodology, documentation, and support.</span></a>
+            <a href="docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.pdf" target="_blank" rel="noreferrer"><strong>Calculation Guide</strong><span>Detailed definitions, source mappings, assumptions, and calculations.</span></a>
+          </article>
+        </div>
+      </section>
+
+      <section class="help-topic-grid" aria-label="Common measures and responsible use">
+        <article class="panel help-section">
+          <div class="panel-head compact"><div><p class="section-kicker">Reference</p><h2>Common Measures</h2></div></div>
+          <dl class="help-definitions">
+            <div><dt>Youth</dt><dd>Current youth membership reported in the applicable source.</dd></div>
+            <div><dt>YoY</dt><dd>Year-over-year movement from the comparison membership value.</dd></div>
+            <div><dt>TAY</dt><dd>Total Available Youth from published school data. Program estimates use documented allocation assumptions.</dd></div>
+            <div><dt>Unit Metric</dt><dd>A workbook-provided unit-health score. Scores 0–2 are treated as priority follow-up.</dd></div>
+            <div><dt>Retention</dt><dd>The source-workbook retention value; it is not recalculated from the page's active filters.</dd></div>
+            <div><dt>Training</dt><dd>The share of applicable published position records marked trained.</dd></div>
+            <div><dt>SYT</dt><dd>Safeguarding Youth Training status, including current and follow-up windows when supplied.</dd></div>
+            <div><dt>Coverage</dt><dd>Commissioner people and assignments found in the published source data.</dd></div>
+          </dl>
+          <p><a class="detail-link" href="docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.pdf" target="_blank" rel="noreferrer">Open the Full Calculation Guide</a></p>
+        </article>
+
+        <article class="panel help-section">
+          <div class="panel-head compact"><div><p class="section-kicker">Responsible use</p><h2>Privacy and Verification</h2></div></div>
+          <ul class="help-list">
+            <li>Use person- and unit-level information only for authorized Scouting operational purposes.</li>
+            <li>Do not repost personal-detail tables or distribute screenshots more broadly than necessary.</li>
+            <li>Roster-readiness pages do not confirm who will attend an activity or whether an activity is approved.</li>
+            <li>Timing, definitions, duplicate registrations, and missing fields can cause differences from other reports.</li>
+            <li>Verify consequential decisions in the authoritative operational system.</li>
+          </ul>
+          <p><a class="detail-link" href="sources.html">Review Sources and Freshness</a></p>
+        </article>
+      </section>
+
+      <section class="panel help-section" aria-labelledby="troubleshootingTitle">
+        <div class="panel-head compact"><div><p class="section-kicker">Support</p><h2 id="troubleshootingTitle">Troubleshooting</h2></div></div>
+        <dl class="help-definitions troubleshooting-list">
+          <div><dt>A value looks wrong</dt><dd>Clear the page filters, confirm the refresh date, and compare the record with the linked workbook or system of record.</dd></div>
+          <div><dt>A district or record is missing</dt><dd>Clear search and filters. Confirm the selected program, Service Area, and district, then check the source label.</dd></div>
+          <div><dt>The page looks empty</dt><dd>Reload the page and return controls to Council or All. If the issue continues, report the page and active filters.</dd></div>
+          <div><dt>The table is cut off</dt><dd>Scroll inside the table horizontally and vertically. For a paper copy, use landscape orientation.</dd></div>
+          <div><dt>The data seems stale</dt><dd>Compare the page refresh date with Sources &amp; Freshness. Report the source and expected newer date.</dd></div>
+          <div><dt>Need assistance</dt><dd>Email dashboard support with the page, refresh date, active filters, expected result, and a screenshot when appropriate.</dd></div>
+        </dl>
+        <div class="help-support-actions">
+          <a class="help-action" data-report-problem href="mailto:scouting@imetpetersargent.com">Email Dashboard Support</a>
+          <a class="help-action" href="sources.html">Open Sources &amp; Freshness</a>
+        </div>
+      </section>
+
+      <footer class="help-footer">
+        <span>Guide version 1</span>
+        <span id="guideFreshness">Dashboard refresh date unavailable</span>
+        <span>Use your browser's Print command to create a PDF copy.</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="site-navigation.js?v=20260823-help-nav-1"></script>
+  <script src="report-problem.js?v=20260712"></script>
+  <script src="help.js?v=20260823-help-1"></script>
+</body>
+</html>
