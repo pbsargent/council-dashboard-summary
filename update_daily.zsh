@@ -1,9 +1,9 @@
 #!/bin/zsh
 set -euo pipefail
 
-ROOT="${CAC_DASHBOARD_ROOT:-/Users/petersargent/CACDashboardAutomation}"
+ROOT="${CAC_DASHBOARD_ROOT:-/Users/petersargent/CACDashboardPlatform}"
 PYTHON="${AUTOMATION_PYTHON:-${ROOT}/.venv/bin/python}"
-SUMMARY_REPO="${COUNCIL_DASHBOARD_SUMMARY_REPO:-${ROOT}/outputs/council-dashboard-summary-github}"
+SUMMARY_REPO="${COUNCIL_DASHBOARD_SUMMARY_REPO:-${ROOT}/sites/council-dashboard-summary}"
 PREVIEW_SITE="${ROOT}/outputs/council-commissioner-dashboard-site"
 BUILD_DIR="${ROOT}/outputs/council-dashboard-summary-refresh"
 BUILDER="${ROOT}/work/commissioner_site/build_site.py"
@@ -130,18 +130,6 @@ git_repo() {
   git --git-dir="${SUMMARY_REPO}/.git" --work-tree="$SUMMARY_REPO" "$@"
 }
 
-publish_historyless() {
-  local message="$1"
-  local expected tree commit
-
-  expected="$(git_repo rev-parse "origin/${BRANCH}")"
-  tree="$(git_repo write-tree)"
-  commit="$(git_repo commit-tree "$tree" -m "$message")"
-
-  git_repo update-ref "refs/heads/${BRANCH}" "$commit"
-  git_repo push --force-with-lease="refs/heads/${BRANCH}:${expected}" origin "HEAD:${BRANCH}"
-}
-
 require_file "$PYTHON"
 require_file "$BUILDER"
 require_file "$RENEWAL_BUILDER"
@@ -158,23 +146,19 @@ LAST_STEP="synchronize GitHub Pages repository before refresh"
 log "Synchronizing scheduled dashboard code with origin/${BRANCH}"
 cd /Users/petersargent
 git_repo fetch origin "$BRANCH"
-
-ahead="$(git_repo rev-list --count "origin/${BRANCH}..HEAD")"
-behind="$(git_repo rev-list --count "HEAD..origin/${BRANCH}")"
-
-if [[ "$ahead" != "0" && "$behind" != "0" ]]; then
-  print -u2 -r -- "Local repo has diverged from origin/${BRANCH}; resolve manually in $SUMMARY_REPO"
+if [[ -n "$(git_repo status --porcelain --untracked-files=no)" ]]; then
+  print -u2 -r -- "Production checkout has tracked local changes before refresh: $SUMMARY_REPO"
   exit 1
 fi
 
-if [[ "$behind" != "0" ]]; then
-  if [[ -n "$(git_repo status --porcelain --untracked-files=no)" ]]; then
-    print -u2 -r -- "Local tracked changes would prevent loading the latest scheduled dashboard code from origin/${BRANCH}"
-    exit 1
-  fi
-  log "Loading latest scheduled dashboard code before data generation"
-  git_repo pull --ff-only origin "$BRANCH"
+# This checkout is automation-owned and disposable. Always begin from the
+# authoritative remote tree so an earlier historyless commit or a merged code
+# change can never strand the daily publisher on a divergent local root.
+if [[ "$(git_repo rev-parse HEAD)" != "$(git_repo rev-parse "origin/${BRANCH}")" ]]; then
+  log "Aligning the production checkout with origin/${BRANCH}"
+  git_repo reset --hard "origin/${BRANCH}"
 fi
+BASE_REMOTE_SHA="$(git_repo rev-parse "origin/${BRANCH}")"
 
 LAST_STEP="validate discrete dashboard page structure"
 log "Validating required dashboard pages, routes, and branded assets"
@@ -268,19 +252,10 @@ LAST_STEP="fetch GitHub Pages repository"
 cd /Users/petersargent
 git_repo fetch origin "$BRANCH"
 
-LAST_STEP="check local and remote git state"
-ahead="$(git_repo rev-list --count "origin/${BRANCH}..HEAD")"
-behind="$(git_repo rev-list --count "HEAD..origin/${BRANCH}")"
-
-if [[ "$ahead" != "0" && "$behind" != "0" ]]; then
-  print -u2 -r -- "Local repo has diverged from origin/${BRANCH}; resolve manually in $SUMMARY_REPO"
+LAST_STEP="confirm sole-writer GitHub state"
+if [[ "$(git_repo rev-parse "origin/${BRANCH}")" != "$BASE_REMOTE_SHA" ]]; then
+  print -u2 -r -- "GitHub changed during the refresh; refusing to combine two writers. Retry the consolidated pipeline."
   exit 1
-fi
-
-if [[ "$behind" != "0" ]]; then
-  LAST_STEP="pull latest GitHub Pages changes"
-  log "Pulling latest GitHub changes"
-  git_repo pull --ff-only origin "$BRANCH"
 fi
 
 LAST_STEP="revalidate discrete dashboard page structure before publication"
@@ -298,10 +273,11 @@ if git_repo diff --cached --quiet; then
 fi
 
 LAST_STEP="publish refreshed dashboard data"
-log "Publishing historyless dashboard data update for ${SNAPSHOT_DATE}"
-publish_historyless "Update dashboard data ${SNAPSHOT_DATE}"
+log "Publishing linear dashboard data update for ${SNAPSHOT_DATE}"
+git_repo commit -m "Update dashboard data ${SNAPSHOT_DATE}"
+git_repo push origin "HEAD:${BRANCH}"
 PUBLISHED_COMMIT="$(git_repo rev-parse HEAD)"
-PUBLISH_STATUS="published historyless update"
+PUBLISH_STATUS="published linear update"
 if [[ "$MONDAY_STATUS" == failed* || "$FALL_RECRUITMENT_STATUS" == failed* ]]; then
   RUN_RESULT="SUCCESS WITH MONDAY WARNING"
 else

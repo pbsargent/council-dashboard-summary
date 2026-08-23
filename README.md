@@ -17,7 +17,7 @@ Technical setup, data acquisition, automation, validation, and rebuild guidance 
 
 Freshness timestamps shown in the dashboard are rendered in the viewer browser's local timezone. No-offset Council dashboard timestamps are interpreted as America/Chicago source time before display.
 
-The scheduled daily updater runs from the active working copy at `/Users/petersargent/CouncilDashboardSummaryRepo-Utility2`, orchestrated by `/Users/petersargent/CACDashboardAutomation/tools/daily_build_publish.zsh`. Older checkouts are retained only for reference and must not be used for production edits.
+The scheduled daily updater runs from the active working copy at `/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary`, orchestrated by `/Users/petersargent/CACDashboardPlatform/tools/daily_build_publish.zsh`. Older checkouts are retained only for reference and must not be used for production edits.
 
 The normal web refresh also rebuilds `data/fall-recruitment-latest.js` from monday.com board `18420720719` for the Cub Scout JSN Dashboard. Its pre-publish validation requires both school-planning graphics to remain pie charts, matching the monday.com dashboard.
 
@@ -33,7 +33,9 @@ The Unit Level Dashboard uses the latest dated Unit Level Metrics workbook, stor
 
 The scheduled Council Summary publisher uses the `CACDashboardAutomation/.venv` Python environment and does not require the Codex application or a Codex-managed runtime to be running.
 
-Both the Council Summary and the separate Commissioner Dashboard portal now use historyless publishing. Each publish replaces the public `main` branch with one current root commit using `--force-with-lease`, so the repos do not grow by one commit per daily refresh.
+Both the Council Summary and Commissioner portal now use ordinary linear Git
+commits. The consolidated platform is their sole production writer; force
+pushes and parentless commits are prohibited.
 
 For manual site-only publishing after HTML/CSS/JS/data edits, use `publish_site_only.zsh` or double-click `Publish Council Dashboard.command`. This path does not rebuild source workbooks.
 

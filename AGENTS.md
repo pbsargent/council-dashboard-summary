@@ -39,7 +39,7 @@ Before publishing a Cub Scout JSN Dashboard change:
 
 ## Cub Scout JSN Dashboard daily automation
 
-The Cub Scout JSN data refresh is part of the normal Council web refresh. The active production checkout is `/Users/petersargent/CouncilDashboardSummaryRepo-Utility2`; `/Users/petersargent/CACDashboardAutomation/tools/daily_build_publish.zsh` invokes its `update_daily.zsh` during the regular dashboard build.
+The Cub Scout JSN data refresh is part of the normal Council web refresh. The active production checkout is `/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary`; `/Users/petersargent/CACDashboardPlatform/tools/daily_build_publish.zsh` invokes its `update_daily.zsh` during the regular dashboard build.
 
 That updater fetches and fast-forwards `main`, queries monday.com board `18420720719`, regenerates `data/fall-recruitment-latest.js`, runs `tools/validate_site_structure.py`, publishes the refreshed data, and reports the Cub Scout JSN status with the other web dashboards. The validator fails closed unless both `School with no Cub Packs` and `Schools with no Recruitment Plans` remain monday.com-style pie charts. The refresh must not modify monday.com.
 
@@ -58,4 +58,4 @@ Preserve the nested scrolling behavior added on 2026-08-21. Long tables must rem
 - Renewal workflow rows must scroll inside `.board-scroll`; renewal event tables must scroll inside `.event-table-wrap` and render all rows rather than an arbitrary first-row subset.
 - When shared table CSS or renewal table JavaScript changes, bump the corresponding cache-busting query string on every page that loads the asset.
 
-`tools/validate_site_structure.py` fails closed on these requirements. Before publishing, run that validator, exercise a genuinely long table at desktop and mobile widths, and verify the cache-busted assets on the live GitHub Pages site after the daily historyless build.
+`tools/validate_site_structure.py` fails closed on these requirements. Before publishing, run that validator, exercise a genuinely long table at desktop and mobile widths, and verify the cache-busted assets on the live GitHub Pages site after the consolidated daily build.

@@ -479,7 +479,7 @@ def build_doc():
     add_heading(doc, "3. How The Daily Refresh Works", 1)
     add_body(
         doc,
-        "The scheduled macOS LaunchAgents refresh the source workbooks first, then publish the two dashboard sites from their active working copies. The Council Summary site runs /Users/petersargent/CouncilDashboardSummaryUpdate.zsh and uses /Users/petersargent/CouncilDashboardSummaryRepo as its active GitHub Pages repo. The Commissioner Dashboard is a separate GitHub Pages portal that reads the same canonical Council Summary JSON, so it is updated without replacing or merging into the Council Summary site.",
+        "The scheduled macOS LaunchAgents refresh the source workbooks first, then publish the two dashboard sites from their active working copies. The Council Summary site runs /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/update_daily.zsh and uses /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary as its active GitHub Pages repo. The Commissioner Dashboard is a separate GitHub Pages portal that reads the same canonical Council Summary JSON, so it is updated without replacing or merging into the Council Summary site.",
     )
     for step in [
         "Find the newest `*_Dashboard - CAC.xlsx` Council dashboard workbook in the Council Dashboard Reports shared drive.",
@@ -489,8 +489,8 @@ def build_doc():
         "Find the newest monday.com export workbook in the Council monday.com Reports shared drive.",
         "Build `data/monday-latest.json`, falling back to the monday.com API only if needed.",
         "Copy the refreshed JSON files to the local preview site.",
-        "Publish the Council Summary site tree to GitHub Pages using historyless publishing.",
-        "Publish the Commissioner Dashboard site tree to its separate GitHub Pages repository using historyless publishing.",
+        "Publish the Council Summary site tree to GitHub Pages with one ordinary linear commit.",
+        "Publish the Commissioner Dashboard only when its site tree changed, using an ordinary linear commit.",
         "Let GitHub Pages publish the updated dashboard.",
     ]:
         add_step(doc, step)
@@ -501,8 +501,8 @@ def build_doc():
     )
     add_callout(
         doc,
-        "Historyless publishing",
-        "Each GitHub Pages repository is replaced with a fresh single root commit for each publish using force-with-lease protection. That keeps the public Pages repositories compact while still publishing the current static site trees.",
+        "Single-writer publishing",
+        "The consolidated CAC Dashboard Platform is the only production writer. It starts from the current remote commit and pushes ordinary linear commits without force.",
     )
     add_callout(
         doc,
@@ -512,7 +512,7 @@ def build_doc():
     add_callout(
         doc,
         "Automation paths",
-        "The active Council Summary repo is /Users/petersargent/CouncilDashboardSummaryRepo. The Council Summary LaunchAgent is /Users/petersargent/Library/LaunchAgents/com.pbsargent.council-dashboard-summary.daily.plist. The scheduled wrapper script is /Users/petersargent/CouncilDashboardSummaryUpdate.zsh. The active Commissioner Dashboard worktree is /Users/petersargent/CACDashboardAutomation/outputs/council-commissioner-dashboard-github, and its scheduled publisher is /Users/petersargent/CACDashboardAutomation/work/commissioner_site/update_and_publish_github.zsh.",
+        "The active Council Summary repo is /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary. The sole LaunchAgent is /Users/petersargent/Library/LaunchAgents/com.cac.dashboard.macpro-daily.plist. The active Commissioner worktree is /Users/petersargent/CACDashboardPlatform/sites/council-commissioner-dashboard, and the shared publisher is /Users/petersargent/CACDashboardPlatform/work/commissioner_site/update_and_publish_github.zsh.",
     )
 
     add_heading(doc, "4. Build And Data Acquisition Requirements", 1)
@@ -529,7 +529,7 @@ def build_doc():
             ["Workbook patterns", "Use `*_Dashboard - CAC.xlsx` only for the council dashboard source, `*_CAC - Unit Metric Scorecard.xlsx` only for Unit Level detail, `*_CST7.xlsx` for CST metrics, and `*monday-export.xlsx` for monday.com detail."],
             ["monday.com access", "Daily export workbook preferred; API token fallback requires read access to the configured boards."],
             ["Publishing", "GitHub Pages repository on main branch with static HTML, CSS, JavaScript, assets, and JSON data."],
-            ["Automation", "LaunchAgent or equivalent scheduler that refreshes source workbooks, builds changed JSON, and historylessly publishes the current site trees to GitHub."],
+            ["Automation", "One LaunchAgent that refreshes source workbooks, builds changed JSON, and publishes the current site trees with ordinary linear Git commits."],
             ["Service Area mapping", "Authoritative district-to-Service-Area mapping source and a maintained mapping table in the builder."],
             ["Panel help", "Shared `panel-help.js` and dashboard CSS provide active hover, focus, and click/tap help popovers for the ? controls."],
         ],

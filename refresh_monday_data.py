@@ -48,9 +48,9 @@ BOARDS = {
         },
     },
     "schools": {
-        "id": 9158891570,
-        "name": "Schools",
-        "url": "https://capitolareacouncil564.monday.com/boards/9158891570",
+        "id": 18420733851,
+        "name": "CAC Schools",
+        "url": "https://capitolareacouncil564.monday.com/boards/18420733851",
         "columns": {
             "status": "dropdown_mm3gpfex",
             "district": "dropdown_mkqzfzs3",
@@ -104,6 +104,8 @@ POPCORN_COMMITMENT_COLUMNS = (
 POPCORN_COMMITMENT_STATUSES = frozenset({
     "Committed",
     "Not Committed",
+    "Not Selling",
+    "Not Started",
 })
 
 

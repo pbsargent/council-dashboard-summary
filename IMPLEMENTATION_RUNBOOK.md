@@ -34,7 +34,7 @@ For a similar dashboard on another machine, either install equivalent Python pac
 The active publishing repository is:
 
 ```text
-/Users/petersargent/CouncilDashboardSummaryRepo
+/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary
 https://github.com/pbsargent/council-dashboard-summary
 ```
 
@@ -57,12 +57,11 @@ This repository also carries operational helper scripts:
 - `tools/inject_unit_youth_trends.py` injects the workbook `Units-Youth` tab into published dashboard JSON.
 - `publish_site_only.zsh` publishes prepared local site changes without rebuilding source workbooks.
 - `Publish Council Dashboard.command` is the double-click wrapper for `publish_site_only.zsh`.
-- `Install Unit Youth Daily Refresh.command` patches the installed scheduled launcher if the launcher ever needs the Unit-Youth injector hook reinstalled.
 
 Separate Commissioner Dashboard portal:
 
 ```text
-/Users/petersargent/CACDashboardAutomation/outputs/council-commissioner-dashboard-github
+/Users/petersargent/CACDashboardPlatform/sites/council-commissioner-dashboard
 https://github.com/pbsargent/council-commissioner-dashboard
 https://pbsargent.github.io/council-commissioner-dashboard/
 ```
@@ -82,7 +81,7 @@ This is enforced in `tools/validate_site_structure.py` through `DETAIL_PAGES`, `
 
 ## 2. Data Acquisition Requirements
 
-The dashboard does not read Google Drive, OneDrive, or monday.com from the browser. Data is acquired by local scripts, converted to JSON, historylessly published to GitHub, and served by GitHub Pages.
+The dashboard does not read Google Drive, OneDrive, or monday.com from the browser. Data is acquired by local scripts, converted to JSON, committed by the consolidated single writer, and served by GitHub Pages.
 
 ### Google Shared Drive Access
 
@@ -206,13 +205,13 @@ Current board IDs are embedded in `refresh_monday_data.py`.
 The daily refresh is coordinated by:
 
 ```text
-/Users/petersargent/CouncilDashboardSummaryUpdate.zsh
+/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/update_daily.zsh
 ```
 
 The installed LaunchAgent runs:
 
 ```text
-/bin/zsh -lc 'COUNCIL_DASHBOARD_SUMMARY_REPO=/Users/petersargent/CouncilDashboardSummaryRepo /Users/petersargent/CouncilDashboardSummaryUpdate.zsh'
+/bin/zsh -lc 'COUNCIL_DASHBOARD_SUMMARY_REPO=/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/update_daily.zsh'
 ```
 
 The operational order is:
@@ -233,14 +232,14 @@ The operational order is:
 14. Copy refreshed JSON and Unit Level data to the local preview site when present.
 15. Rebuild `renewal-board/data.js` when the renewal board subpage exists.
 16. Copy the renewal-board data bundle to the local preview site when present.
-17. Fetch/pull `origin/main` for the publishing repo.
+17. Fetch `origin/main` and align the automation-owned checkout to it.
 18. Stage changed JSON files, the Unit Level data bundle, and `renewal-board/data.js`.
-19. Create a fresh root commit from the staged site tree.
-20. Push that single commit to GitHub Pages with `--force-with-lease`.
+19. Create one ordinary child commit from the staged changes.
+20. Push it to GitHub Pages without force.
 
 The website code is not regenerated daily. JSON data files and the renewal-board data bundle update unless a human commits HTML/CSS/JS changes.
 
-The installed scheduled launcher is `/Users/petersargent/CouncilDashboardSummaryUpdate.zsh`. It should contain these Unit & Youth injector lines:
+The installed scheduled launcher is `/Users/petersargent/CACDashboardPlatform/tools/daily_pipeline.zsh`. The site updater should contain these Unit & Youth injector lines:
 
 ```zsh
 UNIT_YOUTH_INJECTOR="${COUNCIL_DASHBOARD_SUMMARY_UNIT_YOUTH_INJECTOR:-${SUMMARY_REPO}/tools/inject_unit_youth_trends.py}"
@@ -248,15 +247,18 @@ require_file "$UNIT_YOUTH_INJECTOR"
 "$PYTHON" "$UNIT_YOUTH_INJECTOR" "${SUMMARY_REPO}/data/latest.json" "${SUMMARY_REPO}/data/${SNAPSHOT_DATE}.json"
 ```
 
-If those lines are missing after replacing the scheduled launcher, run `Install Unit Youth Daily Refresh.command` from the repo.
+If those lines are missing, restore `update_daily.zsh` from the consolidated
+platform source; the site repository no longer installs its own scheduler.
 
 The Commissioner Dashboard portal is published by:
 
 ```text
-/Users/petersargent/CACDashboardAutomation/work/commissioner_site/update_and_publish_github.zsh
+/Users/petersargent/CACDashboardPlatform/work/commissioner_site/update_and_publish_github.zsh
 ```
 
-Its LaunchAgent runs at 8:50 AM local machine time. The publisher writes the portal HTML and uses the same historyless `git commit-tree` plus `push --force-with-lease` pattern. The commissioner repository should therefore remain one current root commit rather than growing each day.
+The sole 8:30 AM platform job invokes this publisher after the Council site. It
+writes the portal only when shared code or assets changed and publishes an
+ordinary linear commit without force.
 
 ## 4. Manual Refresh
 
@@ -265,15 +267,15 @@ Use a manual refresh when validating a new source workbook, testing a path chang
 Recommended command:
 
 ```bash
-COUNCIL_DASHBOARD_SUMMARY_REPO=/Users/petersargent/CouncilDashboardSummaryRepo /Users/petersargent/CouncilDashboardSummaryUpdate.zsh
+COUNCIL_DASHBOARD_SUMMARY_REPO=/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/update_daily.zsh
 ```
 
 Optional monday.com token override:
 
 ```bash
 MONDAY_API_TOKEN_FILE=/path/to/Monday-Com-API-Token.txt \
-COUNCIL_DASHBOARD_SUMMARY_REPO=/Users/petersargent/CouncilDashboardSummaryRepo \
-/Users/petersargent/CouncilDashboardSummaryUpdate.zsh
+COUNCIL_DASHBOARD_SUMMARY_REPO=/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary \
+/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/update_daily.zsh
 ```
 
 Manual council/CST build only:
@@ -288,7 +290,7 @@ Manual monday.com workbook refresh only:
 
 ```bash
 /Users/petersargent/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 \
-  /Users/petersargent/CouncilDashboardSummaryRepo/refresh_monday_data.py \
+  /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/refresh_monday_data.py \
   --token-file /path/to/Monday-Com-API-Token.txt \
   --output /tmp/monday-latest.json
 ```
@@ -297,9 +299,9 @@ Manual Unit & Youth trend injection only:
 
 ```bash
 /Users/petersargent/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 \
-  /Users/petersargent/CouncilDashboardSummaryRepo/tools/inject_unit_youth_trends.py \
-  /Users/petersargent/CouncilDashboardSummaryRepo/data/latest.json \
-  /Users/petersargent/CouncilDashboardSummaryRepo/data/$(date +%F).json
+  /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/tools/inject_unit_youth_trends.py \
+  /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/data/latest.json \
+  /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/data/$(date +%F).json
 ```
 
 This reads the workbook path already stored in each JSON file at `dashboard.source`, then extracts the `Units-Youth` tab into `dashboard.unit_youth_trends`.
@@ -309,7 +311,7 @@ This reads the workbook path already stored in each JSON file at `dashboard.sour
 Installed LaunchAgent:
 
 ```text
-/Users/petersargent/Library/LaunchAgents/com.pbsargent.council-dashboard-summary.daily.plist
+/Users/petersargent/Library/LaunchAgents/com.cac.dashboard.macpro-daily.plist
 ```
 
 Current schedule:
@@ -328,7 +330,7 @@ Related daily automation sequence:
 | 8:45 AM | `com.cac.dashboard.unitmetricrefresh` | Build UnitMetricCompare deck/PDF |
 | 8:50 AM | `com.cac.dashboard.githubpublish` | Publish the Commissioner Dashboard portal |
 | 8:55 AM | `com.pbsargent.membership-operating-reports.daily` | Export monday.com workbook and build operating deck/PDF |
-| 9:05 AM | `com.pbsargent.council-dashboard-summary.daily` | Build and publish Council Dashboard Summary JSON |
+| 9:05 AM | `com.cac.dashboard.macpro-daily` | Build and publish Council Dashboard Summary JSON |
 
 Current log files:
 
@@ -340,7 +342,7 @@ Current log files:
 Useful checks:
 
 ```bash
-launchctl print gui/$(id -u)/com.pbsargent.council-dashboard-summary.daily
+launchctl print gui/$(id -u)/com.cac.dashboard.macpro-daily
 tail -50 "/Users/petersargent/Documents/Codex/Daily Uodate/outputs/council-dashboard-summary-github/update_daily.log"
 tail -50 "/Users/petersargent/Documents/Codex/Daily Uodate/outputs/council-dashboard-summary-github/update_daily.err.log"
 ```
@@ -353,7 +355,9 @@ Publishing occurs when the active repo pushes to:
 origin main
 ```
 
-The Pages repositories use historyless publishing. Each publish replaces `main` with one current root commit made from the staged site tree. The scripts use `--force-with-lease` so a publish will not overwrite a remote update that the local checkout has not fetched.
+The Pages repositories use normal linear history. The consolidated publisher
+starts from the current remote commit, verifies that no second writer changed
+GitHub during generation, and pushes without force.
 
 Public site:
 
@@ -374,14 +378,14 @@ Most major panels include circular `?` controls. The text lives in the HTML butt
 For manual site-only publishing after page, script, stylesheet, docs, or already-prepared data changes, run:
 
 ```bash
-cd /Users/petersargent/CouncilDashboardSummaryRepo
+cd /Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary
 ./publish_site_only.zsh "Publish site updates"
 ```
 
 Or double-click:
 
 ```text
-/Users/petersargent/CouncilDashboardSummaryRepo/Publish Council Dashboard.command
+/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/Publish Council Dashboard.command
 ```
 
 This path stages and commits the current repo state and pushes to GitHub Pages. It does not rebuild Council/CST workbooks, refresh monday.com, or regenerate renewal-board data unless those files are already changed locally.
@@ -433,15 +437,15 @@ curl -I https://pbsargent.github.io/council-dashboard-summary/data/monday-latest
 | monday.com page is stale | monday workbook missing and API fallback failed | Export workbook, token path, API access |
 | 18 monday.com districts appear | Operational labels included | Official-district filtering logic and source labels |
 | School market context is blank | Schools rows missing or district labels do not match official districts | `boards.schools.rows`, `scouting_district`, official district list |
-| Git push fails | Auth, network, or force-with-lease mismatch | `git status`, `git fetch`, GitHub credentials, remote `origin/main` |
+| Git push fails | Auth, network, or a second writer changed GitHub | `git status`, `git fetch`, GitHub credentials, remote `origin/main` |
 | Page still shows old code | Browser or CDN cached JavaScript | Bump script query string and republish |
 | `?` help does not open | Missing/stale `panel-help.js` or cached CSS | Confirm `panel-help.js` is loaded, CSS has `.panel-help-tooltip`, and query strings were bumped |
 | Future-looking timestamp | Source timezone interpreted incorrectly | Check whether timestamp has `Z`/offset or should be treated as America/Chicago |
 | Service Area filter missing or empty | Stale JavaScript/HTML or missing mapping in JSON | Check cache-busted script URL, `dashboard.service_areas`, and `service_area` fields |
 | CAC deck fails with `Worksheet Membership does not exist` | CAC deck builder selected a Unit Level Metrics workbook instead of the `Dashboard - CAC` workbook | Verify `update_from_google_folder.zsh` filters to `*_Dashboard - CAC.xlsx`; confirm the log line `Newest workbook:` shows the dated Dashboard file, not `*_CAC - Unit Metric Scorecard.xlsx` |
-| Unit & Youth trends missing/stale | Injector not present in scheduled launcher or `Units-Youth` tab changed layout | Check `UNIT_YOUTH_INJECTOR` lines in `/Users/petersargent/CouncilDashboardSummaryUpdate.zsh`, run `tools/inject_unit_youth_trends.py`, verify `dashboard.unit_youth_trends` |
+| Unit & Youth trends missing/stale | Injector not present in scheduled launcher or `Units-Youth` tab changed layout | Check `UNIT_YOUTH_INJECTOR` lines in `/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/update_daily.zsh`, run `tools/inject_unit_youth_trends.py`, verify `dashboard.unit_youth_trends` |
 | Membership trend charts show legend but no 2024 values | Published JSON lacks 2024 series or stale script/data cache | Verify `dashboard.unit_youth_trends.series.*.values.2024`, refresh page, confirm cache-busted `membership-detail.20260626.js` |
-| Commissioner repo starts growing again | Scheduled publisher reverted to normal commit flow | Confirm `/Users/petersargent/CACDashboardAutomation/work/commissioner_site/update_and_publish_github.zsh` uses `commit-tree` and `push --force-with-lease` |
+| Commissioner publisher diverges | A legacy checkout still has production push access | Confirm only `/Users/petersargent/CACDashboardPlatform/sites/council-commissioner-dashboard` can push |
 | Workbook quality concern | Concentrated formula errors in source workbook | Scan actual Excel error cells; current 2026-07-01 CAC workbook has concentrated errors in `Renewal Prep` and `Objectives - Commissioners`, not a mostly-error workbook |
 
 ## 9. Rebuilding a Similar Dashboard
