@@ -26,7 +26,7 @@ As of the 2026-07-11 extract:
 | Council dashboard workbook | `2026-07-11_Dashboard - CAC.xlsx` | 12 official districts, 30 priority units, 5,396 training rows, 5,235 SYT rows, Unit & Youth trend history |
 | CST comparison workbook | `2026-07-11_CST7.xlsx` | Service Territory comparison data |
 | monday.com daily workbook | `2026-07-16_Membership-Hub-Field-Service-monday-export.xlsx` | 203 prospects, 311 renewals, 738 schools, 308 Popcorn commitment rows |
-| Service Area hierarchy | monday.com `Field Service / Service Areas` board | Authoritative Service Area > District mapping, Field Director names, district professionals, chairs, and commissioners |
+| Service Area hierarchy | monday.com `Field Service / Service Areas` board | Authoritative Service Area > District mapping, Field Director names, district professionals, Volunteer Chairs, and District Commissioners; board values override workbook leadership fields, including intentional blanks |
 | Published dashboard data | `data/latest.json` | Main source for home, training, SYT, unit metrics, coverage, and CST views |
 | Published monday.com data | `data/monday-latest.json` | Source for monday.com and membership market context views |
 | Published renewal board data | `renewal-board/data.js` | Source for the 2026 Unit Renewal subpage |
@@ -86,7 +86,7 @@ Armadillo, Bee Cave, Chisholm Trail, Colorado River, Exploring, Hill Country, Li
 
 ### Service Area Hierarchy
 
-Service Area is not derived from the source workbook formulas. It is an authoritative hierarchy read from the monday.com `Field Service / Service Areas` board and cached locally for the daily builder.
+Service Area is not derived from the source workbook formulas. It is an authoritative hierarchy read from the monday.com `Field Service / Service Areas` board and captured for each daily build. The same board is authoritative for district `Volunteer Chair` and `Commissioner`; those values replace the workbook's district-leadership values everywhere the shared district and renewal datasets expose them. A blank board cell remains blank rather than falling back to a stale workbook value.
 
 | Service Area | Field Director | Districts |
 | --- | --- | --- |

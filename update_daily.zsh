@@ -11,6 +11,7 @@ SITE_STAGER="${ROOT}/tools/stage_static_site.zsh"
 PAGES_DEPLOYER="${ROOT}/tools/deploy_github_pages_artifact.zsh"
 BUILDER="${ROOT}/work/commissioner_site/build_site.py"
 RENEWAL_BUILDER="${ROOT}/work/renewal_recreation/build_renewal_board_data.py"
+SERVICE_HIERARCHY_REFRESHER="${ROOT}/work/renewal_recreation/refresh_service_area_hierarchy.py"
 MONDAY_REFRESHER="${SUMMARY_REPO}/refresh_monday_data.py"
 UNIT_YOUTH_INJECTOR="${SUMMARY_REPO}/tools/inject_unit_youth_trends.py"
 UNIT_LEVEL_BUILDER="${SUMMARY_REPO}/tools/build_unit_level_dashboard.py"
@@ -137,6 +138,7 @@ git_repo() {
 require_file "$PYTHON"
 require_file "$BUILDER"
 require_file "$RENEWAL_BUILDER"
+require_file "$SERVICE_HIERARCHY_REFRESHER"
 require_file "$MONDAY_REFRESHER"
 require_file "$UNIT_YOUTH_INJECTOR"
 require_file "$UNIT_LEVEL_BUILDER"
@@ -177,7 +179,12 @@ log "Preparing isolated GitHub Pages staging tree"
 LAST_STEP="build council and CST data snapshot"
 log "Building fresh council and CST data snapshot"
 cd /Users/petersargent
-"$PYTHON" "$BUILDER" --output-dir "$BUILD_DIR"
+SERVICE_HIERARCHY_SNAPSHOT="${BUILD_DIR}/service_area_hierarchy.json"
+"$PYTHON" "$SERVICE_HIERARCHY_REFRESHER" \
+  --token-file "$MONDAY_TOKEN_FILE" \
+  --output "$SERVICE_HIERARCHY_SNAPSHOT"
+SERVICE_HIERARCHY_CACHE="$SERVICE_HIERARCHY_SNAPSHOT" \
+  "$PYTHON" "$BUILDER" --output-dir "$BUILD_DIR"
 COUNCIL_STATUS="built fresh source snapshot"
 
 require_file "${BUILD_DIR}/data/latest.json"
@@ -247,7 +254,8 @@ fi
 LAST_STEP="refresh renewal board data bundle"
 if [[ -d "${SITE_STAGE}/renewal-board" ]]; then
   log "Refreshing renewal board data bundle"
-  "$PYTHON" "$RENEWAL_BUILDER" --output "${SITE_STAGE}/renewal-board/data.js"
+  SERVICE_HIERARCHY_CACHE="$SERVICE_HIERARCHY_SNAPSHOT" \
+    "$PYTHON" "$RENEWAL_BUILDER" --output "${SITE_STAGE}/renewal-board/data.js"
   RENEWAL_STATUS="updated renewal-board/data.js"
   if [[ -d "${PREVIEW_SITE}/renewal-board" ]]; then
     copy_file "${SITE_STAGE}/renewal-board/data.js" "${PREVIEW_SITE}/renewal-board/data.js"

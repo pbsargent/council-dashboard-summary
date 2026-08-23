@@ -120,7 +120,7 @@ The scripts choose the newest matching file by modification time and filename. K
 
 ### Non-Workbook Source: Service Areas
 
-Service Area grouping is controlled by the authoritative Bill Kohl email titled `Districts and Service Area`, received 2026-06-30. The mapping is hard-coded in `work/commissioner_site/build_site.py` so daily refreshes can add `service_area` and `service_area_field_director` to published JSON rows.
+Service Area grouping and district volunteer leadership are controlled by the authoritative monday.com `Field Service / Service Areas` board (board `18420160563`). Before each daily build, `work/renewal_recreation/refresh_service_area_hierarchy.py` captures the board hierarchy and its `Volunteer Chair` and `Commissioner` columns. The council snapshot and renewal-board builder both read that same run-specific capture.
 
 Current mapping:
 
@@ -130,7 +130,7 @@ Current mapping:
 | Central | Vicki Rosengarten | Armadillo, Colorado River, Exploring, San Gabriel, Thunderbird |
 | Southern | Ed Grune | Live Oak, Sacred Springs, Waterloo |
 
-If the council changes Service Area ownership, update `SERVICE_AREAS` in `build_site.py`, rebuild `data/latest.json`, republish the Council Summary, and refresh the documentation.
+If the board structure changes, update the hierarchy refresher's expected column and reference-type mappings. Ordinary Service Area, Volunteer Chair, and Commissioner changes require no code edit; the next daily build reads them from monday.com.
 
 ### Required Workbook Sheets
 
