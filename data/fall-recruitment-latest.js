@@ -1,5 +1,5 @@
 window.FALL_RECRUITMENT_DATA = {
-  "generatedAt": "2026-08-22T14:58:48Z",
+  "generatedAt": "2026-08-23T14:27:54Z",
   "dashboardName": "Cub Scout JSN Dashboard",
   "dashboardUrl": "https://capitolareacouncil564.monday.com/overviews/32299792",
   "boardName": "2026 Fall Recruitment Tracking",
