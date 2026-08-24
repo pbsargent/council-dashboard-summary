@@ -180,6 +180,45 @@ function searchQuery() {
   return document.getElementById("searchInput")?.value.trim().toLowerCase() || "";
 }
 
+function selectedPriorityMetricBand() {
+  return document.getElementById("priorityMetricSelect")?.value || "0-2";
+}
+
+function matchesPriorityMetricBand(value) {
+  const metricValue = Number(value);
+  if (!Number.isFinite(metricValue)) return false;
+  const band = selectedPriorityMetricBand();
+  if (band === "3") return metricValue === 3;
+  if (band === "4-5") return metricValue >= 4 && metricValue <= 5;
+  return metricValue >= 0 && metricValue <= 2;
+}
+
+function priorityUnitRows() {
+  const existingRows = state.data?.dashboard?.priority_units || [];
+  if (!state.unitData?.units?.length) return existingRows;
+
+  const rowKey = (district, unit) => `${ProgramFilter.cleanDistrict(district)}|${String(unit || "").trim()}`;
+  const existingByUnit = new Map(existingRows.map((row) => [rowKey(row.district, row.unit), row]));
+
+  return state.unitData.units.map((unit) => {
+    const district = ProgramFilter.cleanDistrict(unit.district);
+    const unitName = [unit.unit_type, unit.number, unit.gender]
+      .filter((part) => part != null && part !== "")
+      .join(" ");
+    const existing = existingByUnit.get(rowKey(district, unitName));
+    if (existing) return existing;
+    return {
+      district,
+      unit: unitName || unit.name,
+      unit_type: unit.unit_type,
+      metric: unit.metric,
+      youth: unit.youth,
+      commissioners: unit.commissioner ? [unit.commissioner] : [],
+      pin_status: null,
+    };
+  });
+}
+
 function programUnits() {
   return (state.unitData?.units || []).filter((unit) => ProgramFilter.matchesUnitType(unit.unit_type));
 }
@@ -257,11 +296,10 @@ function currentDistricts() {
 }
 
 function matchingPriorityUnits() {
-  const { data } = state;
   const district = selectedDistrict();
   const q = searchQuery();
 
-  return data.dashboard.priority_units.filter((row) => {
+  return priorityUnitRows().filter((row) => {
     const haystack = [
       row.district,
       row.unit,
@@ -269,6 +307,7 @@ function matchingPriorityUnits() {
       row.pin_status,
     ].join(" ").toLowerCase();
     return ProgramFilter.matchesUnitType(row.unit_type)
+      && matchesPriorityMetricBand(row.metric)
       && (!district || row.district === district) && (!q || haystack.includes(q));
   });
 }
@@ -863,7 +902,7 @@ function renderAll() {
 }
 
 function bindEvents() {
-  ["districtSelect", "statusSelect", "searchInput"].forEach((id) => {
+  ["districtSelect", "statusSelect", "searchInput", "priorityMetricSelect"].forEach((id) => {
     document.getElementById(id)?.addEventListener("input", renderAll);
   });
 

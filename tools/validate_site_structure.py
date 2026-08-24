@@ -210,6 +210,28 @@ def main() -> int:
             if f'href="{href}"' not in help_source:
                 errors.append(f"help.html: missing required documentation link {href!r}")
 
+    unit_health_path = root / "unit-health.html"
+    priority_script_path = root / "council-dashboard-summary.20260626-tay-kpi.js"
+    if unit_health_path.is_file():
+        unit_health_source = unit_health_path.read_text(encoding="utf-8")
+        if 'id="priorityMetricSelect"' not in unit_health_source:
+            errors.append("unit-health.html: missing Priority Units metric selector")
+        for value in ("0-2", "3", "4-5"):
+            if f'<option value="{value}">' not in unit_health_source:
+                errors.append(f"unit-health.html: missing Priority Units metric option {value!r}")
+    if priority_script_path.is_file():
+        priority_script = priority_script_path.read_text(encoding="utf-8")
+        for required in (
+            'document.getElementById("priorityMetricSelect")',
+            'matchesPriorityMetricBand(row.metric)',
+            '"priorityMetricSelect"',
+        ):
+            if required not in priority_script:
+                errors.append(
+                    "council-dashboard-summary.20260626-tay-kpi.js: "
+                    f"missing Priority Units metric-filter binding {required!r}"
+                )
+
     for relative, page_key in DETAIL_PAGES.items():
         path = root / relative
         if not path.is_file():
@@ -395,7 +417,7 @@ def main() -> int:
         f"{len(SUMMARY_PAGES)} summary pages, {len(DETAIL_PAGES)} detail pages, "
         f"{len(NAVIGATION_ROUTES)} routes, {len(NAVIGATION_HIERARCHY)} hierarchy groups, "
         f"{len(REQUIRED_ASSETS)} shared assets, {len(HELP_ASSETS)} help assets, Cub Scout JSN pie-chart parity, "
-        "and scroll-table safeguards."
+        "Priority Units metric filtering, and scroll-table safeguards."
     )
     return 0
 
