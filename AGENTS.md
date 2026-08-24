@@ -73,3 +73,13 @@ Treat `help.html` as part of the public product contract. Whenever the website's
 - Update the help asset cache-busting versions whenever `help.css` or `help.js` changes, and update every navigation cache-busting reference whenever `site-navigation.js` changes.
 - Extend `tools/validate_site_structure.py` when a structural help requirement changes so scheduled publication fails closed on regressions.
 - Before publishing any structural or content change, include `help.html` in the review and verify the live help page after deployment.
+
+## Priority Units metric-band contract
+
+Preserve the Metric selector in the **Priority Units** block on `unit-health.html`. It must offer exactly these operational bands: `0–2`, `3`, and `4–5`, with `0–2` selected by default.
+
+- Populate the table from the complete unit-level dataset so all three bands return the full matching unit list; do not fall back to the legacy capped `dashboard.priority_units` list as the primary source.
+- Preserve commissioner and PIN details from `dashboard.priority_units` when matching records are available, and use the unit-level assignment data for the remaining units.
+- Keep the selector compatible with the master program filter and any district or search filters present on the page.
+- Keep `help.html` aligned with this control, retain the validator checks for all three options and their JavaScript binding, and bump the page's JavaScript cache-busting query whenever the implementation changes.
+- Before publishing changes to this block, verify each band on the live page and confirm that the rendered Metric values remain within the selected band.
