@@ -75,7 +75,7 @@ Future builds and publishes must preserve these two data-driven detail pages:
 - `camping-readiness.html`: **Pack Camping Readiness**, using BALOO and current Hazardous Weather roster coverage.
 - `troop-camping-readiness.html`: **Troop Camping Readiness**, using the absence of mandatory code `S11` as the published IOLS readiness signal plus current Hazardous Weather roster coverage.
 
-Both pages belong under **People & Readiness**, after Training and SYT and before Commissioner Portal. They must not be moved back under Unit Health & Renewal. Their page eyebrow and back link must continue to identify `people.html` as the parent page.
+Both pages belong under **People & Readiness**, after Training and SYT. Commissioner Portal belongs under **Overview**, before Council Comparison. The camping-readiness pages must not be moved back under Unit Health & Renewal. Their page eyebrow and back link must continue to identify `people.html` as the parent page.
 
 This is enforced in `tools/validate_site_structure.py` through `DETAIL_PAGES`, `NAVIGATION_ROUTES`, and `NAVIGATION_HIERARCHY`. The scheduled updater runs that validator after loading the current site code and again immediately before publication. A future build that removes either page, changes its route or page identity, or moves it to the wrong navigation parent must fail before publishing.
 

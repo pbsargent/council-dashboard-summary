@@ -9,6 +9,7 @@
   const destination = (path) => new URL(path, siteRoot).href;
 
   const overviewItems = [
+    { key: "commissioner-portal", label: "Commissioner Portal", href: "https://pbsargent.github.io/council-commissioner-dashboard/", external: true },
     { key: "comparison", label: "Council Comparison", path: "comparison.html" },
   ];
 
@@ -49,7 +50,6 @@
         { key: "syt", label: "SYT", path: "syt.html" },
         { key: "camping-readiness", label: "Pack Camping Readiness", path: "camping-readiness.html" },
         { key: "troop-camping-readiness", label: "Troop Camping Readiness", path: "troop-camping-readiness.html" },
-        { key: "commissioner-portal", label: "Commissioner Portal", href: "https://pbsargent.github.io/council-commissioner-dashboard/", external: true },
       ],
     },
     {
@@ -82,8 +82,8 @@
       </a>
       <div class="nav-children nav-overview-children">
         ${overviewItems.map((item) => `
-          <a class="nav-child" data-nav-key="${item.key}" href="${itemHref(item)}">
-            <span>${item.label}</span>
+          <a class="nav-child" data-nav-key="${item.key}" href="${itemHref(item)}"${item.external ? ' target="_blank" rel="noreferrer"' : ""}>
+            <span>${item.label}</span>${item.external ? '<span class="nav-external" aria-hidden="true">↗</span>' : ""}
           </a>
         `).join("")}
       </div>
