@@ -379,6 +379,7 @@ function renderKpis() {
     ["Avg Metric", metric(c.avg_metric), `${p(c.healthy_rate)} at metric 4-5`, "teal"],
     ["Assigned", p(c.assigned_pct), `${n(c.assigned_units)} assigned units`, "good"],
     ["Training", p(c.training_pct), "All scouter training", "warning"],
+    ["Volunteers", n(state.data.dashboard.council.volunteers), "Councilwide unique Member IDs from the Training roster", "teal"],
     ["Current SYT", p(c.syt_pct), `${n(sytFollowUp)} expired or expiring within 90 days`, c.syt_pct >= 0.98 ? "good" : "warning"],
     [ProgramFilter.isCouncil() ? "Primary Youth / TAY" : "Primary Youth / Est. TAY", p(tay.pct), `${n(tay.members)} primary youth of ${n(Math.round(tay.tay))} ${ProgramFilter.isCouncil() ? "TAY" : "estimated TAY"}`, "teal"],
   ];
@@ -795,6 +796,7 @@ function renderCoverage() {
   const withAssignments = data.dashboard.commissioners.filter((row) => row.assigned_units).length;
   const unitCommissioners = unitCommissionerSummary(data.dashboard.commissioners, c);
   const cards = [
+    ["Volunteers", n(c.volunteers), "Councilwide Membership-tab count of unique nonblank Member IDs in the Training roster."],
     ["Workbook commissioner records", n(c.commissioners), "Commissioners worksheet records; my.Scouting dashboard summary may apply a narrower role filter."],
     ["Unique Unit Commissioners", n(unitCommissioners.total), `${n(unitCommissioners.assigned)} have assigned units; duplicate Unit Commissioner role rows count once.`],
     ["Commissioners trained", p(trained / Math.max(1, data.dashboard.commissioners.length)), `${n(trained)} trained records.`],

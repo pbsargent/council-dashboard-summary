@@ -437,6 +437,7 @@ def build_doc():
         ["Area", "Current value"],
         [
             ["Youth membership", fmt_num(council.get("members"))],
+            ["Volunteers", fmt_num(council.get("volunteers"))],
             ["Retention", fmt_pct(council_retention)],
             ["Units", fmt_num(council.get("units"))],
             ["At-risk units", f"{fmt_num(council.get('at_risk_units'))} ({fmt_pct(council.get('at_risk_rate'))})"],
@@ -556,6 +557,7 @@ def build_doc():
             ["Average Metric", "District average metrics weighted by the number of units in each district."],
             ["Assigned", "Assigned units divided by total units. Assigned units come from the Assigned tab."],
             ["Training", "District all-scouter training rates weighted by units."],
+            ["Volunteers", "Councilwide value published on the Membership tab, calculated by the source workbook as the count of unique nonblank Member IDs in the Training roster. It is not district- or program-filterable."],
             ["Youth / TAY", "Council: council youth divided by raw school-row TAY. Program view: actual program youth divided by estimated grade/age-eligible school TAY."],
             ["Popcorn Participation", "Units marked Committed divided by every unit row in the published Popcorn snapshot."],
         ],
@@ -834,6 +836,7 @@ def build_doc():
             ["Healthy rate", "Units with Unit Metric 4-5 divided by total units."],
             ["Assigned %", "Assigned units divided by total units."],
             ["Council training %", "District training rates weighted by district units."],
+            ["Volunteers", "Count of unique nonblank Training roster Member IDs, published by the source workbook on the Membership tab."],
             ["Council SYT %", "District SYT rates weighted by district members."],
             ["Council Youth / TAY", "Council youth divided by raw school-row TAY total."],
             ["District Youth / TAY", "District youth divided by school TAY attributed to that district."],

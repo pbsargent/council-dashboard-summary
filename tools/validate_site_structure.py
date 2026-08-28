@@ -231,6 +231,22 @@ def main() -> int:
                     "council-dashboard-summary.20260626-tay-kpi.js: "
                     f"missing Priority Units metric-filter binding {required!r}"
                 )
+        for required in (
+            'state.data.dashboard.council.volunteers',
+            '["Volunteers", n(c.volunteers)',
+        ):
+            if required not in priority_script:
+                errors.append(
+                    "council-dashboard-summary.20260626-tay-kpi.js: "
+                    f"missing Volunteers metric integration {required!r}"
+                )
+
+    if help_page_path.is_file():
+        help_source = help_page_path.read_text(encoding="utf-8")
+        if "<dt>Volunteers</dt>" not in help_source:
+            errors.append("help.html: missing Volunteers measure definition")
+        if "<dt>Connections (12 Mo.)</dt>" not in help_source:
+            errors.append("help.html: missing Connections (12 Mo.) measure definition")
 
     for relative, page_key in DETAIL_PAGES.items():
         path = root / relative

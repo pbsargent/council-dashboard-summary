@@ -42,14 +42,15 @@ The scheduled macOS LaunchAgent runs the refresh through `/Users/petersargent/CA
 1. The script runs `work/commissioner_site/build_site.py`.
 2. The builder finds the newest `*Dashboard - CAC*.xlsx` file in the Council Dashboard Reports shared drive.
 3. The builder finds the newest `*_CST7.xlsx` file in the Council Metric Reports shared drive.
-4. The builder writes a fresh `data/latest.json` and a dated working archive such as `data/YYYY-MM-DD.json` outside the Pages source tree.
-5. The script runs `tools/inject_unit_youth_trends.py` against the fresh JSON files so `dashboard.unit_youth_trends` is regenerated from the workbook `Units-Youth` tab.
-6. The script runs `refresh_monday_data.py`.
-7. The monday.com refresher first looks for the newest `*monday-export.xlsx` workbook in the Council monday.com Reports shared drive.
-8. If no workbook is available or parsing fails, it falls back to the monday.com API using the local token file.
-9. The script copies refreshed data into the local preview site.
-10. The script rebuilds `renewal-board/data.js` from the newest monday.com renewal export and Council dashboard workbook.
-11. The consolidated platform packages the current static tree, verifies its checksum, and deploys it through GitHub Pages Actions without creating a generated-data commit.
+4. The builder finds the newest `Connection History YYYY-MM-DD.csv` file in the Commissioner Tools Reports shared drive and counts completed connections in the report's trailing 365-day window.
+5. The builder writes a fresh `data/latest.json` and a dated working archive such as `data/YYYY-MM-DD.json` outside the Pages source tree.
+6. The script runs `tools/inject_unit_youth_trends.py` against the fresh JSON files so `dashboard.unit_youth_trends` is regenerated from the workbook `Units-Youth` tab.
+7. The script runs `refresh_monday_data.py`.
+8. The monday.com refresher first looks for the newest `*monday-export.xlsx` workbook in the Council monday.com Reports shared drive.
+9. If no workbook is available or parsing fails, it falls back to the monday.com API using the local token file.
+10. The script copies refreshed data into the local preview site.
+11. The script rebuilds `renewal-board/data.js` from the newest monday.com renewal export and Council dashboard workbook.
+12. The consolidated platform packages the current static tree, verifies its checksum, and deploys it through GitHub Pages Actions without creating a generated-data commit.
 The dashboard pages are static HTML, CSS, and JavaScript. They do not query Google Drive or monday.com directly in the browser. They read only the published JSON files.
 
 The Commissioner Dashboard at `https://pbsargent.github.io/council-commissioner-dashboard/` is a separate GitHub Pages portal that reads the same canonical Council Dashboard Summary JSON. The consolidated platform updates it only when its code or shared assets change.
@@ -66,7 +67,7 @@ The builder reads these tabs from the Council dashboard workbook:
 
 | Workbook Tab | Used For |
 | --- | --- |
-| `Membership` | District youth membership, units, YoY movement, year-end comparison, SYT %, PIN %, district commissioner, field executive |
+| `Membership` | District youth membership, units, YoY movement, year-end comparison, SYT %, PIN %, district commissioner, field executive, and the councilwide Volunteers count |
 | `Unit Metric Compare` | Average metric, metric band rates, UL & CC trained, small unit threshold, membership growth, advancement, outdoor, retention |
 | `Glance` | Packs, pack connect %, troops, troop connect %, % units not renewed, commissioner trained % |
 | `Training Dive` | All-scouter training %, direct-contact training % |
@@ -85,6 +86,10 @@ Only official district rows are used for the primary district rollups. The offic
 Armadillo, Bee Cave, Chisholm Trail, Colorado River, Exploring, Hill Country, Live Oak, North Shore, Sacred Springs, San Gabriel, Thunderbird, Waterloo.
 
 `Scoutreach` is recognized by the builder as a real district-like label in source files, but the published district dashboard uses the 12 official dashboard workbook rows.
+
+### Commissioner Connection History
+
+The Commissioner Dashboard's **Connections (12 Mo.)** district column counts completed rows in the newest `Connection History YYYY-MM-DD.csv` report. The window is the 365 days ending on the report-generated date, and each completed connection counts once as a unit visit. Rows outside the official district list, incomplete rows, and rows outside that window are excluded. The published JSON records the source file, report date, and window boundaries in `dashboard.connection_history`.
 
 ### Service Area Hierarchy
 
@@ -261,6 +266,7 @@ These are estimates rather than source-native grade counts. Program views displa
 | Average Metric | `dashboard.council.avg_metric` | Weighted average of district `avg_metric`, weighted by district `units` |
 | Assigned | `dashboard.council.assigned_pct` | `assigned_units / units`; assigned units are counted from rows in the Assigned tab where `Assigned` is `yes` |
 | Training | `dashboard.council.training_pct` | Trained person-level rows divided by all rows from the workbook Training tab |
+| Volunteers | `dashboard.council.volunteers` | Councilwide value published in `Membership!S2`, calculated by the source workbook as the count of unique nonblank `Training[MemberID]` values; it does not change with district or program filters |
 | Youth / TAY | Council: `dashboard.council.members / sum(monday schools tay)`; program: actual unit-level program youth divided by estimated grade/age-eligible school TAY | Council uses source totals; program views use the documented program-specific estimate |
 | Popcorn Participation | `boards.popcorn.committed / boards.popcorn.items` | Units marked `Committed` divided by all rows in the Popcorn Commitments snapshot |
 
