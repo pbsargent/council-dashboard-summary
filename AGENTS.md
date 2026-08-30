@@ -102,3 +102,53 @@ privacy-safe value while private source workbooks remain unchanged.
 - Keep the shared Council snapshot, Unit Level bundles, and Renewal Board bundle covered.
 - When a new public bundle or person-name field is added, extend the sanitizer and its tests before publishing.
 - Run the sanitizer's check mode immediately before deploying either public site; fail closed if a full person name remains in a covered field.
+
+## Outdoor leadership readiness contract
+
+Preserve the shared readiness model established on 2026-08-30 across People &
+Readiness, Training, SYT, Pack Camping Readiness, Troop Camping Readiness, and
+Unit-Level Detail.
+
+- Leadership depth is **Gap** for zero qualified leaders, **Fragile** for one,
+  **Preferred Depth** for two or more, and **Unknown** when the published data
+  cannot support a classification. Never convert Unknown to Gap.
+- Pack readiness uses BALOO-qualified leaders. Troop readiness uses IOLS-trained
+  Scoutmasters and Assistant Scoutmasters. Hazardous Weather remains a
+  separate filter and signal rather than part of the depth classification.
+- Pack and Troop readiness tables include every reviewed unit matching the
+  active filters, including Preferred Depth units. Do not revert to gap-only or
+  action-only lists.
+- Preserve the exact Status choices `All statuses`, `Gap`, `Fragile`,
+  `Preferred Depth`, and `Unknown`, and keep Unit-Level Detail on the same
+  shared classification.
+- Keep `outdoor-readiness.js`, its focused test, the site validator, public help,
+  data dictionary, runbook, README, and generated calculation guide aligned.
+
+## District Operational Detail contract
+
+Preserve the compact scorecard table in **District Performance → District
+scorecard → Operational Detail**.
+
+- Show **At Risk** and **Assigned** as plain numeric percentages. Do not restore
+  mini-meters, progress bars, or other decorative bars inside these table cells.
+- Keep the **Retention** column immediately after **Avg Metric** for both
+  district and Service Area rows. District values come from the workbook's
+  `retention_rate`; the master program filter does not recalculate that source
+  metric.
+- Display retention rounded to the nearest whole percent and allow valid values
+  above 100%. Service Area retention is the unit-weighted average of districts
+  that have both a reported retention value and a nonzero unit count.
+- Keep the header and every rendered row at the same column count. Whenever the
+  shared dashboard JavaScript changes, bump its cache-busting query on every
+  page that loads it.
+- Preserve the District Operational Detail assertions in
+  `tools/validate_site_structure.py`, render `districts.html`, and confirm zero
+  `.mini-meter` elements in `#districtRows` before publishing.
+
+## Data & Help training-reference contract
+
+Keep the official Scouting America Training Codes workbook and Position Trained
+Requirements PDF linked from `sources.html`. Preserve the corresponding
+fail-closed checks in `tools/validate_site_structure.py` and keep the public
+Dashboard Guide and generated calculation guide synchronized with metric and
+control changes.

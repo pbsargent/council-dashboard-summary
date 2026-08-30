@@ -9,6 +9,7 @@ const state = {
 const fmt = new Intl.NumberFormat("en-US");
 const one = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 const pct = new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 1 });
+const pctWhole = new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 0 });
 const signedPct = new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 1, signDisplay: "always" });
 const signedNum = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0, signDisplay: "always" });
 const viewerTimestamp = new Intl.DateTimeFormat(undefined, {
@@ -38,6 +39,10 @@ function n(value) {
 
 function p(value) {
   return value == null || Number.isNaN(value) ? "n/a" : pct.format(value);
+}
+
+function pWhole(value) {
+  return value == null || Number.isNaN(value) ? "n/a" : pctWhole.format(value);
 }
 
 function sp(value) {
@@ -168,6 +173,13 @@ function serviceAreaSummary(rows, key) {
   if (key === "syt_pct" || key === "training_pct") {
     const members = rows.reduce((total, row) => total + (row.members || 0), 0);
     return members ? rows.reduce((total, row) => total + (row[key] || 0) * (row.members || 0), 0) / members : null;
+  }
+  if (key === "retention_rate") {
+    const measuredRows = rows.filter((row) => row.retention_rate != null && row.units);
+    const units = measuredRows.reduce((total, row) => total + row.units, 0);
+    return units
+      ? measuredRows.reduce((total, row) => total + row.retention_rate * row.units, 0) / units
+      : null;
   }
   return rows.reduce((total, row) => total + (row[key] || 0), 0);
 }
@@ -713,11 +725,6 @@ function renderQualityChecks() {
   `).join("");
 }
 
-function miniMeter(value, tone = "") {
-  const width = Math.max(0, Math.min(100, (value || 0) * 100));
-  return `<span class="mini-meter"><span class="meter"><span class="meter-fill ${tone}" style="width:${width}%"></span></span><span class="subtle">${p(value)}</span></span>`;
-}
-
 function renderDistrictRows() {
   const rows = currentDistricts().sort((a, b) => (b.at_risk_rate || 0) - (a.at_risk_rate || 0));
   const forceOpen = Boolean(selectedDistrict() || searchQuery());
@@ -733,8 +740,9 @@ function renderDistrictRows() {
         <td class="num">${n(serviceAreaSummary(service.rows, "members"))}</td>
         <td class="num">${sp(serviceAreaSummary(service.rows, "yoy_pct"))}</td>
         <td class="num">${metric(serviceAreaSummary(service.rows, "avg_metric"))}</td>
-        <td class="num">${miniMeter(serviceAreaSummary(service.rows, "at_risk_rate"), "risk")}<div class="subtle">${n(atRiskUnits)} / ${n(units)}</div></td>
-        <td class="num">${miniMeter(serviceAreaSummary(service.rows, "assigned_pct"))}</td>
+        <td class="num">${pWhole(serviceAreaSummary(service.rows, "retention_rate"))}</td>
+        <td class="num">${p(serviceAreaSummary(service.rows, "at_risk_rate"))}<div class="subtle">${n(atRiskUnits)} / ${n(units)}</div></td>
+        <td class="num">${p(serviceAreaSummary(service.rows, "assigned_pct"))}</td>
         <td class="num">${p(serviceAreaSummary(service.rows, "syt_pct"))}</td>
         <td class="num">${p(serviceAreaSummary(service.rows, "training_pct"))}</td>
         <td></td>
@@ -747,8 +755,9 @@ function renderDistrictRows() {
       <td class="num">${n(row.members)}</td>
       <td class="num">${sp(row.yoy_pct)}</td>
       <td class="num">${metric(row.avg_metric)}</td>
-      <td class="num">${miniMeter(row.at_risk_rate, "risk")}</td>
-      <td class="num">${miniMeter(row.assigned_pct)}</td>
+      <td class="num">${pWhole(row.retention_rate)}</td>
+      <td class="num">${p(row.at_risk_rate)}</td>
+      <td class="num">${p(row.assigned_pct)}</td>
       <td class="num">${p(row.syt_pct)}</td>
       <td class="num">${p(row.training_pct)}</td>
       <td>${esc(row.district_commissioner || "TBA")}<div class="subtle">${esc(row.field_exec || "")}</div></td>

@@ -239,6 +239,11 @@ def main() -> int:
 
     unit_health_path = root / "unit-health.html"
     priority_script_path = root / "council-dashboard-summary.20260626-tay-kpi.js"
+    districts_path = root / "districts.html"
+    if districts_path.is_file():
+        districts_source = districts_path.read_text(encoding="utf-8")
+        if '<th class="num">Retention</th>' not in districts_source:
+            errors.append("districts.html: Operational Detail must include the Retention column")
     if unit_health_path.is_file():
         unit_health_source = unit_health_path.read_text(encoding="utf-8")
         if 'id="priorityMetricSelect"' not in unit_health_source:
@@ -248,6 +253,30 @@ def main() -> int:
                 errors.append(f"unit-health.html: missing Priority Units metric option {value!r}")
     if priority_script_path.is_file():
         priority_script = priority_script_path.read_text(encoding="utf-8")
+        district_rows_match = re.search(
+            r"function renderDistrictRows\(\) \{(?P<body>[\s\S]*?)\n\}\n\nfunction renderPriorityRows",
+            priority_script,
+        )
+        if district_rows_match is None:
+            errors.append(
+                "council-dashboard-summary.20260626-tay-kpi.js: missing District Operational Detail renderer"
+            )
+        else:
+            district_rows_source = district_rows_match.group("body")
+            if "miniMeter(" in district_rows_source:
+                errors.append(
+                    "council-dashboard-summary.20260626-tay-kpi.js: "
+                    "District Operational Detail must use plain percentages, not mini-bars"
+                )
+            for required in (
+                'pWhole(serviceAreaSummary(service.rows, "retention_rate"))',
+                "pWhole(row.retention_rate)",
+            ):
+                if required not in district_rows_source:
+                    errors.append(
+                        "council-dashboard-summary.20260626-tay-kpi.js: "
+                        f"missing District Operational Detail retention binding {required!r}"
+                    )
         for required in (
             'document.getElementById("priorityMetricSelect")',
             'matchesPriorityMetricBand(row.metric)',
@@ -559,7 +588,8 @@ def main() -> int:
         f"{len(SUMMARY_PAGES)} summary pages, {len(DETAIL_PAGES)} detail pages, "
         f"{len(NAVIGATION_ROUTES)} routes, {len(NAVIGATION_HIERARCHY)} hierarchy groups, "
         f"{len(REQUIRED_ASSETS)} shared assets, {len(HELP_ASSETS)} help assets, Cub Scout JSN pie-chart parity, "
-        "Priority Units metric filtering, public person-name privacy, and scroll-table safeguards."
+        "District Operational Detail retention and plain-percentage safeguards, Priority Units metric filtering, "
+        "public person-name privacy, and scroll-table safeguards."
     )
     return 0
 
