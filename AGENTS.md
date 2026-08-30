@@ -67,6 +67,12 @@ Preserve the nested scrolling behavior added on 2026-08-21. Long tables must rem
 
 Treat `help.html` as part of the public product contract. Whenever the website's navigation, page structure, page purpose, filters, controls, metric names or definitions, status language, source behavior, privacy guidance, or troubleshooting behavior changes, review and update the corresponding help content in the same source change.
 
+Use the dashboard's page names precisely in implementation and handoff notes:
+
+- **Data & Help** means `sources.html`, the page for source workbooks, references, methodology, and support links.
+- **Dashboard Guide** means `help.html`, the separate reader guide linked from Data & Help.
+- When reporting a published change to either page, identify the exact page and public URL so “help page” is not ambiguous.
+
 - Keep the page directory in `help.html` aligned with `site-navigation.js`, including parent/child placement and user-facing labels.
 - Keep Quick Start, controls, measures, responsible-use guidance, and troubleshooting text consistent with actual dashboard behavior.
 - Preserve live freshness rendering through `help.js`, responsive and print behavior through `help.css`, and the link from `sources.html`.
@@ -83,3 +89,16 @@ Preserve the Metric selector in the **Priority Units** block on `unit-health.htm
 - Keep the selector compatible with the master program filter and any district or search filters present on the page.
 - Keep `help.html` aligned with this control, retain the validator checks for all three options and their JavaScript binding, and bump the page's JavaScript cache-busting query whenever the implementation changes.
 - Before publishing changes to this block, verify each band on the live page and confirm that the rendered Metric values remain within the selected band.
+
+## Public person-name privacy contract
+
+Every public Council Dashboard Summary and Commissioner portal page and data
+bundle must publish person names as **First Name, Last Initial** (for example,
+`Alex R.`). Apply the rule at the publication-data layer so visible tables,
+searchable values, fetched JSON, and JavaScript data bundles all use the same
+privacy-safe value while private source workbooks remain unchanged.
+
+- Preserve `tools/sanitize_public_person_names.py` in both production deployment paths.
+- Keep the shared Council snapshot, Unit Level bundles, and Renewal Board bundle covered.
+- When a new public bundle or person-name field is added, extend the sanitizer and its tests before publishing.
+- Run the sanitizer's check mode immediately before deploying either public site; fail closed if a full person name remains in a covered field.

@@ -33,6 +33,14 @@ As of the 2026-08-23 extract:
 | Published monday.com data | `data/monday-latest.json` | Source for monday.com and membership market context views |
 | Published renewal board data | `renewal-board/data.js` | Source for the 2026 Unit Renewal subpage |
 
+Publication privacy rule: every person-name field in the public Council Summary
+and Commissioner portal artifacts is abbreviated to first name plus last
+initial, such as `Alex R.`. This applies to training and SYT people, commissioner
+assignments and rosters, district and Service Area leadership, Unit Level member
+and commissioner fields, and Renewal Board owners, leaders, contacts, and
+commissioners. Private source workbooks and intermediate build inputs are not
+modified.
+
 ## Daily Refresh Flow
 
 The daily refresh is controlled by `update_daily.zsh`.

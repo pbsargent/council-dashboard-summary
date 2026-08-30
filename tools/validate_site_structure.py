@@ -127,6 +127,8 @@ HELP_ASSETS = (
     "help.js",
 )
 
+PERSON_NAME_PRIVACY_ASSET = "tools/sanitize_public_person_names.py"
+
 SCROLL_ASSET_VERSION = "20260821-scrollable-tables-v1"
 SHARED_TABLE_STYLE_PAGES = (
     "index.html",
@@ -182,6 +184,20 @@ def main() -> int:
         path = root / relative
         if not path.is_file() or path.stat().st_size == 0:
             errors.append(f"missing required help asset: {relative}")
+
+    privacy_path = root / PERSON_NAME_PRIVACY_ASSET
+    if not privacy_path.is_file() or privacy_path.stat().st_size == 0:
+        errors.append(f"missing required person-name privacy asset: {PERSON_NAME_PRIVACY_ASSET}")
+    updater_path = root / "update_daily.zsh"
+    if updater_path.is_file():
+        updater_source = updater_path.read_text(encoding="utf-8")
+        for required in (
+            'PERSON_NAME_SANITIZER="${SUMMARY_REPO}/tools/sanitize_public_person_names.py"',
+            '"$PYTHON" "$PERSON_NAME_SANITIZER" "$SITE_STAGE"',
+            '"$PYTHON" "$PERSON_NAME_SANITIZER" "$SITE_STAGE" --check',
+        ):
+            if required not in updater_source:
+                errors.append(f"update_daily.zsh: missing person-name privacy contract {required!r}")
 
     for relative, (page_key, required_headings) in SUMMARY_PAGES.items():
         path = root / relative
@@ -260,6 +276,8 @@ def main() -> int:
             errors.append("help.html: missing Connections (12 Mo.) measure definition")
         if "<dt>Outdoor Leadership Depth</dt>" not in help_source:
             errors.append("help.html: missing Outdoor Leadership Depth measure definition")
+        if "first name and last initial" not in help_source:
+            errors.append("help.html: missing public person-name privacy guidance")
 
     for relative, page_key in DETAIL_PAGES.items():
         path = root / relative
@@ -488,7 +506,7 @@ def main() -> int:
         f"{len(SUMMARY_PAGES)} summary pages, {len(DETAIL_PAGES)} detail pages, "
         f"{len(NAVIGATION_ROUTES)} routes, {len(NAVIGATION_HIERARCHY)} hierarchy groups, "
         f"{len(REQUIRED_ASSETS)} shared assets, {len(HELP_ASSETS)} help assets, Cub Scout JSN pie-chart parity, "
-        "Priority Units metric filtering, and scroll-table safeguards."
+        "Priority Units metric filtering, public person-name privacy, and scroll-table safeguards."
     )
     return 0
 

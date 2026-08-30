@@ -40,6 +40,11 @@ GitHub Pages artifacts. Their repositories retain ordinary linear history for
 source changes only. The consolidated platform is their sole production
 deployer; force pushes and parentless commits are prohibited.
 
+All person names in public Council Summary and Commissioner portal data are
+published as first name plus last initial (for example, `Alex R.`). The
+publication sanitizer covers the shared Council snapshot, Unit Level bundles,
+and Renewal Board bundle without modifying the private source workbooks.
+
 For manual site-only publishing after HTML/CSS/JS/data edits, use `publish_site_only.zsh` or double-click `Publish Council Dashboard.command`. This path does not rebuild source workbooks.
 
 Service Area filtering and district volunteer leadership are refreshed from the authoritative monday.com `Field Service / Service Areas` board. The run-specific hierarchy is applied during JSON generation and is available alongside District filters across the major dashboard pages; board leadership values, including intentional blanks, override workbook values.

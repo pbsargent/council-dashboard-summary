@@ -17,6 +17,7 @@ UNIT_YOUTH_INJECTOR="${SUMMARY_REPO}/tools/inject_unit_youth_trends.py"
 UNIT_LEVEL_BUILDER="${SUMMARY_REPO}/tools/build_unit_level_dashboard.py"
 FALL_RECRUITMENT_BUILDER="${SUMMARY_REPO}/tools/build_fall_recruitment_dashboard.py"
 SITE_STRUCTURE_VALIDATOR="${SUMMARY_REPO}/tools/validate_site_structure.py"
+PERSON_NAME_SANITIZER="${SUMMARY_REPO}/tools/sanitize_public_person_names.py"
 MONDAY_TOKEN_FILE="${MONDAY_API_TOKEN_FILE:-/Users/petersargent/Documents/06 Personal, Legal, and Sensitive/Sensitive - Move to Password Manager/Monday-Com-API-Token.txt}"
 MONDAY_SOURCE_DIR="${MONDAY_SOURCE_DIR:-/Users/petersargent/Library/CloudStorage/GoogleDrive-peter@imetpetersargent.com/Shared drives/Council monday.com Reports}"
 UNIT_LEVEL_SOURCE_DIR="${UNIT_LEVEL_SOURCE_DIR:-/Users/petersargent/Library/CloudStorage/GoogleDrive-peter@imetpetersargent.com/Shared drives/Council Dashboard Reports}"
@@ -144,6 +145,7 @@ require_file "$UNIT_YOUTH_INJECTOR"
 require_file "$UNIT_LEVEL_BUILDER"
 require_file "$FALL_RECRUITMENT_BUILDER"
 require_file "$SITE_STRUCTURE_VALIDATOR"
+require_file "$PERSON_NAME_SANITIZER"
 require_file "$SITE_STAGER"
 require_file "$PAGES_DEPLOYER"
 require_dir "$SUMMARY_REPO/.git"
@@ -263,6 +265,15 @@ if [[ -d "${SITE_STAGE}/renewal-board" ]]; then
   fi
 else
   RENEWAL_STATUS="skipped; renewal-board directory not found"
+fi
+
+LAST_STEP="apply public person-name privacy format"
+log "Abbreviating public person names as First Name, Last Initial"
+"$PYTHON" "$PERSON_NAME_SANITIZER" "$SITE_STAGE"
+"$PYTHON" "$PERSON_NAME_SANITIZER" "$SITE_STAGE" --check
+if [[ -d "$PREVIEW_SITE" ]]; then
+  "$PYTHON" "$PERSON_NAME_SANITIZER" "$PREVIEW_SITE"
+  "$PYTHON" "$PERSON_NAME_SANITIZER" "$PREVIEW_SITE" --check
 fi
 
 LAST_STEP="fetch GitHub Pages repository"
