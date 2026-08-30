@@ -38,5 +38,9 @@ assert.equal(troops[0].depthStatus.key, "preferred");
 assert.equal(readiness.depthStatus(0).key, "gap");
 assert.equal(readiness.depthStatus(1).key, "fragile");
 assert.equal(readiness.depthStatus(2).key, "preferred");
+assert.equal(readiness.depthStatus(null).key, "unknown");
+assert.equal(readiness.matchesDepthStatus(packs[0], "preferred"), true);
+assert.equal(readiness.matchesDepthStatus(packs[0], "gap"), false);
+assert.equal(readiness.matchesDepthStatus(packs[0], ""), true);
 
 console.log("Outdoor readiness tests passed.");

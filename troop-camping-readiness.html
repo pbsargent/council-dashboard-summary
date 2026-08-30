@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
   <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
-  <link rel="stylesheet" href="camping-readiness.css?v=20260830-leadership-depth-1">
+  <link rel="stylesheet" href="camping-readiness.css?v=20260830-status-filter-1">
   <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
 </head>
 <body data-page="troop-camping-readiness">
@@ -59,13 +59,21 @@
           <select id="districtSelect"></select>
         </label>
         <label class="control">
-          <span>Readiness signal</span>
+          <span>Status</span>
           <select id="statusSelect">
-            <option value="">Any action needed</option>
-            <option value="gap">No IOLS-trained SM/ASM</option>
-            <option value="fragile">One IOLS-trained SM/ASM — fragile</option>
-            <option value="hazard">Hazardous Weather gap</option>
-            <option value="multiple">IOLS and HW gaps</option>
+            <option value="">All statuses</option>
+            <option value="gap">Gap</option>
+            <option value="fragile">Fragile</option>
+            <option value="preferred">Preferred Depth</option>
+            <option value="unknown">Unknown</option>
+          </select>
+        </label>
+        <label class="control">
+          <span>Hazardous Weather</span>
+          <select id="hazardSelect">
+            <option value="">All HW statuses</option>
+            <option value="current">Current</option>
+            <option value="gap">Gap</option>
           </select>
         </label>
         <label class="control">
@@ -85,15 +93,15 @@
       <section class="panel detail-table camping-readiness-table" aria-labelledby="readinessTableTitle">
         <div class="panel-head">
           <div>
-            <p class="section-kicker">Troop-level action list</p>
+            <p class="section-kicker">Troop-level readiness</p>
             <div class="panel-title-row">
-              <h2 id="readinessTableTitle">Troop Outdoor Leadership Action List</h2>
+              <h2 id="readinessTableTitle">Troop Outdoor Leadership Readiness</h2>
               <button class="panel-help" type="button" aria-label="Troop camping readiness source help" title="Source: Council dashboard workbook Training tab. IOLS depth counts unique Scoutmasters and Assistant Scoutmasters. An explicit IOLS field is used when published; otherwise status is inferred when mandatory code S11 is no longer outstanding. Hazardous Weather uses current direct-contact dates.">?</button>
             </div>
           </div>
           <span class="count-pill" id="troopCount" aria-live="polite"></span>
         </div>
-        <p class="subtle readiness-source-note">The action list shows Troops with zero or one IOLS-trained Scoutmaster or Assistant Scoutmaster, plus any Troop without a current direct-contact Hazardous Weather record. When an explicit IOLS field is unavailable, the dashboard uses the absence of S11 as its fallback signal.</p>
+        <p class="subtle readiness-source-note">The table shows every reviewed Troop. Use the Status and Hazardous Weather filters to focus on IOLS leadership depth and roster training signals separately. When an explicit IOLS field is unavailable, the dashboard uses the absence of S11 as its fallback signal.</p>
         <div class="table-wrap">
           <table>
             <thead>
@@ -116,7 +124,7 @@
   <script src="site-navigation.js?v=20260827-commissioner-nav-1"></script>
   <script src="panel-help.js?v=20260630-active-help"></script>
   <script src="report-problem.js?v=20260712"></script>
-  <script src="outdoor-readiness.js?v=20260830-leadership-depth-1"></script>
-  <script src="troop-camping-readiness.js?v=20260830-leadership-depth-1"></script>
+  <script src="outdoor-readiness.js?v=20260830-status-filter-1"></script>
+  <script src="troop-camping-readiness.js?v=20260830-status-filter-1"></script>
 </body>
 </html>

@@ -48,8 +48,6 @@ function renderControls() {
   document.getElementById("districtSelect").innerHTML = `<option value="">All districts</option>${districts.map((district) => `<option value="${esc(district)}">${esc(district)}</option>`).join("")}`;
 }
 
-function actionPacks() { return state.packs.filter((pack) => pack.needsAction); }
-
 function renderKpis() {
   const zero = state.packs.filter((pack) => pack.qualificationCount === 0).length;
   const one = state.packs.filter((pack) => pack.qualificationCount === 1).length;
@@ -70,15 +68,14 @@ function renderKpis() {
 function currentPacks() {
   const district = document.getElementById("districtSelect").value;
   const status = document.getElementById("statusSelect").value;
+  const hazard = document.getElementById("hazardSelect").value;
   const sort = document.getElementById("sortSelect").value;
   const query = document.getElementById("searchInput").value.trim().toLowerCase();
-  return actionPacks().filter((pack) => {
-    const matchesStatus = !status
-      || pack.depthStatus.key === status
-      || (status === "hazard" && pack.missingHazardousWeather)
-      || (status === "multiple" && pack.qualificationCount === 0 && pack.missingHazardousWeather);
+  return state.packs.filter((pack) => {
+    const matchesStatus = CACOutdoorReadiness.matchesDepthStatus(pack, status);
+    const matchesHazard = !hazard || (hazard === "gap" ? pack.missingHazardousWeather : !pack.missingHazardousWeather);
     const haystack = [pack.district, pack.unit, ...pack.qualificationPeople, ...pack.hazardousWeatherPeople].join(" ").toLowerCase();
-    return (!district || pack.district === district) && matchesStatus && (!query || haystack.includes(query));
+    return (!district || pack.district === district) && matchesStatus && matchesHazard && (!query || haystack.includes(query));
   }).sort((a, b) => {
     if (sort === "leaders") return a.leaderCount - b.leaderCount || a.district.localeCompare(b.district) || a.unitNumber - b.unitNumber;
     if (sort === "district") return a.district.localeCompare(b.district) || a.unitNumber - b.unitNumber || a.unit.localeCompare(b.unit);
@@ -87,6 +84,9 @@ function currentPacks() {
 }
 
 function qualificationCell(pack) {
+  if (pack.depthStatus.key === "unknown") {
+    return '<div class="coverage-cell"><span class="status neutral">Unknown</span><span class="coverage-people">BALOO leadership depth could not be determined from the published roster data.</span></div>';
+  }
   const names = pack.qualificationPeople.length
     ? pack.qualificationPeople.join("; ")
     : "No BALOO-qualified leader appears in the published roster data.";
@@ -100,9 +100,11 @@ function hazardCell(pack) {
 
 function recommendedAction(pack) {
   const actions = [];
-  if (pack.qualificationCount === 0) actions.push("Recruit or train a registered adult in BALOO");
+  if (pack.depthStatus.key === "unknown") actions.push("Verify BALOO training data for this Pack");
+  else if (pack.qualificationCount === 0) actions.push("Recruit or train a registered adult in BALOO");
   else if (pack.qualificationCount === 1) actions.push("Develop a second BALOO-qualified leader for continuity");
   if (pack.missingHazardousWeather) actions.push("confirm an attending leader with current Hazardous Weather training");
+  if (!actions.length) actions.push("Maintain preferred leadership depth and current training records");
   return `${actions.join("; ")}. Confirm the actual event roster before camping.`;
 }
 
@@ -126,7 +128,7 @@ function renderRows() {
 }
 
 function bindEvents() {
-  ["districtSelect", "statusSelect", "sortSelect", "searchInput"].forEach((id) => document.getElementById(id).addEventListener("input", renderRows));
+  ["districtSelect", "statusSelect", "hazardSelect", "sortSelect", "searchInput"].forEach((id) => document.getElementById(id).addEventListener("input", renderRows));
 }
 
 async function init() {

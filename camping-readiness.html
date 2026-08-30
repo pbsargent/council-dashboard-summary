@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
   <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
-  <link rel="stylesheet" href="camping-readiness.css?v=20260830-leadership-depth-1">
+  <link rel="stylesheet" href="camping-readiness.css?v=20260830-status-filter-1">
   <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
 </head>
 <body data-page="camping-readiness">
@@ -56,13 +56,21 @@
           <select id="districtSelect"></select>
         </label>
         <label class="control">
-          <span>Readiness signal</span>
+          <span>Status</span>
           <select id="statusSelect">
-            <option value="">Any action needed</option>
-            <option value="gap">No BALOO</option>
-            <option value="fragile">One BALOO — fragile</option>
-            <option value="hazard">Hazardous Weather gap</option>
-            <option value="multiple">BALOO and HW gaps</option>
+            <option value="">All statuses</option>
+            <option value="gap">Gap</option>
+            <option value="fragile">Fragile</option>
+            <option value="preferred">Preferred Depth</option>
+            <option value="unknown">Unknown</option>
+          </select>
+        </label>
+        <label class="control">
+          <span>Hazardous Weather</span>
+          <select id="hazardSelect">
+            <option value="">All HW statuses</option>
+            <option value="current">Current</option>
+            <option value="gap">Gap</option>
           </select>
         </label>
         <label class="control">
@@ -82,15 +90,15 @@
       <section class="panel detail-table camping-readiness-table" aria-labelledby="readinessTableTitle">
         <div class="panel-head">
           <div>
-            <p class="section-kicker">Pack-level action list</p>
+            <p class="section-kicker">Pack-level readiness</p>
             <div class="panel-title-row">
-              <h2 id="readinessTableTitle">Pack Outdoor Leadership Action List</h2>
+              <h2 id="readinessTableTitle">Pack Outdoor Leadership Readiness</h2>
               <button class="panel-help" type="button" aria-label="Camping readiness source help" title="Source: Council dashboard workbook Training tab. BALOO depth counts unique registered Pack leaders with BALOO recorded. Zero is a coverage gap, one is fragile coverage, and two or more is preferred depth. Hazardous Weather uses current dates published for direct-contact leaders.">?</button>
             </div>
           </div>
           <span class="count-pill" id="packCount" aria-live="polite"></span>
         </div>
-        <p class="subtle readiness-source-note">The action list shows Packs with zero or one BALOO-qualified leader, plus any Pack without a current direct-contact Hazardous Weather record. Confirm the actual attending roster before treating any result as final.</p>
+        <p class="subtle readiness-source-note">The table shows every reviewed Pack. Use the Status and Hazardous Weather filters to focus on BALOO leadership depth and roster training signals separately. Confirm the actual attending roster before treating any result as final.</p>
         <div class="table-wrap">
           <table>
             <thead>
@@ -113,7 +121,7 @@
   <script src="site-navigation.js?v=20260827-commissioner-nav-1"></script>
   <script src="panel-help.js?v=20260630-active-help"></script>
   <script src="report-problem.js?v=20260712"></script>
-  <script src="outdoor-readiness.js?v=20260830-leadership-depth-1"></script>
-  <script src="camping-readiness.js?v=20260830-leadership-depth-1"></script>
+  <script src="outdoor-readiness.js?v=20260830-status-filter-1"></script>
+  <script src="camping-readiness.js?v=20260830-status-filter-1"></script>
 </body>
 </html>

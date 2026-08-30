@@ -82,9 +82,16 @@
   }
 
   function depthStatus(count) {
+    if (count === null || count === undefined || !Number.isFinite(Number(count))) {
+      return { key: "unknown", label: "Leadership depth unknown", shortLabel: "Unknown", tone: "neutral" };
+    }
     if (count <= 0) return { key: "gap", label: "No qualified leader", shortLabel: "Gap", tone: "bad" };
     if (count === 1) return { key: "fragile", label: "One qualified leader", shortLabel: "Fragile", tone: "warn" };
     return { key: "preferred", label: "Two or more qualified leaders", shortLabel: "Preferred depth", tone: "good" };
+  }
+
+  function matchesDepthStatus(unit, selectedStatus) {
+    return !selectedStatus || unit?.depthStatus?.key === selectedStatus;
   }
 
   function buildUnits(people, unitType, generatedDate) {
@@ -150,6 +157,7 @@
     hasIols,
     isIolsPosition,
     isUnitType,
+    matchesDepthStatus,
     parseDate,
   };
 

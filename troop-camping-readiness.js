@@ -48,8 +48,6 @@ function renderControls() {
   document.getElementById("districtSelect").innerHTML = `<option value="">All districts</option>${districts.map((district) => `<option value="${esc(district)}">${esc(district)}</option>`).join("")}`;
 }
 
-function actionTroops() { return state.troops.filter((troop) => troop.needsAction); }
-
 function renderKpis() {
   const zero = state.troops.filter((troop) => troop.qualificationCount === 0).length;
   const one = state.troops.filter((troop) => troop.qualificationCount === 1).length;
@@ -70,15 +68,14 @@ function renderKpis() {
 function currentTroops() {
   const district = document.getElementById("districtSelect").value;
   const status = document.getElementById("statusSelect").value;
+  const hazard = document.getElementById("hazardSelect").value;
   const sort = document.getElementById("sortSelect").value;
   const query = document.getElementById("searchInput").value.trim().toLowerCase();
-  return actionTroops().filter((troop) => {
-    const matchesStatus = !status
-      || troop.depthStatus.key === status
-      || (status === "hazard" && troop.missingHazardousWeather)
-      || (status === "multiple" && troop.qualificationCount === 0 && troop.missingHazardousWeather);
+  return state.troops.filter((troop) => {
+    const matchesStatus = CACOutdoorReadiness.matchesDepthStatus(troop, status);
+    const matchesHazard = !hazard || (hazard === "gap" ? troop.missingHazardousWeather : !troop.missingHazardousWeather);
     const haystack = [troop.district, troop.unit, ...troop.qualificationPeople, ...troop.hazardousWeatherPeople].join(" ").toLowerCase();
-    return (!district || troop.district === district) && matchesStatus && (!query || haystack.includes(query));
+    return (!district || troop.district === district) && matchesStatus && matchesHazard && (!query || haystack.includes(query));
   }).sort((a, b) => {
     if (sort === "leaders") return a.leaderCount - b.leaderCount || a.district.localeCompare(b.district) || a.unitNumber - b.unitNumber;
     if (sort === "district") return a.district.localeCompare(b.district) || a.unitNumber - b.unitNumber || a.unit.localeCompare(b.unit);
@@ -87,6 +84,9 @@ function currentTroops() {
 }
 
 function qualificationCell(troop) {
+  if (troop.depthStatus.key === "unknown") {
+    return '<div class="coverage-cell"><span class="status neutral">Unknown</span><span class="coverage-people">IOLS leadership depth could not be determined from the published roster data.</span></div>';
+  }
   const names = troop.qualificationPeople.length
     ? troop.qualificationPeople.join("; ")
     : "No IOLS-trained Scoutmaster or Assistant Scoutmaster appears in the published roster data.";
@@ -100,9 +100,11 @@ function hazardCell(troop) {
 
 function recommendedAction(troop) {
   const actions = [];
-  if (troop.qualificationCount === 0) actions.push("Complete or record IOLS for a Scoutmaster or Assistant Scoutmaster");
+  if (troop.depthStatus.key === "unknown") actions.push("Verify IOLS training data for this Troop");
+  else if (troop.qualificationCount === 0) actions.push("Complete or record IOLS for a Scoutmaster or Assistant Scoutmaster");
   else if (troop.qualificationCount === 1) actions.push("Develop a second IOLS-trained Scoutmaster or Assistant Scoutmaster for continuity");
   if (troop.missingHazardousWeather) actions.push("confirm an attending leader with current Hazardous Weather training");
+  if (!actions.length) actions.push("Maintain preferred leadership depth and current training records");
   return `${actions.join("; ")}. Confirm the actual event roster before camping.`;
 }
 
@@ -126,7 +128,7 @@ function renderRows() {
 }
 
 function bindEvents() {
-  ["districtSelect", "statusSelect", "sortSelect", "searchInput"].forEach((id) => document.getElementById(id).addEventListener("input", renderRows));
+  ["districtSelect", "statusSelect", "hazardSelect", "sortSelect", "searchInput"].forEach((id) => document.getElementById(id).addEventListener("input", renderRows));
 }
 
 async function init() {

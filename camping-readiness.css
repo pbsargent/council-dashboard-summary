@@ -52,6 +52,10 @@
   min-width: 1240px;
 }
 
+.camping-readiness-toolbar {
+  grid-template-columns: minmax(150px, .8fr) minmax(150px, .8fr) minmax(170px, .9fr) minmax(170px, .9fr) minmax(220px, 1.2fr);
+}
+
 .readiness-source-note {
   margin: -4px 0 12px;
 }
@@ -89,10 +93,21 @@
   margin-bottom: 2px;
 }
 
+.status.neutral {
+  color: var(--muted);
+  background: rgba(148, 163, 184, .14);
+}
+
 .action-copy {
   min-width: 230px;
   margin-top: 0;
   color: var(--ink);
+}
+
+@media (max-width: 1180px) {
+  .camping-readiness-toolbar {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 820px) {

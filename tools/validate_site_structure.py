@@ -303,7 +303,7 @@ def main() -> int:
                     f"{relative}: missing parent link {expected_label!r} -> {expected_href!r}"
                 )
 
-    readiness_asset_version = "20260830-leadership-depth-1"
+    readiness_asset_version = "20260830-status-filter-1"
     readiness_pages = (
         "camping-readiness.html",
         "troop-camping-readiness.html",
@@ -326,12 +326,40 @@ def main() -> int:
         for required in (
             'if (count <= 0)',
             'if (count === 1)',
+            'key: "unknown"',
+            'matchesDepthStatus',
             'qualificationRows.length < 2',
             'row?.iols_trained',
             'includes("S11")',
         ):
             if required not in readiness_source:
                 errors.append(f"outdoor-readiness.js: missing leadership-depth contract {required!r}")
+
+    readiness_status_options = (
+        '<option value="">All statuses</option>',
+        '<option value="gap">Gap</option>',
+        '<option value="fragile">Fragile</option>',
+        '<option value="preferred">Preferred Depth</option>',
+        '<option value="unknown">Unknown</option>',
+    )
+    readiness_filter_contracts = {
+        "camping-readiness.html": "camping-readiness.js",
+        "troop-camping-readiness.html": "troop-camping-readiness.js",
+    }
+    for page_name, script_name in readiness_filter_contracts.items():
+        page_source = (root / page_name).read_text(encoding="utf-8")
+        script_source = (root / script_name).read_text(encoding="utf-8")
+        for option in readiness_status_options:
+            if option not in page_source:
+                errors.append(f"{page_name}: missing readiness Status option {option!r}")
+        if 'id="hazardSelect"' not in page_source:
+            errors.append(f"{page_name}: missing separate Hazardous Weather filter")
+        if "CACOutdoorReadiness.matchesDepthStatus" not in script_source:
+            errors.append(f"{script_name}: Status selector must filter leadership-depth status")
+        if '"hazardSelect"' not in script_source:
+            errors.append(f"{script_name}: Hazardous Weather selector must remain bound")
+        if "actionPacks()" in script_source or "actionTroops()" in script_source:
+            errors.append(f"{script_name}: readiness table must include preferred-depth units")
 
     for relative, forbidden in {
         "camping-readiness.html": "Packs Missing Camping Leadership Coverage",
