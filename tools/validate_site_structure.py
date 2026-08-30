@@ -372,6 +372,18 @@ def main() -> int:
             if required not in unit_level_script:
                 errors.append(f"unit-level-dashboard.js: missing Unit-Level readiness status contract {required!r}")
 
+    documentation_contracts = {
+        "README.md": ("Gap / Fragile / Preferred Depth / Unknown", "Unit-Level Detail uses the same shared classification"),
+        "IMPLEMENTATION_RUNBOOK.md": ("All statuses, Gap, Fragile, Preferred Depth, and Unknown", "unmatched Training-tab units show Unknown"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("| Unknown |", "Every reviewed Pack", "Every reviewed Troop", "status is Unknown rather than Gap"),
+        "tools/build_human_data_guide.py": ("Leadership-depth Status can be filtered", "Unknown is not converted to Gap", "Unit-Level camping readiness"),
+    }
+    for relative, required_phrases in documentation_contracts.items():
+        source = (root / relative).read_text(encoding="utf-8")
+        for phrase in required_phrases:
+            if phrase not in source:
+                errors.append(f"{relative}: missing camping-readiness documentation contract {phrase!r}")
+
     for relative, forbidden in {
         "camping-readiness.html": "Packs Missing Camping Leadership Coverage",
         "troop-camping-readiness.html": "Troops Missing Camping Leadership Coverage",

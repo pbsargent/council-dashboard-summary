@@ -72,10 +72,12 @@ That repository is a small static portal into the Council Dashboard Summary and 
 
 Future builds and publishes must preserve these two data-driven detail pages:
 
-- `camping-readiness.html`: **Pack Camping Readiness**, using zero/one/two-plus BALOO leadership depth and current Hazardous Weather roster coverage.
-- `troop-camping-readiness.html`: **Troop Camping Readiness**, using zero/one/two-plus IOLS-trained Scoutmaster/Assistant Scoutmaster depth plus current Hazardous Weather roster coverage. An explicit IOLS field controls when present; otherwise the absence of mandatory code `S11` is the fallback signal.
+- `camping-readiness.html`: **Pack Camping Readiness**, classifying BALOO leadership depth as Gap, Fragile, Preferred Depth, or Unknown and showing current Hazardous Weather roster coverage separately.
+- `troop-camping-readiness.html`: **Troop Camping Readiness**, classifying IOLS-trained Scoutmaster/Assistant Scoutmaster depth as Gap, Fragile, Preferred Depth, or Unknown and showing current Hazardous Weather roster coverage separately. An explicit IOLS field controls when present; otherwise the absence of mandatory code `S11` is the fallback signal.
 
-Both pages belong under **People & Readiness**, after Training and SYT. Commissioner Portal belongs under **Overview**, before Council Comparison. The camping-readiness pages must not be moved back under Unit Health & Renewal. Their page eyebrow and back link must continue to identify `people.html` as the parent page.
+Both pages belong under **People & Readiness**, after Training and SYT. Commissioner Portal belongs under **Overview**, before Council Comparison. The camping-readiness pages must not be moved back under Unit Health & Renewal. Their page eyebrow and back link must continue to identify `people.html` as the parent page. Each table must include every reviewed Pack or Troop so Preferred Depth remains selectable. The Status selector must offer All statuses, Gap, Fragile, Preferred Depth, and Unknown; the Hazardous Weather selector must remain separate so the two signals can be combined without changing their definitions.
+
+`unit-level.html` must load the same `outdoor-readiness.js` classification. For Packs and Troops, Unit-Level Detail shows the matching Camping Readiness status in the KPI strip and repeats it in Training Readiness with qualification count and Hazardous Weather context. A missing Training-tab unit match displays Unknown. Crews, Ships, and Posts do not receive a camping-readiness KPI.
 
 This is enforced in `tools/validate_site_structure.py` through `DETAIL_PAGES`, `NAVIGATION_ROUTES`, and `NAVIGATION_HIERARCHY`. The scheduled updater runs that validator after loading the current site code and again immediately before publication. A future build that removes either page, changes its route or page identity, or moves it to the wrong navigation parent must fail before publishing.
 
@@ -410,7 +412,9 @@ After any refresh or rebuild, check:
 - Home page loads without JavaScript errors.
 - Training, SYT, monday.com, Popcorn, unit metrics, and membership detail pages load.
 - Pack Camping Readiness and Troop Camping Readiness load, remain under People & Readiness, and read the current `dashboard.training_people` snapshot through `outdoor-readiness.js`.
-- Both pages classify qualification depth as zero (gap), one (fragile), or two-plus (preferred). Pack Camping Readiness evaluates BALOO plus current Hazardous Weather coverage; Troop Camping Readiness evaluates applicable SM/ASM IOLS status plus current Hazardous Weather coverage.
+- Both pages classify qualification depth as zero (Gap), one (Fragile), two-plus (Preferred Depth), or unclassifiable (Unknown), and their default tables include all reviewed units.
+- The Status filter returns those four leadership-depth categories. Hazardous Weather is independently filterable as Current or Gap and can be combined with Status, District, Sort, and Search.
+- Unit-Level Detail shows the same Camping Readiness status for Packs and Troops in both its KPI strip and Training Readiness row; unmatched Training-tab units show Unknown.
 - Neither page represents campout approval or claims that roster data proves two-deep, female-leader, registration, or actual-attendance compliance.
 - Renewal board page loads, honors light/dark mode, and links back to the Council Summary page.
 - Panel `?` controls display active help popovers on hover, focus, or click/tap.

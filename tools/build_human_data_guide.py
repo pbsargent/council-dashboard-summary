@@ -231,8 +231,10 @@ def add_reference_bullet(doc: Document, text: str):
     paragraph = doc.add_paragraph(style="Body Text")
     paragraph.paragraph_format.left_indent = Inches(0.28)
     paragraph.paragraph_format.first_line_indent = Inches(-0.18)
-    paragraph.add_run("•  ")
-    paragraph.add_run(text)
+    paragraph.paragraph_format.space_after = Pt(2)
+    paragraph.paragraph_format.line_spacing = 1.0
+    set_run_font(paragraph.add_run("•  "), size=9.5, color=INK)
+    set_run_font(paragraph.add_run(text), size=9.5, color=INK)
     return paragraph
 
 
@@ -643,13 +645,13 @@ def build_doc():
             ["People & Readiness", "Where leader training, safeguarding, and camping-readiness gaps are concentrated."],
             ["Training", "Which people are trained, which leaders are direct-contact, and where direct-contact training gaps exist."],
             ["SYT", "Safeguarding Youth Training follow-up plus applicable Hazardous Weather and IOLS position-training issues; BALOO is informational at person level."],
-            ["Pack Camping Readiness", "Which Packs have zero, one, or two-plus BALOO-qualified leaders and which lack a current Hazardous Weather roster signal."],
-            ["Troop Camping Readiness", "Which Troops have zero, one, or two-plus IOLS-trained Scoutmasters/Assistant Scoutmasters and which lack a current Hazardous Weather roster signal."],
+            ["Pack Camping Readiness", "Which Packs are Gap, Fragile, Preferred Depth, or Unknown for BALOO leadership depth, with Hazardous Weather filtered separately."],
+            ["Troop Camping Readiness", "Which Troops are Gap, Fragile, Preferred Depth, or Unknown for IOLS-trained Scoutmaster/Assistant Scoutmaster depth, with Hazardous Weather filtered separately."],
             ["Recruitment Pipeline", "Where prospect, renewal, and school operating follow-up is concentrated."],
             ["Cub Scout JSN", "How school recruiting plans, dates, locations, materials, and uncovered schools compare with the monday.com source dashboard."],
             ["Popcorn", "How unit commitments, goals, prior sales, onboarding, and training roll up from Service Area to District to Unit."],
             ["Unit Metrics", "How districts and unit sections compare across unit health, training, outdoor, advancement, and the current workbook retention metric."],
-            ["Unit-Level Detail", "Which individual units and members drive program-specific youth, growth, training, SYT, health, and assignment results."],
+            ["Unit-Level Detail", "Which individual units and members drive program-specific youth, growth, training, SYT, health, assignment, and Pack/Troop camping-readiness status."],
             ["Renewal Status", "Which units are initiated, submitted, pending acceptance, posted, or otherwise need renewal follow-up."],
             ["Data & Help", "Which source workbooks are current, how values are calculated, where to report a problem, and which external training references apply."],
         ],
@@ -795,17 +797,18 @@ def build_doc():
     add_heading(doc, "Camping readiness", 2)
     add_body(
         doc,
-        "The Pack and Troop Camping Readiness pages group published Training-tab rows by District and unit. They are roster-readiness and training follow-up aids, not campout approvals, attendance rosters, or replacements for council and Guide to Safe Scouting requirements.",
+        "The Pack and Troop Camping Readiness pages group published Training-tab rows by District and unit. Their default tables include every reviewed unit. Leadership-depth Status can be filtered as Gap, Fragile, Preferred Depth, or Unknown, while Hazardous Weather is filtered separately as Current or Gap. The two filters can be combined with District, Sort, and Search. These pages are roster-readiness and training follow-up aids, not campout approvals, attendance rosters, or replacements for council and Guide to Safe Scouting requirements.",
     )
     add_table(
         doc,
         ["Readiness signal", "Current dashboard rule"],
         [
-            ["Pack BALOO depth", "Zero recorded BALOO-qualified leaders is a gap, one is fragile coverage, and two or more is preferred continuity."],
+            ["Pack BALOO depth", "Zero recorded BALOO-qualified leaders is Gap, one is Fragile, and two or more is Preferred Depth."],
             ["Pack Hazardous Weather coverage", "At least one direct-contact Pack leader has a recognizable Hazardous Weather date on or after the published data generated date."],
-            ["Troop IOLS depth", "Counts IOLS-trained Scoutmasters and Assistant Scoutmasters as zero, one, or two-plus. Explicit IOLS status controls when published; absence of mandatory code S11 is the fallback."],
+            ["Troop IOLS depth", "Counts IOLS-trained Scoutmasters and Assistant Scoutmasters as Gap, Fragile, or Preferred Depth. Explicit IOLS status controls when published; absence of mandatory code S11 is the fallback."],
             ["Troop Hazardous Weather coverage", "At least one direct-contact Troop leader has a recognizable Hazardous Weather date on or after the published data generated date."],
-            ["Overnight gap", "Either required roster-level signal is absent. Both signals must be present for the page to show Ready based on roster."],
+            ["Unknown", "The published Training-tab roster cannot support a leadership-depth classification for the unit. Unknown is not converted to Gap."],
+            ["Unit-Level Detail", "For Packs and Troops, the same status appears in the Camping Readiness KPI and Training Readiness row. A missing Training-tab unit match appears as Unknown; other unit types do not receive this KPI."],
         ],
         [3000, 6360],
     )
@@ -895,8 +898,8 @@ def build_doc():
             ["District Youth / TAY", "District youth divided by school TAY attributed to that district."],
             ["Program Youth / TAY", "Actual youth from units of the selected program divided by estimated grade/age-eligible school TAY."],
             ["Retention", "(Current members - members new in the prior 12 months) divided by same-month prior-year members; results above 100% are valid, and displayed values round to the nearest whole percent."],
-            ["Pack camping readiness", "BALOO depth is classified as zero (gap), one (fragile), or two-plus (preferred), alongside current direct-contact Hazardous Weather coverage."],
-            ["Troop camping readiness", "Applicable SM/ASM IOLS depth is classified as zero (gap), one (fragile), or two-plus (preferred), alongside current direct-contact Hazardous Weather coverage."],
+            ["Camping readiness", "Pack BALOO and applicable Troop SM/ASM IOLS depth are classified as Gap, Fragile, Preferred Depth, or Unknown; Hazardous Weather Current/Gap is a separate filter."],
+            ["Unit-Level camping readiness", "Pack/Troop Unit-Level Detail uses the same shared status; an unmatched Training-tab unit is Unknown rather than Gap."],
             ["Popcorn Participation", "Committed Popcorn unit rows divided by all Popcorn unit rows."],
             ["Registered commissioners", "Unique normalized commissioner names."],
             ["Unit commissioners", "Unique normalized people with at least one Unit Commissioner role."],

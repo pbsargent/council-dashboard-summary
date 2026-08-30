@@ -358,8 +358,10 @@ The Camping Readiness page reads `dashboard.training_people` from `data/latest.j
 | Hazardous Weather coverage | At least one direct-contact Pack leader row has a recognizable `hazardous_weather_expires` date on or after `generated_date` |
 | Gap | Zero BALOO-qualified leaders are recorded |
 | Fragile | Exactly one BALOO-qualified leader is recorded; this satisfies the Pack coverage signal but creates a single point of failure |
-| Preferred depth | Two or more BALOO-qualified leaders are recorded |
-| Action list | Packs with zero or one BALOO-qualified leader, plus any Pack with no current direct-contact Hazardous Weather record |
+| Preferred Depth | Two or more BALOO-qualified leaders are recorded |
+| Unknown | The published Training-tab roster cannot support a leadership-depth classification for the unit |
+| Displayed population | Every reviewed Pack, including Preferred Depth; the Status filter offers All statuses, Gap, Fragile, Preferred Depth, and Unknown |
+| Hazardous Weather filter | Independently offers All HW statuses, Current, and Gap; it can be combined with leadership-depth Status |
 
 The page shows all registered Pack positions when counting BALOO because the unit requirement is based on an attending registered leader, not only a direct-contact position. Hazardous Weather remains limited to direct-contact leaders because the published workbook field is `Hazardous Weather - DC Only`. The classifications measure roster depth; they do not prove who will attend or whether event-level two-deep, female-leader, or registration rules are satisfied.
 
@@ -375,8 +377,10 @@ The Troop Camping Readiness page applies the same district-plus-unit grouping to
 | Hazardous Weather coverage | At least one direct-contact Troop leader has a recognizable `hazardous_weather_expires` date on or after `generated_date` |
 | Gap | Zero IOLS-trained Scoutmasters or Assistant Scoutmasters are recorded |
 | Fragile | Exactly one IOLS-trained Scoutmaster or Assistant Scoutmaster is recorded |
-| Preferred depth | Two or more IOLS-trained Scoutmasters or Assistant Scoutmasters are recorded |
-| Action list | Troops with zero or one applicable IOLS-trained leader, plus any Troop with no current direct-contact Hazardous Weather record |
+| Preferred Depth | Two or more IOLS-trained Scoutmasters or Assistant Scoutmasters are recorded |
+| Unknown | The published Training-tab roster cannot support a leadership-depth classification for the unit |
+| Displayed population | Every reviewed Troop, including Preferred Depth; the Status filter offers All statuses, Gap, Fragile, Preferred Depth, and Unknown |
+| Hazardous Weather filter | Independently offers All HW statuses, Current, and Gap; it can be combined with leadership-depth Status |
 
 The daily builder publishes an explicit `iols_trained` value when the Training tab contains `IOLS Trained` (or the transitional `IOLA - Troops` header). When it is unavailable, the page infers status from the mandatory-training exception list: an applicable SM/ASM with `S11` still present is flagged as needing IOLS. Hazardous Weather retains the same direct-contact-only limitation described above.
 
@@ -455,6 +459,8 @@ Retention is calculated as `(current members - members new in the prior 12 month
 ## Unit-Level Detail Page
 
 The Unit-Level Detail page reads `data/unit-level-latest.js`, generated from the newest Unit Level Metrics workbook. Its direct `unit_type` field is the source of truth for the master program filter. Unit records expose the selected unit's health and growth metrics plus the published member-due-to-renew detail; long member tables remain inside a bounded, scrollable region on desktop and mobile and expand fully only for print.
+
+For Packs and Troops, the page also reads `dashboard.training_people` from `data/latest.json` and applies the same district-plus-unit join and `outdoor-readiness.js` classification used by the Camping Readiness pages. The KPI strip and Training Readiness panel both display Gap, Fragile, Preferred Depth, or Unknown. Pack status uses BALOO depth; Troop status uses IOLS-trained Scoutmaster/Assistant Scoutmaster depth. The KPI detail also reports the recorded qualification count and Hazardous Weather Current/Gap signal. If no matching Training-tab unit is found, the status is Unknown rather than Gap. Crews, Ships, and Posts do not display this camping-readiness KPI.
 
 The Unit Level Metrics workbook is a separate source from the main `Dashboard - CAC.xlsx` workbook. The two filename selectors must remain distinct even though both files live in the Council Dashboard Reports shared drive.
 
