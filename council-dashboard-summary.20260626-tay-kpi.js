@@ -808,6 +808,33 @@ function renderCoverage() {
   `).join("");
 }
 
+function renderOutdoorReadinessOverview() {
+  const target = document.getElementById("outdoorReadinessPanel");
+  if (!target) return;
+  const people = state.data.dashboard.training_people || [];
+  const definitions = [
+    ["Pack", "BALOO", "camping-readiness.html"],
+    ["Troop", "IOLS-trained SM/ASM", "troop-camping-readiness.html"],
+  ].filter(([unitType]) => ProgramFilter.isCouncil() || ProgramFilter.getType() === unitType);
+  const cards = definitions.map(([unitType, qualification, href]) => {
+    const units = CACOutdoorReadiness.buildUnits(people, unitType, state.data.generated_date);
+    const zero = units.filter((unit) => unit.qualificationCount === 0).length;
+    const one = units.filter((unit) => unit.qualificationCount === 1).length;
+    const depth = units.filter((unit) => unit.qualificationCount >= 2).length;
+    return `<article class="coverage-item">
+      <strong>${esc(unitType)} ${esc(qualification)} depth</strong>
+      <p><span class="status ${zero ? "bad" : "good"}">${n(zero)} gap</span> <span class="status ${one ? "warn" : "good"}">${n(one)} fragile</span> <span class="status good">${n(depth)} preferred</span></p>
+      <p><a class="detail-link" href="${esc(href)}">Open ${esc(unitType)} action list</a></p>
+    </article>`;
+  });
+  target.innerHTML = cards.join("") || '<div class="empty-state">BALOO and IOLS leadership depth apply to Packs and Troops.</div>';
+  const attention = definitions.reduce((sum, [unitType]) => {
+    const units = CACOutdoorReadiness.buildUnits(people, unitType, state.data.generated_date);
+    return sum + units.filter((unit) => unit.qualificationCount < 2).length;
+  }, 0);
+  document.getElementById("outdoorReadinessStatus").textContent = `${n(attention)} need depth follow-up`;
+}
+
 function renderCommissionerRows() {
   const rows = matchingCommissioners().sort((a, b) => {
     const districtCompare = String(a.district || "").localeCompare(String(b.district || ""));
@@ -899,6 +926,7 @@ function renderAll() {
   if (document.getElementById("districtRows")) renderDistrictRows();
   if (document.getElementById("priorityRows")) renderPriorityRows();
   if (document.getElementById("coverage")) renderCoverage();
+  if (document.getElementById("outdoorReadinessPanel")) renderOutdoorReadinessOverview();
   if (document.getElementById("commissionerRows")) renderCommissionerRows();
   if (document.getElementById("territoryGrid")) renderTerritory();
 }

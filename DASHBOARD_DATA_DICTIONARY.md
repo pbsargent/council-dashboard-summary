@@ -346,12 +346,14 @@ The Camping Readiness page reads `dashboard.training_people` from `data/latest.j
 
 | Readiness Item | Pack-level Formula |
 | --- | --- |
-| BALOO coverage | At least one registered Pack leader row has `baloo_expires` equal to `Yes` or another recognizable completion date |
+| BALOO leadership depth | Count of unique registered Pack leaders whose `baloo_expires` value is `Yes` or another recognizable completion date |
 | Hazardous Weather coverage | At least one direct-contact Pack leader row has a recognizable `hazardous_weather_expires` date on or after `generated_date` |
-| Overnight gap | BALOO coverage is absent, Hazardous Weather coverage is absent, or both are absent |
-| Ready based on roster | Both BALOO and current Hazardous Weather coverage are present |
+| Gap | Zero BALOO-qualified leaders are recorded |
+| Fragile | Exactly one BALOO-qualified leader is recorded; this satisfies the Pack coverage signal but creates a single point of failure |
+| Preferred depth | Two or more BALOO-qualified leaders are recorded |
+| Action list | Packs with zero or one BALOO-qualified leader, plus any Pack with no current direct-contact Hazardous Weather record |
 
-The page shows all registered Pack positions when looking for BALOO coverage because the unit requirement is based on an attending registered leader, not only a direct-contact position. Hazardous Weather remains limited to direct-contact leaders because the published workbook field is `Hazardous Weather - DC Only`. A Hazardous Weather-only flag therefore requires confirmation against the attending leadership roster before it is treated as final.
+The page shows all registered Pack positions when counting BALOO because the unit requirement is based on an attending registered leader, not only a direct-contact position. Hazardous Weather remains limited to direct-contact leaders because the published workbook field is `Hazardous Weather - DC Only`. The classifications measure roster depth; they do not prove who will attend or whether event-level two-deep, female-leader, or registration rules are satisfied.
 
 The page is a planning and follow-up aid. It does not confirm which leaders will attend a particular campout and does not replace council approval or Guide to Safe Scouting requirements.
 
@@ -361,12 +363,14 @@ The Troop Camping Readiness page applies the same district-plus-unit grouping to
 
 | Readiness Item | Troop-level Formula |
 | --- | --- |
-| IOLS coverage | At least one direct-contact Troop leader does not have mandatory code `S11` outstanding |
+| IOLS leadership depth | Count of unique Scoutmasters and Assistant Scoutmasters recorded as IOLS trained. An explicit `iols_trained` value controls when present; otherwise absence of mandatory code `S11` is the fallback signal. |
 | Hazardous Weather coverage | At least one direct-contact Troop leader has a recognizable `hazardous_weather_expires` date on or after `generated_date` |
-| Overnight gap | IOLS coverage is absent, Hazardous Weather coverage is absent, or both are absent |
-| Ready based on roster | Both the IOLS and current Hazardous Weather signals are present |
+| Gap | Zero IOLS-trained Scoutmasters or Assistant Scoutmasters are recorded |
+| Fragile | Exactly one IOLS-trained Scoutmaster or Assistant Scoutmaster is recorded |
+| Preferred depth | Two or more IOLS-trained Scoutmasters or Assistant Scoutmasters are recorded |
+| Action list | Troops with zero or one applicable IOLS-trained leader, plus any Troop with no current direct-contact Hazardous Weather record |
 
-IOLS status is inferred from the mandatory-training exception list because the published training row does not include a separate IOLS completion field. This follows the existing SYT detail-page logic, where direct-contact Troop leaders with `S11` still present are flagged as needing IOLS. Hazardous Weather retains the same direct-contact-only limitation described above.
+The daily builder publishes an explicit `iols_trained` value when the Training tab contains `IOLS Trained` (or the transitional `IOLA - Troops` header). When it is unavailable, the page infers status from the mandatory-training exception list: an applicable SM/ASM with `S11` still present is flagged as needing IOLS. Hazardous Weather retains the same direct-contact-only limitation described above.
 
 The Troop page is a roster-readiness and training follow-up aid. IOLS is required for Scoutmasters and Assistant Scoutmasters to be position-trained; the page does not represent campout approval or replace attendance-specific leadership checks.
 
@@ -382,13 +386,13 @@ Readiness logic:
 | --- | --- |
 | SYT | Required for direct-contact leaders; missing or expired date is an issue |
 | Hazardous Weather | Required for direct-contact leaders; missing or expired date is an issue |
-| BALOO | Required only when direct-contact leader is in a Pack; missing or expired BALOO date is an issue |
-| IOLS | Required only when direct-contact leader is in a Troop; the page flags an IOLS issue when mandatory code `S11` remains present |
+| BALOO | Informational person-level qualification for Pack leaders; missing BALOO is not an individual issue because Pack coverage is evaluated at unit level |
+| IOLS | Required for Scoutmaster and Assistant Scoutmaster rows; explicit IOLS status is used when present, otherwise mandatory code `S11` is the fallback |
 
 Display behavior:
 
 - When the SYT page is filtered to `All leaders`, existing SYT or safety dates are displayed even for non-direct-contact rows.
-- Missing SYT, Hazardous Weather, BALOO, or IOLS fields are flagged as issues only when the item is required by the direct-contact/unit-type logic above.
+- Missing SYT, Hazardous Weather, or applicable IOLS fields are flagged as person-level issues. BALOO is displayed as a recorded qualification and evaluated as a Pack-level depth measure.
 - For non-direct-contact rows with no required date, the page displays `n/a`.
 
 The code names displayed on the SYT page come from the workbook `Training Codes` tab. For example, the page looks up `Y01`, `SCO_800`, `C32`, and `S11` to display course names when available.
@@ -400,9 +404,9 @@ SYT page KPI formulas:
 | DC Leaders | Count where `direct_contact === true` |
 | SYT Current | Filtered SYT rows with a non-missing, non-expired expiration date divided by all filtered SYT rows; upcoming 0-90 day expirations remain current but are included in Needs Review |
 | HW Current | Direct-contact rows without a Hazardous Weather issue divided by direct-contact rows |
-| BALOO Issues | Direct-contact Pack rows with missing or expired BALOO |
-| IOLS Issues | Direct-contact Troop rows with mandatory code `S11` still present |
-| Any Issue | Direct-contact rows with at least one SYT, Hazardous Weather, BALOO, or IOLS issue |
+| BALOO Recorded | Pack leader rows with BALOO recorded; unit-level depth is reported separately |
+| IOLS Issues | Scoutmaster and Assistant Scoutmaster rows lacking an explicit IOLS completion or retaining mandatory code `S11` |
+| Any Issue | Applicable rows with at least one SYT, Hazardous Weather, or IOLS issue |
 
 ## Unit Metrics Detail Page
 

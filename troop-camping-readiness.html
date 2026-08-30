@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
   <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
-  <link rel="stylesheet" href="camping-readiness.css?v=20260813-camping-readiness-1">
+  <link rel="stylesheet" href="camping-readiness.css?v=20260830-leadership-depth-1">
   <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
 </head>
 <body data-page="troop-camping-readiness">
@@ -30,7 +30,7 @@
         <div>
           <p class="eyebrow">People &amp; Readiness</p>
           <h1>Troop Camping Readiness <span class="title-data-date" id="titleDataDate"></span></h1>
-          <p class="lede">Troops without recorded leadership coverage for IOLS, current Hazardous Weather training, or both.</p>
+          <p class="lede">IOLS leadership depth and current Hazardous Weather roster signals for Troop outdoor planning.</p>
         </div>
         <div class="hero-actions">
           <a class="detail-link" href="training.html">Open Leader Training Detail</a>
@@ -42,8 +42,8 @@
       <section class="readiness-policy" aria-label="Troop training readiness context">
         <div>
           <p class="section-kicker">Troop leadership readiness</p>
-          <strong>Scoutmasters and Assistant Scoutmasters require IOLS to be position-trained, and at least one attending leader must have current Hazardous Weather training.</strong>
-          <p>This page treats a Troop as roster-ready when at least one direct-contact leader has no outstanding S11 IOLS requirement and at least one has current Hazardous Weather training. It is not campout approval.</p>
+          <strong>IOLS is a position-training requirement for Scoutmasters and Assistant Scoutmasters; two or more recorded IOLS-trained leaders provide preferred continuity.</strong>
+          <p>The IOLS count is a leadership-depth signal, not a national minimum number of IOLS-trained adults for a campout. Two-deep leadership and actual attendance remain event-level checks.</p>
         </div>
         <div class="readiness-policy-links">
           <a href="https://www.scouting.org/wp-content/uploads/2025/10/Position-Trained-Requirements-Oct2025.pdf" target="_blank" rel="noreferrer">Position-Trained Requirements <span aria-hidden="true">↗</span></a>
@@ -59,18 +59,19 @@
           <select id="districtSelect"></select>
         </label>
         <label class="control">
-          <span>Training gap</span>
-          <select id="gapSelect">
-            <option value="">Any missing requirement</option>
-            <option value="both">Both missing</option>
-            <option value="iols">IOLS gap</option>
+          <span>Readiness signal</span>
+          <select id="statusSelect">
+            <option value="">Any action needed</option>
+            <option value="gap">No IOLS-trained SM/ASM</option>
+            <option value="fragile">One IOLS-trained SM/ASM — fragile</option>
             <option value="hazard">Hazardous Weather gap</option>
+            <option value="multiple">IOLS and HW gaps</option>
           </select>
         </label>
         <label class="control">
           <span>Sort</span>
           <select id="sortSelect">
-            <option value="severity">Most training missing</option>
+            <option value="severity">Highest attention first</option>
             <option value="district">District and troop</option>
             <option value="leaders">Fewest registered leaders</option>
           </select>
@@ -86,21 +87,21 @@
           <div>
             <p class="section-kicker">Troop-level action list</p>
             <div class="panel-title-row">
-              <h2 id="readinessTableTitle">Troops Missing Camping Leadership Coverage</h2>
-              <button class="panel-help" type="button" aria-label="Troop camping readiness source help" title="Source: Council dashboard workbook Training tab. IOLS coverage is inferred for direct-contact Troop leaders when mandatory code S11 is no longer outstanding. Hazardous Weather coverage uses current dates published for direct-contact leaders. Troops are flagged when either roster-level signal has no recorded coverage.">?</button>
+              <h2 id="readinessTableTitle">Troop Outdoor Leadership Action List</h2>
+              <button class="panel-help" type="button" aria-label="Troop camping readiness source help" title="Source: Council dashboard workbook Training tab. IOLS depth counts unique Scoutmasters and Assistant Scoutmasters. An explicit IOLS field is used when published; otherwise status is inferred when mandatory code S11 is no longer outstanding. Hazardous Weather uses current direct-contact dates.">?</button>
             </div>
           </div>
           <span class="count-pill" id="troopCount" aria-live="polite"></span>
         </div>
-        <p class="subtle readiness-source-note">IOLS is inferred from the absence of mandatory code S11, and Hazardous Weather is published as a direct-contact-only field. Confirm attending leaders' records before treating a flag as final.</p>
+        <p class="subtle readiness-source-note">The action list shows Troops with zero or one IOLS-trained Scoutmaster or Assistant Scoutmaster, plus any Troop without a current direct-contact Hazardous Weather record. When an explicit IOLS field is unavailable, the dashboard uses the absence of S11 as its fallback signal.</p>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th>District</th>
                 <th>Troop</th>
-                <th>Missing</th>
-                <th>IOLS Coverage</th>
+                <th>Status</th>
+                <th>IOLS Leadership Depth</th>
                 <th>Hazardous Weather Coverage</th>
                 <th>Recommended Action</th>
               </tr>
@@ -115,6 +116,7 @@
   <script src="site-navigation.js?v=20260827-commissioner-nav-1"></script>
   <script src="panel-help.js?v=20260630-active-help"></script>
   <script src="report-problem.js?v=20260712"></script>
-  <script src="troop-camping-readiness.js?v=20260813-troop-readiness-1"></script>
+  <script src="outdoor-readiness.js?v=20260830-leadership-depth-1"></script>
+  <script src="troop-camping-readiness.js?v=20260830-leadership-depth-1"></script>
 </body>
 </html>

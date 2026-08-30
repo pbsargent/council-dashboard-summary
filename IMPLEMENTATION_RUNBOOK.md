@@ -72,8 +72,8 @@ That repository is a small static portal into the Council Dashboard Summary and 
 
 Future builds and publishes must preserve these two data-driven detail pages:
 
-- `camping-readiness.html`: **Pack Camping Readiness**, using BALOO and current Hazardous Weather roster coverage.
-- `troop-camping-readiness.html`: **Troop Camping Readiness**, using the absence of mandatory code `S11` as the published IOLS readiness signal plus current Hazardous Weather roster coverage.
+- `camping-readiness.html`: **Pack Camping Readiness**, using zero/one/two-plus BALOO leadership depth and current Hazardous Weather roster coverage.
+- `troop-camping-readiness.html`: **Troop Camping Readiness**, using zero/one/two-plus IOLS-trained Scoutmaster/Assistant Scoutmaster depth plus current Hazardous Weather roster coverage. An explicit IOLS field controls when present; otherwise the absence of mandatory code `S11` is the fallback signal.
 
 Both pages belong under **People & Readiness**, after Training and SYT. Commissioner Portal belongs under **Overview**, before Council Comparison. The camping-readiness pages must not be moved back under Unit Health & Renewal. Their page eyebrow and back link must continue to identify `people.html` as the parent page.
 
@@ -409,8 +409,9 @@ After any refresh or rebuild, check:
 - Council youth, units, training rows, commissioner rows, prospects, renewals, school rows, and Popcorn participation counts are plausible.
 - Home page loads without JavaScript errors.
 - Training, SYT, monday.com, Popcorn, unit metrics, and membership detail pages load.
-- Pack Camping Readiness and Troop Camping Readiness load, remain under People & Readiness, and read the current `dashboard.training_people` snapshot.
-- Pack Camping Readiness continues to evaluate BALOO plus current Hazardous Weather coverage; Troop Camping Readiness continues to evaluate the IOLS `S11` signal plus current Hazardous Weather coverage.
+- Pack Camping Readiness and Troop Camping Readiness load, remain under People & Readiness, and read the current `dashboard.training_people` snapshot through `outdoor-readiness.js`.
+- Both pages classify qualification depth as zero (gap), one (fragile), or two-plus (preferred). Pack Camping Readiness evaluates BALOO plus current Hazardous Weather coverage; Troop Camping Readiness evaluates applicable SM/ASM IOLS status plus current Hazardous Weather coverage.
+- Neither page represents campout approval or claims that roster data proves two-deep, female-leader, registration, or actual-attendance compliance.
 - Renewal board page loads, honors light/dark mode, and links back to the Council Summary page.
 - Panel `?` controls display active help popovers on hover, focus, or click/tap.
 - Service Area and District filters both populate and work on the home page, Training, SYT, Unit Metrics, Membership, monday.com detail, Popcorn, and Commissioner Dashboard.

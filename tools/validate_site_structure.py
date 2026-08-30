@@ -115,6 +115,7 @@ NAVIGATION_HIERARCHY = {
 REQUIRED_ASSETS = (
     "cac-theme.css",
     "site-navigation.js",
+    "outdoor-readiness.js",
     "assets/cac-logo-horizontal.png",
     "assets/cac-topo-navy.webp",
     "assets/fonts/Figtree-Variable.ttf",
@@ -247,6 +248,8 @@ def main() -> int:
             errors.append("help.html: missing Volunteers measure definition")
         if "<dt>Connections (12 Mo.)</dt>" not in help_source:
             errors.append("help.html: missing Connections (12 Mo.) measure definition")
+        if "<dt>Outdoor Leadership Depth</dt>" not in help_source:
+            errors.append("help.html: missing Outdoor Leadership Depth measure definition")
 
     for relative, page_key in DETAIL_PAGES.items():
         path = root / relative
@@ -269,6 +272,48 @@ def main() -> int:
                 errors.append(
                     f"{relative}: missing parent link {expected_label!r} -> {expected_href!r}"
                 )
+
+    readiness_asset_version = "20260830-leadership-depth-1"
+    readiness_pages = (
+        "camping-readiness.html",
+        "troop-camping-readiness.html",
+        "training.html",
+        "syt.html",
+        "people.html",
+        "unit-level.html",
+    )
+    for relative in readiness_pages:
+        path = root / relative
+        if not path.is_file():
+            continue
+        expected = f"outdoor-readiness.js?v={readiness_asset_version}"
+        if expected not in parse_page(path).scripts:
+            errors.append(f"{relative}: missing shared outdoor-readiness script {expected!r}")
+
+    readiness_path = root / "outdoor-readiness.js"
+    if readiness_path.is_file():
+        readiness_source = readiness_path.read_text(encoding="utf-8")
+        for required in (
+            'if (count <= 0)',
+            'if (count === 1)',
+            'qualificationRows.length < 2',
+            'row?.iols_trained',
+            'includes("S11")',
+        ):
+            if required not in readiness_source:
+                errors.append(f"outdoor-readiness.js: missing leadership-depth contract {required!r}")
+
+    for relative, forbidden in {
+        "camping-readiness.html": "Packs Missing Camping Leadership Coverage",
+        "troop-camping-readiness.html": "Troops Missing Camping Leadership Coverage",
+    }.items():
+        path = root / relative
+        if path.is_file() and forbidden in path.read_text(encoding="utf-8"):
+            errors.append(f"{relative}: legacy binary camping-readiness language remains")
+
+    syt_detail_path = root / "syt-detail.js"
+    if syt_detail_path.is_file() and 'if (baloo.issue) issues.push("BALOO")' in syt_detail_path.read_text(encoding="utf-8"):
+        errors.append("syt-detail.js: BALOO must not be counted as an individual leader issue")
 
     fall_page_path = root / "fall-recruitment.html"
     fall_script_path = root / "fall-recruitment.js"

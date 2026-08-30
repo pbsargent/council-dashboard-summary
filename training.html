@@ -73,10 +73,10 @@
           <span>BALOO</span>
           <select id="balooSelect">
             <option value="">All statuses</option>
-            <option value="issue">Needs review</option>
-            <option value="current">Current</option>
-            <option value="required">Required</option>
-            <option value="not-required">Not required</option>
+            <option value="issue">Not recorded</option>
+            <option value="current">Recorded</option>
+            <option value="required">Pack leaders</option>
+            <option value="not-required">Not applicable</option>
           </select>
         </label>
         <label class="control">
@@ -125,10 +125,10 @@
         <section class="panel training-chart-panel" aria-labelledby="balooChartTitle">
           <div class="panel-head compact">
             <div>
-              <p class="section-kicker">Pack direct-contact safety</p>
+              <p class="section-kicker">Pack qualification</p>
               <div class="panel-title-row">
                 <h2 id="balooChartTitle">BALOO</h2>
-                <button class="panel-help" type="button" aria-label="BALOO source help" title="Source: Training tab BALOO - Pack date. Required for direct-contact pack leaders; missing or expired dates are flagged.">?</button>
+                <button class="panel-help" type="button" aria-label="BALOO source help" title="Source: Training tab BALOO - Pack value. This person-level view shows whether BALOO is recorded; Pack-level coverage and leadership depth are evaluated on Pack Camping Readiness.">?</button>
               </div>
             </div>
           </div>
@@ -141,7 +141,7 @@
               <p class="section-kicker">Troop direct-contact safety</p>
               <div class="panel-title-row">
                 <h2 id="iolsChartTitle">IOLS</h2>
-                <button class="panel-help" type="button" aria-label="IOLS source help" title="Source: Training tab mandatory code S11. Direct-contact troop leaders with S11 still required are flagged as IOLS needs review.">?</button>
+                <button class="panel-help" type="button" aria-label="IOLS source help" title="Source: Training tab. Scoutmaster and Assistant Scoutmaster IOLS status uses an explicit IOLS field when available and otherwise falls back to mandatory code S11.">?</button>
               </div>
             </div>
           </div>
@@ -231,7 +231,8 @@
   <script src="program-filter.js?v=20260717-master-filter-3"></script>
   <script src="panel-help.js?v=20260630-active-help"></script>
   <script src="report-problem.js?v=20260712"></script>
-  <script src="training-detail.js?v=20260823-complete-scroll-lists-1"></script>
+  <script src="outdoor-readiness.js?v=20260830-leadership-depth-1"></script>
+  <script src="training-detail.js?v=20260830-leadership-depth-1"></script>
   <script src="back-context.js?v=20260627-back-context"></script>
 </body>
 </html>

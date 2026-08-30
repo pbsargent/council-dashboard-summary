@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
   <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
-  <link rel="stylesheet" href="camping-readiness.css?v=20260813-camping-readiness-1">
+  <link rel="stylesheet" href="camping-readiness.css?v=20260830-leadership-depth-1">
   <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
 </head>
 <body data-page="camping-readiness">
@@ -30,7 +30,7 @@
         <div>
           <p class="eyebrow">People &amp; Readiness</p>
           <h1>Pack Camping Readiness <span class="title-data-date" id="titleDataDate"></span></h1>
-          <p class="lede">Packs without recorded leadership coverage for BALOO, current Hazardous Weather training, or both.</p>
+          <p class="lede">BALOO leadership depth and current Hazardous Weather roster signals for Pack overnight planning.</p>
         </div>
         <div class="hero-actions">
           <a class="detail-link" href="training.html">Open Leader Training Detail</a>
@@ -42,8 +42,8 @@
       <section class="readiness-policy" aria-label="Camping readiness policy context">
         <div>
           <p class="section-kicker">Unit-coordinated overnight camping</p>
-          <strong>At least one attending leader must be BALOO trained, and at least one attending leader must have current Hazardous Weather training.</strong>
-          <p>This is a roster-readiness flag, not campout approval. Council- or district-organized events may provide leadership differently.</p>
+          <strong>One attending BALOO-trained leader provides required Pack overnight coverage; two or more recorded leaders provide preferred continuity.</strong>
+          <p>Two-deep leadership, female-leader requirements, registration, and actual attendance are separate event-level checks. This roster view is not campout approval.</p>
         </div>
         <a href="https://www.scouting.org/health-and-safety/gss/gss03/" target="_blank" rel="noreferrer">Guide to Safe Scouting <span aria-hidden="true">↗</span></a>
       </section>
@@ -56,18 +56,19 @@
           <select id="districtSelect"></select>
         </label>
         <label class="control">
-          <span>Training gap</span>
-          <select id="gapSelect">
-            <option value="">Any missing requirement</option>
-            <option value="both">Both missing</option>
-            <option value="baloo">BALOO gap</option>
+          <span>Readiness signal</span>
+          <select id="statusSelect">
+            <option value="">Any action needed</option>
+            <option value="gap">No BALOO</option>
+            <option value="fragile">One BALOO — fragile</option>
             <option value="hazard">Hazardous Weather gap</option>
+            <option value="multiple">BALOO and HW gaps</option>
           </select>
         </label>
         <label class="control">
           <span>Sort</span>
           <select id="sortSelect">
-            <option value="severity">Most training missing</option>
+            <option value="severity">Highest attention first</option>
             <option value="district">District and pack</option>
             <option value="leaders">Fewest registered leaders</option>
           </select>
@@ -83,21 +84,21 @@
           <div>
             <p class="section-kicker">Pack-level action list</p>
             <div class="panel-title-row">
-              <h2 id="readinessTableTitle">Packs Missing Camping Leadership Coverage</h2>
-              <button class="panel-help" type="button" aria-label="Camping readiness source help" title="Source: Council dashboard workbook Training tab. BALOO coverage uses any registered Pack leader with BALOO recorded. Hazardous Weather coverage uses current dates published for direct-contact leaders. Packs are flagged when either roster-level requirement has no recorded coverage.">?</button>
+              <h2 id="readinessTableTitle">Pack Outdoor Leadership Action List</h2>
+              <button class="panel-help" type="button" aria-label="Camping readiness source help" title="Source: Council dashboard workbook Training tab. BALOO depth counts unique registered Pack leaders with BALOO recorded. Zero is a coverage gap, one is fragile coverage, and two or more is preferred depth. Hazardous Weather uses current dates published for direct-contact leaders.">?</button>
             </div>
           </div>
           <span class="count-pill" id="packCount" aria-live="polite"></span>
         </div>
-        <p class="subtle readiness-source-note">Hazardous Weather is published as a direct-contact-only field. Confirm other attending leaders' records before treating a Hazardous Weather-only flag as final.</p>
+        <p class="subtle readiness-source-note">The action list shows Packs with zero or one BALOO-qualified leader, plus any Pack without a current direct-contact Hazardous Weather record. Confirm the actual attending roster before treating any result as final.</p>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th>District</th>
                 <th>Pack</th>
-                <th>Missing</th>
-                <th>BALOO Coverage</th>
+                <th>Status</th>
+                <th>BALOO Leadership Depth</th>
                 <th>Hazardous Weather Coverage</th>
                 <th>Recommended Action</th>
               </tr>
@@ -112,6 +113,7 @@
   <script src="site-navigation.js?v=20260827-commissioner-nav-1"></script>
   <script src="panel-help.js?v=20260630-active-help"></script>
   <script src="report-problem.js?v=20260712"></script>
-  <script src="camping-readiness.js?v=20260813-camping-readiness-1"></script>
+  <script src="outdoor-readiness.js?v=20260830-leadership-depth-1"></script>
+  <script src="camping-readiness.js?v=20260830-leadership-depth-1"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-const state = { data: null, unit: null };
+const state = { data: null, readinessData: null, outdoorUnits: { Pack: [], Troop: [] }, unit: null };
 const fmt = new Intl.NumberFormat("en-US");
 const pct = new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 0 });
 const signed = new Intl.NumberFormat("en-US", { signDisplay: "always", maximumFractionDigits: 0 });
@@ -100,7 +100,18 @@ function renderTraining() {
     ["All adult leaders", training.all_leaders_trained_rate],
     ["SYT compliance", training.syt_compliance_rate],
   ];
-  document.getElementById("trainingRows").innerHTML = rows.map(([label, value]) => `<div class="metric-row"><strong>${esc(label)}</strong><div class="metric-value"><span>${p(value)}</span><div class="rate-bar" aria-hidden="true"><span style="width:${Math.max(0, Math.min(100, (value || 0) * 100))}%"></span></div></div></div>`).join("");
+  const rateRows = rows.map(([label, value]) => `<div class="metric-row"><strong>${esc(label)}</strong><div class="metric-value"><span>${p(value)}</span><div class="rate-bar" aria-hidden="true"><span style="width:${Math.max(0, Math.min(100, (value || 0) * 100))}%"></span></div></div></div>`).join("");
+  const readiness = CACOutdoorReadiness.findUnit(state.outdoorUnits[unit.unit_type] || [], unit.district, unit.name);
+  let outdoorRow = "";
+  if (["Pack", "Troop"].includes(unit.unit_type)) {
+    const qualification = unit.unit_type === "Pack" ? "BALOO" : "IOLS-trained SM/ASM";
+    const status = readiness?.depthStatus || { label: "Source record unavailable", tone: "warn" };
+    const detail = readiness
+      ? `${n(readiness.qualificationCount)} recorded · ${readiness.missingHazardousWeather ? "no current HW record" : `${n(readiness.hazardousWeatherCount)} current HW`}`
+      : "No matching Training-tab roster was found for this unit.";
+    outdoorRow = `<div class="metric-row"><div><strong>${esc(qualification)} leadership depth</strong><p>${esc(detail)}</p></div><span class="status ${status.tone}">${esc(status.label)}</span></div>`;
+  }
+  document.getElementById("trainingRows").innerHTML = rateRows + outdoorRow;
 }
 
 function renderRenewal() {
@@ -132,12 +143,20 @@ function renderProfile() {
 function renderAll() { renderHero(); renderKpis(); renderDrivers(); renderTraining(); renderRenewal(); renderProfile(); }
 
 async function init() {
+  const readinessPromise = fetch("data/latest.json", { cache: "no-store" });
   if (window.UNIT_LEVEL_DATA) {
     state.data = window.UNIT_LEVEL_DATA;
   } else {
     const response = await fetch("data/unit-level-latest.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`Unable to load unit dashboard data: ${response.status}`);
-  state.data = await response.json();
+    state.data = await response.json();
+  }
+  const readinessResponse = await readinessPromise;
+  if (readinessResponse.ok) {
+    state.readinessData = await readinessResponse.json();
+    const people = state.readinessData.dashboard?.training_people || [];
+    state.outdoorUnits.Pack = CACOutdoorReadiness.buildUnits(people, "Pack", state.readinessData.generated_date);
+    state.outdoorUnits.Troop = CACOutdoorReadiness.buildUnits(people, "Troop", state.readinessData.generated_date);
   }
   document.getElementById("generatedDate").textContent = `Data ${dateLabel(state.data.data_date)}`;
   document.getElementById("printSource").textContent = `Source: ${state.data.source.name} · ${state.data.source.sheets.join(", ")}`;

@@ -160,18 +160,22 @@ function completionOrDateStatus(value, required = true) {
 function safetyReadiness(row) {
   const direct = isYes(row.direct_contact);
   const hazard = dateStatus(row.hazardous_weather_expires, direct);
-  const balooRequired = direct && isPack(row);
-  const baloo = completionOrDateStatus(row.baloo_expires, balooRequired);
-  const iolsRequired = direct && isTroop(row);
-  const iolsMissing = iolsRequired && hasCode(row, "S11");
+  const balooRequired = isPack(row);
+  const balooRecorded = CACOutdoorReadiness.hasBaloo(row);
+  const baloo = {
+    label: balooRequired ? (balooRecorded ? "Recorded" : "Not recorded") : "Not applicable",
+    tone: balooRequired ? (balooRecorded ? "good" : "warn") : "warn",
+    issue: balooRequired && !balooRecorded,
+  };
+  const iolsRequired = CACOutdoorReadiness.isIolsPosition(row);
+  const iolsMissing = iolsRequired && !CACOutdoorReadiness.hasIols(row);
   const iols = {
-    label: iolsRequired ? (iolsMissing ? `Missing ${codeLabel("S11")}` : `No ${codeLabel("S11")} gap`) : "Not required",
+    label: iolsRequired ? (iolsMissing ? `Missing ${codeLabel("S11")}` : "IOLS recorded") : "Not applicable",
     tone: iolsRequired ? (iolsMissing ? "bad" : "good") : "warn",
     issue: iolsMissing,
   };
   const issues = [];
   if (hazard.issue) issues.push("HW");
-  if (baloo.issue) issues.push("BALOO");
   if (iols.issue) issues.push("IOLS/S11");
   return { direct, hazard, baloo, iols, issues, balooRequired, iolsRequired };
 }
@@ -248,7 +252,6 @@ function currentSafetyPeople() {
     ].join(" ").toLowerCase();
 
     return ProgramFilter.matchesUnitType(row.unit_type)
-      && readiness.direct
       && (!district || row.district === district)
       && (!unitType || row.unit_type === unitType)
       && (!q || haystack.includes(q));
@@ -268,7 +271,7 @@ function summarize(rows) {
 
 function summarizeSafety(rows) {
   const direct = rows.filter((row) => safetyReadiness(row).direct).length;
-  const hazardCurrent = rows.filter((row) => !safetyReadiness(row).hazard.issue).length;
+  const hazardCurrent = rows.filter((row) => safetyReadiness(row).direct && !safetyReadiness(row).hazard.issue).length;
   const balooRequired = rows.filter((row) => safetyReadiness(row).balooRequired).length;
   const balooIssues = rows.filter((row) => safetyReadiness(row).baloo.issue).length;
   const iolsRequired = rows.filter((row) => safetyReadiness(row).iolsRequired).length;
@@ -324,8 +327,8 @@ function renderKpis() {
     ["Expires 31-90", n(summary.next90), "Upcoming renewal watch list", summary.next90 ? "warning" : "good"],
     ["Needs Review", n(issueCount), activeIssue ? "Rows matching the selected filter" : "Expired, missing, or expiring in 90 days", issueCount ? "danger" : "good"],
     ["Hazardous Weather", p(safety.hazardCurrent / Math.max(1, safety.direct)), `${n(safety.direct - safety.hazardCurrent)} direct-contact issues`, safety.direct - safety.hazardCurrent ? "danger" : "good"],
-    ["BALOO Issues", n(safety.balooIssues), `${n(safety.balooRequired)} pack direct-contact leaders`, safety.balooIssues ? "danger" : "good"],
-    ["IOLS Issues", n(safety.iolsIssues), `${n(safety.iolsRequired)} troop direct-contact leaders`, safety.iolsIssues ? "warning" : "good"],
+    ["BALOO Recorded", n(safety.balooRequired - safety.balooIssues), `${n(safety.balooRequired)} Pack leader rows`, "good"],
+    ["IOLS Issues", n(safety.iolsIssues), `${n(safety.iolsRequired)} Scoutmaster/ASM rows`, safety.iolsIssues ? "warning" : "good"],
   ];
 
   document.getElementById("sytKpis").innerHTML = tiles.map(([label, value, sub, tone]) => `
@@ -454,7 +457,7 @@ function renderSignals() {
     [`${n(summary.expired)} expired`, "Rows flagged as expired in the workbook SYT tab."],
     [`${n(summary.next30)} expire in 0-30 days`, "Near-term renewals that are not expired yet."],
     [`${n(summary.next90)} expire in 31-90 days`, "Upcoming renewals to watch before they become urgent."],
-    [`Outdoor safety`, `${n(safety.direct - safety.hazardCurrent)} HW, ${n(safety.balooIssues)} BALOO, and ${n(safety.iolsIssues)} IOLS issues among filtered direct-contact leaders.`],
+    [`Outdoor safety`, `${n(safety.direct - safety.hazardCurrent)} Hazardous Weather and ${n(safety.iolsIssues)} IOLS position-training issues; ${n(safety.balooRequired - safety.balooIssues)} BALOO qualifications are recorded.`],
     [`Top follow-up`, issueRows.map((row) => `${row.name} (${sytStatus(row).label})`).join(", ") || "No SYT rows need review in this view."],
   ];
 

@@ -161,12 +161,18 @@ function completionOrDateStatus(value, required = true) {
 function safetyReadiness(row) {
   const direct = yes(row.direct_contact);
   const hazard = dateStatus(row.hazardous_weather_expires, direct);
-  const balooRequired = direct && isPack(row);
-  const baloo = completionOrDateStatus(row.baloo_expires, balooRequired);
-  const iolsRequired = direct && isTroop(row);
-  const iolsMissing = iolsRequired && hasCode(row, "S11");
+  const balooRequired = isPack(row);
+  const balooRecorded = CACOutdoorReadiness.hasBaloo(row);
+  const baloo = {
+    label: balooRequired ? (balooRecorded ? "Recorded" : "Not recorded") : "Not applicable",
+    tone: balooRequired ? (balooRecorded ? "good" : "warn") : "warn",
+    issue: balooRequired && !balooRecorded,
+    required: balooRequired,
+  };
+  const iolsRequired = CACOutdoorReadiness.isIolsPosition(row);
+  const iolsMissing = iolsRequired && !CACOutdoorReadiness.hasIols(row);
   const iols = {
-    label: iolsRequired ? (iolsMissing ? `Missing ${codeLabel("S11")}` : `No ${codeLabel("S11")} gap`) : "Not required",
+    label: iolsRequired ? (iolsMissing ? `Missing ${codeLabel("S11")}` : "IOLS recorded") : "Not applicable",
     tone: iolsRequired ? (iolsMissing ? "bad" : "good") : "warn",
     issue: iolsMissing,
     required: iolsRequired,
@@ -280,8 +286,8 @@ function renderKpis() {
     ["Direct Contact", n(summary.direct), "Direct Contact = YES", "warning"],
     ["DC Trained", p(summary.directTrained / Math.max(1, summary.direct)), `${n(summary.directUntrained)} need training`, summary.directUntrained ? "danger" : "good"],
     ["HW Issues", n(summary.hazardIssues), "Direct-contact leaders", summary.hazardIssues ? "danger" : "good"],
-    ["BALOO Issues", n(summary.balooIssues), `${n(summary.balooRequired)} pack DC leaders`, summary.balooIssues ? "danger" : "good"],
-    ["IOLS Issues", n(summary.iolsIssues), `${n(summary.iolsRequired)} troop DC leaders`, summary.iolsIssues ? "warning" : "good"],
+    ["BALOO Recorded", n(summary.balooRequired - summary.balooIssues), `${n(summary.balooRequired)} Pack leader rows`, "good"],
+    ["IOLS Issues", n(summary.iolsIssues), `${n(summary.iolsRequired)} Scoutmaster/ASM rows`, summary.iolsIssues ? "warning" : "good"],
     ["Shown", n(currentPeople().length), "After filters", "teal"],
   ];
 
@@ -352,7 +358,7 @@ function renderTrainingDonut() {
   `;
 }
 
-function renderSafetyDonut(key, targetId, label, issueLabel) {
+function renderSafetyDonut(key, targetId, label, issueLabel, currentLabel = "Current") {
   const rows = currentPeople({ ignoreSafety: key });
   const summary = summarize(rows);
   const required = summary[`${key}Required`];
@@ -374,13 +380,13 @@ function renderSafetyDonut(key, targetId, label, issueLabel) {
         </svg>
         <div class="donut-center">
           <strong>${esc(p(currentPct))}</strong>
-          <span>current</span>
+          <span>${esc(currentLabel.toLowerCase())}</span>
         </div>
       </div>
       <div class="donut-legend">
         <div class="legend-row">
           <span class="legend-swatch trained"></span>
-          <span>Current</span>
+          <span>${esc(currentLabel)}</span>
           <strong>${esc(n(current))}</strong>
         </div>
         <div class="legend-row">
@@ -443,8 +449,8 @@ function renderSignals() {
   const cards = [
     [`${n(summary.directUntrained)} direct-contact leaders not trained`, `${p(summary.directTrained / Math.max(1, summary.direct))} direct-contact completion in the filtered view.`],
     [`${n(summary.hazardIssues)} Hazardous Weather issues`, `${p((summary.hazardRequired - summary.hazardIssues) / Math.max(1, summary.hazardRequired))} current among required direct-contact leaders.`],
-    [`${n(summary.balooIssues)} BALOO issues`, `${n(summary.balooRequired)} pack direct-contact leaders require BALOO.`],
-    [`${n(summary.iolsIssues)} IOLS issues`, `${n(summary.iolsRequired)} troop direct-contact leaders require IOLS.`],
+    [`${n(summary.balooRequired - summary.balooIssues)} BALOO qualifications recorded`, `${n(summary.balooRequired)} Pack leader rows are shown; unit coverage is evaluated on the Pack readiness page.`],
+    [`${n(summary.iolsIssues)} IOLS issues`, `${n(summary.iolsRequired)} Scoutmaster and Assistant Scoutmaster rows require IOLS.`],
     [`Top follow-up`, directUntrained.map((row) => row.name).filter(Boolean).join(", ") || "No direct-contact training gaps in the filtered view."],
   ];
 
@@ -485,7 +491,7 @@ function renderAll() {
   renderKpis();
   renderTrainingDonut();
   renderSafetyDonut("hazard", "hazardDonut", "Hazardous Weather", "Needs review");
-  renderSafetyDonut("baloo", "balooDonut", "BALOO", "Needs review");
+  renderSafetyDonut("baloo", "balooDonut", "BALOO", "Not recorded", "Recorded");
   renderSafetyDonut("iols", "iolsDonut", "IOLS", "Needs review");
   renderDistrictRows();
   renderSignals();
