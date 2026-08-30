@@ -23,6 +23,27 @@ function metricStatus(metric) {
   return ["Priority attention", "danger"];
 }
 
+function outdoorSummary(unit) {
+  if (!["Pack", "Troop"].includes(unit.unit_type)) return null;
+  const readiness = CACOutdoorReadiness.findUnit(state.outdoorUnits[unit.unit_type] || [], unit.district, unit.name);
+  const qualification = unit.unit_type === "Pack" ? "BALOO" : "IOLS-trained SM/ASM";
+  const status = readiness?.depthStatus || CACOutdoorReadiness.depthStatus(null);
+  const labels = { gap: "Gap", fragile: "Fragile", preferred: "Preferred Depth", unknown: "Unknown" };
+  const tones = { gap: "danger", fragile: "warning", preferred: "good", unknown: "warning" };
+  const detail = readiness
+    ? `${qualification}: ${n(readiness.qualificationCount)} recorded · ${readiness.missingHazardousWeather ? "HW gap" : "HW current"}`
+    : `${qualification}: training roster match unavailable`;
+  return {
+    readiness,
+    qualification,
+    status,
+    label: labels[status.key] || "Unknown",
+    tone: tones[status.key] || "warning",
+    chipTone: status.key === "unknown" ? "warn" : status.tone,
+    detail,
+  };
+}
+
 function unitsForDistrict(district) {
   return state.data.units.filter((unit) => ProgramFilter.matchesUnitType(unit.unit_type) && unit.district === district);
 }
@@ -66,6 +87,7 @@ function renderKpis() {
   const change = unit.youth_change == null ? "n/a" : `${signed.format(unit.youth_change)} YoY`;
   const districtUnits = unitsForDistrict(unit.district);
   const rank = [...districtUnits].sort((a, b) => b.metric - a.metric).findIndex((row) => row.unit_id === unit.unit_id) + 1;
+  const outdoor = outdoorSummary(unit);
   const tiles = [
     ["Youth", n(unit.youth), `${change} from ${n(unit.youth_prior)}`, unit.youth_change >= 0 ? "good" : "danger"],
     ["Retention", pct100(unit.retention_pct), "Rounded to nearest whole percent; may exceed 100%", unit.retention_pct >= 90 ? "good" : "warning"],
@@ -73,6 +95,7 @@ function renderKpis() {
     ["SYT Compliance", p(training.syt_compliance_rate), `${n(training.syt_0_30)} due in 0–30 days`, training.syt_compliance_rate >= .95 ? "good" : "danger"],
     ["District Position", `${rank} of ${districtUnits.length}`, "Ranked by unit metric", "teal"],
   ];
+  if (outdoor) tiles.push(["Camping Readiness", outdoor.label, outdoor.detail, outdoor.tone]);
   document.getElementById("unitKpis").innerHTML = tiles.map(([label, value, sub, tone]) => `<article class="kpi ${tone}"><div><div class="kpi-label">${esc(label)}</div><div class="kpi-value">${esc(value)}</div></div><div class="kpi-sub">${esc(sub)}</div></article>`).join("");
 }
 
@@ -101,15 +124,13 @@ function renderTraining() {
     ["SYT compliance", training.syt_compliance_rate],
   ];
   const rateRows = rows.map(([label, value]) => `<div class="metric-row"><strong>${esc(label)}</strong><div class="metric-value"><span>${p(value)}</span><div class="rate-bar" aria-hidden="true"><span style="width:${Math.max(0, Math.min(100, (value || 0) * 100))}%"></span></div></div></div>`).join("");
-  const readiness = CACOutdoorReadiness.findUnit(state.outdoorUnits[unit.unit_type] || [], unit.district, unit.name);
+  const outdoor = outdoorSummary(unit);
   let outdoorRow = "";
-  if (["Pack", "Troop"].includes(unit.unit_type)) {
-    const qualification = unit.unit_type === "Pack" ? "BALOO" : "IOLS-trained SM/ASM";
-    const status = readiness?.depthStatus || { label: "Source record unavailable", tone: "warn" };
-    const detail = readiness
-      ? `${n(readiness.qualificationCount)} recorded · ${readiness.missingHazardousWeather ? "no current HW record" : `${n(readiness.hazardousWeatherCount)} current HW`}`
+  if (outdoor) {
+    const detail = outdoor.readiness
+      ? `${n(outdoor.readiness.qualificationCount)} recorded · ${outdoor.readiness.missingHazardousWeather ? "no current HW record" : `${n(outdoor.readiness.hazardousWeatherCount)} current HW`}`
       : "No matching Training-tab roster was found for this unit.";
-    outdoorRow = `<div class="metric-row"><div><strong>${esc(qualification)} leadership depth</strong><p>${esc(detail)}</p></div><span class="status ${status.tone}">${esc(status.label)}</span></div>`;
+    outdoorRow = `<div class="metric-row"><div><strong>${esc(outdoor.qualification)} leadership depth</strong><p>${esc(detail)}</p></div><span class="status ${outdoor.chipTone}">${esc(outdoor.label)}</span></div>`;
   }
   document.getElementById("trainingRows").innerHTML = rateRows + outdoorRow;
 }

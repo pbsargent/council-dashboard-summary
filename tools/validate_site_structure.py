@@ -361,6 +361,17 @@ def main() -> int:
         if "actionPacks()" in script_source or "actionTroops()" in script_source:
             errors.append(f"{script_name}: readiness table must include preferred-depth units")
 
+    unit_level_path = root / "unit-level.html"
+    unit_level_script_path = root / "unit-level-dashboard.js"
+    if unit_level_path.is_file() and unit_level_script_path.is_file():
+        unit_level_page = unit_level_path.read_text(encoding="utf-8")
+        unit_level_script = unit_level_script_path.read_text(encoding="utf-8")
+        if "unit-level-dashboard.js?v=20260830-unit-readiness-status-1" not in unit_level_page:
+            errors.append("unit-level.html: missing cache-busted Unit-Level readiness-status script")
+        for required in ('"Camping Readiness"', 'preferred: "Preferred Depth"', "CACOutdoorReadiness.depthStatus(null)"):
+            if required not in unit_level_script:
+                errors.append(f"unit-level-dashboard.js: missing Unit-Level readiness status contract {required!r}")
+
     for relative, forbidden in {
         "camping-readiness.html": "Packs Missing Camping Leadership Coverage",
         "troop-camping-readiness.html": "Troops Missing Camping Leadership Coverage",
