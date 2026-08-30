@@ -59,7 +59,7 @@ SUMMARY_PAGES = {
     "membership.html": ("membership", ("Membership Intelligence", "Unit & Youth Trends")),
     "unit-health.html": ("unit-health", ("Unit Health & Renewal", "Unit Health Funnel", "Exceptions", "Priority Units")),
     "people.html": ("people", ("People & Readiness", "All-Scouter Training", "Safeguarding Youth Training", "Commissioner Coverage Roster", "Coverage Snapshot")),
-    "sources.html": ("sources", ("Sources, Freshness & Help", "Dashboard Source Workbooks", "Calculation Guide", "Report a Problem")),
+    "sources.html": ("sources", ("Sources, Freshness & Help", "Dashboard Source Workbooks", "References", "Calculation Guide", "Report a Problem")),
     "help.html": ("help", ("How to Use the CAC Dashboard", "Quick Start", "Choose the Right Dashboard Page", "Common Measures", "Troubleshooting")),
 }
 
@@ -210,6 +210,16 @@ def main() -> int:
         for href in ("sources.html", "docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.pdf"):
             if f'href="{href}"' not in help_source:
                 errors.append(f"help.html: missing required documentation link {href!r}")
+
+    sources_page_path = root / "sources.html"
+    if sources_page_path.is_file():
+        sources_source = sources_page_path.read_text(encoding="utf-8")
+        for href in (
+            "https://www.scouting.org/wp-content/uploads/2026/01/Training-Codes-Jan-26.xlsx",
+            "https://www.scouting.org/wp-content/uploads/2025/05/Position-Trained-Requirements-Jun2025.pdf",
+        ):
+            if f'href="{href}"' not in sources_source:
+                errors.append(f"sources.html: missing required reference link {href!r}")
 
     unit_health_path = root / "unit-health.html"
     priority_script_path = root / "council-dashboard-summary.20260626-tay-kpi.js"
