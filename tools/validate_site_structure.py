@@ -278,6 +278,8 @@ def main() -> int:
             errors.append("help.html: missing Outdoor Leadership Depth measure definition")
         if "first name and last initial" not in help_source:
             errors.append("help.html: missing public person-name privacy guidance")
+        if "<strong>Data &amp; Help</strong>" not in help_source or "training reference links" not in help_source:
+            errors.append("help.html: missing Data & Help training-reference guidance")
 
     for relative, page_key in DETAIL_PAGES.items():
         path = root / relative

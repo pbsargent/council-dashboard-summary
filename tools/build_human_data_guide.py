@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -10,14 +11,15 @@ from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.opc.constants import RELATIONSHIP_TYPE as RT
 from docx.shared import Inches, Pt, RGBColor
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "docs"
 OUT_FILE = OUT_DIR / "Council-Dashboard-Summary-Source-and-Calculation-Guide.docx"
-LATEST_JSON = ROOT / "data" / "latest.json"
-MONDAY_JSON = ROOT / "data" / "monday-latest.json"
+LATEST_JSON = Path(os.environ.get("CAC_GUIDE_LATEST_JSON", ROOT / "data" / "latest.json"))
+MONDAY_JSON = Path(os.environ.get("CAC_GUIDE_MONDAY_JSON", ROOT / "data" / "monday-latest.json"))
 LOGO = ROOT / "assets" / "cac-logo.png"
 
 BLUE = RGBColor(46, 116, 181)
@@ -231,6 +233,32 @@ def add_reference_bullet(doc: Document, text: str):
     paragraph.paragraph_format.first_line_indent = Inches(-0.18)
     paragraph.add_run("•  ")
     paragraph.add_run(text)
+    return paragraph
+
+
+def add_external_reference(doc: Document, label: str, url: str):
+    paragraph = doc.add_paragraph(style="Body Text")
+    paragraph.paragraph_format.left_indent = Inches(0.28)
+    paragraph.paragraph_format.first_line_indent = Inches(-0.18)
+    paragraph.add_run("•  ")
+    label_run = paragraph.add_run(f"{label}: ")
+    label_run.bold = True
+
+    hyperlink = OxmlElement("w:hyperlink")
+    hyperlink.set(qn("r:id"), paragraph.part.relate_to(url, RT.HYPERLINK, is_external=True))
+    run = OxmlElement("w:r")
+    run_properties = OxmlElement("w:rPr")
+    color = OxmlElement("w:color")
+    color.set(qn("w:val"), "2E74B5")
+    underline = OxmlElement("w:u")
+    underline.set(qn("w:val"), "single")
+    run_properties.extend([color, underline])
+    run.append(run_properties)
+    text = OxmlElement("w:t")
+    text.text = url
+    run.append(text)
+    hyperlink.append(run)
+    paragraph._p.append(hyperlink)
     return paragraph
 
 
@@ -478,6 +506,11 @@ def build_doc():
         doc,
         "The monday.com daily workbook is preferred because it contains richer detail rows. If that workbook is not available, the automation can fall back to the monday.com API, but the API fallback is less detailed than the workbook export. The Council Dashboard Reports drive also contains Unit Level Metrics captures; those are used only for Unit Level detail and must not be selected as the main Dashboard - CAC workbook.",
     )
+    add_callout(
+        doc,
+        "Public person-name privacy",
+        "Every person-name field published on the public Council Summary and Commissioner sites is reduced to first name plus last initial, such as Alex R. This applies to training and SYT rows, commissioner rosters and assignments, Service Area and district leadership, Unit-Level members and commissioners, and Renewal owners, leaders, contacts, and commissioners. Private source workbooks and intermediate working files are unchanged.",
+    )
 
     add_heading(doc, "3. How The Daily Refresh Works", 1)
     add_body(
@@ -493,6 +526,7 @@ def build_doc():
         "Find the newest monday.com export workbook in the Council monday.com Reports shared drive.",
         "Build `data/monday-latest.json`, falling back to the monday.com API only if needed.",
         "Rebuild Unit-Level Detail, Renewal Status, Units-Youth history, and the Cub Scout JSN data bundle.",
+        "Abbreviate every covered public person-name field to first name plus last initial and stop the deployment if a covered full name remains.",
         "Run the site-structure validator and stage the complete static site in an isolated Pages tree.",
         "Deploy the Council Summary site tree as a checksum-verified GitHub Pages artifact without committing generated data.",
         "Deploy the Commissioner Dashboard as a verified Pages artifact only when its static payload changed.",
@@ -535,6 +569,7 @@ def build_doc():
             ["monday.com access", "Daily export workbook preferred; API token fallback requires read access to the configured boards."],
             ["Publishing", "GitHub Pages repository on main branch with static HTML, CSS, JavaScript, assets, and JSON data."],
             ["Automation", "One LaunchAgent that refreshes source data and deploys generated data as verified Pages artifacts. Ordinary linear Git commits are reserved for source changes."],
+            ["Privacy gate", "`tools/sanitize_public_person_names.py` abbreviates covered public person-name fields and fails closed before deployment if a covered full name remains."],
             ["Service Area hierarchy", "Read access to monday.com board 18420160563 for Service Areas and district leadership."],
             ["Panel help", "Shared `panel-help.js` and dashboard CSS provide active hover, focus, and click/tap help popovers for the ? controls."],
         ],
@@ -616,13 +651,29 @@ def build_doc():
             ["Unit Metrics", "How districts and unit sections compare across unit health, training, outdoor, advancement, and the current workbook retention metric."],
             ["Unit-Level Detail", "Which individual units and members drive program-specific youth, growth, training, SYT, health, and assignment results."],
             ["Renewal Status", "Which units are initiated, submitted, pending acceptance, posted, or otherwise need renewal follow-up."],
-            ["Data & Help", "Which source workbooks are current, how values are calculated, and where to report a problem."],
+            ["Data & Help", "Which source workbooks are current, how values are calculated, where to report a problem, and which external training references apply."],
         ],
         [2100, 7260],
     )
     add_body(
         doc,
         "Detail pages that compare district records also expose Service Area filters. District filters remain available inside the selected Service Area, and official district views exclude operational labels that are not part of the 12-district Council dashboard structure.",
+    )
+
+    add_heading(doc, "Data & Help references", 2)
+    add_body(
+        doc,
+        "The Data & Help page publishes direct links to these Scouting America reference documents:",
+    )
+    add_external_reference(
+        doc,
+        "Training Code List",
+        "https://www.scouting.org/wp-content/uploads/2026/01/Training-Codes-Jan-26.xlsx",
+    )
+    add_external_reference(
+        doc,
+        "Trained Leader Requirements",
+        "https://www.scouting.org/wp-content/uploads/2025/05/Position-Trained-Requirements-Jun2025.pdf",
     )
 
     add_heading(doc, "Cub Scout JSN interpretation", 2)
@@ -656,9 +707,9 @@ def build_doc():
         doc,
         ["Service Area", "Field Director", "Official districts"],
         [
-            ["Northern", "Justin Brundin", "Bee Cave; Chisholm Trail; Hill Country; North Shore"],
-            ["Central", "Vicki Rosengarten", "Armadillo; Colorado River; Exploring; San Gabriel; Thunderbird"],
-            ["Southern", "Ed Grune", "Live Oak; Sacred Springs; Waterloo"],
+            ["Northern", "Justin B.", "Bee Cave; Chisholm Trail; Hill Country; North Shore"],
+            ["Central", "Vicki R.", "Armadillo; Colorado River; Exploring; San Gabriel; Thunderbird"],
+            ["Southern", "Ed G.", "Live Oak; Sacred Springs; Waterloo"],
         ],
         [1700, 2200, 5460],
     )
@@ -804,6 +855,7 @@ def build_doc():
             ["Commissioners trained", "Unique commissioners marked trained divided by unique commissioners where training status is known."],
             ["With assignments", "Unique commissioners with assigned units divided by unique commissioners."],
             ["Assigned units", "Rows in the Assigned tab where Assigned is yes."],
+            ["Connections (12 Mo.)", "Completed Commissioner Connection History records in the 365 days ending on the report date. Each completed connection counts once as a unit visit; rows outside the official districts, incomplete rows, and rows outside the window are excluded."],
         ],
         [2600, 6760],
     )
@@ -822,6 +874,7 @@ def build_doc():
         "Program TAY values are dashboard estimates based on published school grade or age spans and must not be added together.",
         "Popcorn participation counts every published unit row in the denominator and only rows marked Committed in the numerator.",
         "Popcorn contact names, email addresses, and phone numbers are excluded from the public JSON and dashboard.",
+        "Across all public Council Summary and Commissioner outputs, person names display as first name plus last initial. The publication gate stops deployment if a covered full name remains.",
         "The Markdown data dictionary remains the best place for exact formulas and implementation details.",
     ]:
         add_bullet(doc, text)
@@ -847,6 +900,7 @@ def build_doc():
             ["Popcorn Participation", "Committed Popcorn unit rows divided by all Popcorn unit rows."],
             ["Registered commissioners", "Unique normalized commissioner names."],
             ["Unit commissioners", "Unique normalized people with at least one Unit Commissioner role."],
+            ["Connections (12 Mo.)", "Completed Commissioner Connection History rows in the 365 days ending on the report date, limited to official districts."],
             ["Service Area", "Run-specific monday.com Service Areas hierarchy applied after official district normalization."],
         ],
         [2700, 6660],
@@ -856,6 +910,7 @@ def build_doc():
     add_reference_bullet(doc, "`DASHBOARD_DATA_DICTIONARY.md` documents the full data dictionary and formulas.")
     add_reference_bullet(doc, "`IMPLEMENTATION_RUNBOOK.md` documents technical setup, source acquisition, automation, validation, and rebuild requirements.")
     add_reference_bullet(doc, "`update_daily.zsh` documents the automation order.")
+    add_reference_bullet(doc, "`tools/sanitize_public_person_names.py` documents and enforces the public first-name/last-initial rule.")
     add_reference_bullet(doc, "`panel-help.js` documents the website's active ? help popover behavior.")
     add_reference_bullet(doc, "`refresh_monday_data.py` documents the monday.com workbook/API extraction.")
     add_reference_bullet(doc, "`tools/build_unit_level_dashboard.py` documents the Unit-Level Detail data build.")
