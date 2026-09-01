@@ -324,6 +324,8 @@ def main() -> int:
             errors.append("help.html: missing PIN Stale-state definition")
         if "Unit Health Funnel combines Inactive and Stale PINs" not in help_source:
             errors.append("help.html: missing Unit Health Funnel combined PIN-follow-up definition")
+        if "Units without a matched PIN remain in the denominator" not in help_source:
+            errors.append("help.html: missing Unit Health Funnel PIN-denominator explanation")
         if "<dt>Outdoor Leadership Depth</dt>" not in help_source:
             errors.append("help.html: missing Outdoor Leadership Depth measure definition")
         if "first name and last initial" not in help_source:

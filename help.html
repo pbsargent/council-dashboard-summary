@@ -127,7 +127,8 @@
             <div><dt>SYT</dt><dd>Safeguarding Youth Training status, including current and follow-up windows when supplied.</dd></div>
             <div><dt>Coverage</dt><dd>Commissioner people and assignments found in the published source data.</dd></div>
             <div><dt>Connections (12 Mo.)</dt><dd>Completed Commissioner Connection History records in the 365 days ending on the report date. Each completed connection counts once as a unit visit.</dd></div>
-            <div><dt>PIN</dt><dd>The unit's BeAScout map-pin status. Stale means the matched PIN record has a blank last-modified date or was last modified before the same calendar date one year prior to publication. Otherwise the source Active or Inactive state is shown. n/a means no PIN record was matched. The Unit Health Funnel combines Inactive and Stale PINs into one follow-up count for the current master program view.</dd></div>
+            <div><dt>PIN</dt><dd>The unit's BeAScout map-pin status. Active and Inactive retain the source state when the matched record is current. Stale means the matched PIN has a blank or unusable last-modified date, or was last modified before the same calendar date one year prior to publication. n/a means no PIN record was matched; it does not mean inactive.</dd></div>
+            <div><dt>Inactive + Stale PINs</dt><dd>The Unit Health Funnel combines Inactive and Stale PINs into one follow-up count for the current master program view. Its percentage divides that count by all tracked units in the view. Units without a matched PIN remain in the denominator, so the percentage can be lower than a calculation based only on matched PIN rows.</dd></div>
           </dl>
           <p><a class="detail-link" href="docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.pdf" target="_blank" rel="noreferrer">Open the Full Calculation Guide</a></p>
         </article>

@@ -225,7 +225,7 @@ def add_bullet(doc: Document, text: str):
     paragraph = doc.add_paragraph(style="List Bullet")
     paragraph.paragraph_format.space_before = Pt(1)
     paragraph.paragraph_format.space_after = Pt(4)
-    paragraph.paragraph_format.keep_together = True
+    paragraph.paragraph_format.keep_together = False
     paragraph.paragraph_format.keep_with_next = False
     paragraph.add_run(text)
     return paragraph
@@ -636,6 +636,28 @@ def build_doc():
         [2100, 7260],
     )
 
+    add_heading(doc, "BeAScout PIN status and follow-up", 2)
+    add_body(
+        doc,
+        "The dashboard uses one PIN classification in Unit Follow-up, the first Unit-Level Detail KPI, and the Unit Health Funnel. It does not treat a missing match as an inactive PIN.",
+    )
+    add_table(
+        doc,
+        ["Display state", "Plain-English meaning"],
+        [
+            ["Active", "The matched PIN is current and the source state is Active."],
+            ["Inactive", "The matched PIN is current and the source state is Inactive."],
+            ["Stale", "The matched last-modified date is blank or unusable, or is before the same calendar date one year prior to publication."],
+            ["n/a", "No PIN record was matched to the unit. This does not mean inactive or stale."],
+        ],
+        [1800, 7560],
+    )
+    add_callout(
+        doc,
+        "How the funnel percentage works",
+        "Inactive + Stale is the matched follow-up count. The percentage divides that count by all tracked membership-dashboard units in the selected program view. Units without a matched PIN stay in the denominator, so do not divide only by the number of PIN-status rows.",
+    )
+
     add_heading(doc, "6. What Each Dashboard Page Adds", 1)
     add_table(
         doc,
@@ -868,23 +890,26 @@ def build_doc():
     )
 
     add_heading(doc, "12. Practical Caveats", 1)
-    for text in [
-        "The published dashboard is only as current as the most recent successful local refresh and GitHub Pages deployment.",
-        "The ? buttons provide quick panel context in the website. They are not a replacement for this guide or the Markdown data dictionary.",
-        "Workbook labels and sheet names matter. If a source workbook changes structure, the refresh may need a code update.",
-        "Expiration checks on the Training and SYT pages use the viewer browser's current date.",
-        "Freshness timestamps are displayed in the viewer browser's local timezone, so the same data snapshot can show different clock times to viewers in different timezones.",
-        "The SYT detail page flags SYT for all leaders. It flags Hazardous Weather, BALOO, and IOLS only when they are required by the leader's role and unit type.",
-        "The Pack and Troop Camping Readiness pages evaluate roster-level training signals from the published snapshot; they do not confirm campout attendance or approval.",
-        "monday.com district labels can include operational labels that are not official dashboard districts; official district charts filter those out.",
-        "Service Area filters and district leadership are based on the run-specific monday.com Service Areas capture, not on source workbook columns.",
-        "Program TAY values are dashboard estimates based on published school grade or age spans and must not be added together.",
-        "Popcorn participation counts every published unit row in the denominator and only rows marked Committed in the numerator.",
-        "Popcorn contact names, email addresses, and phone numbers are excluded from the public JSON and dashboard.",
-        "Across all public Council Summary and Commissioner outputs, person names display as first name plus last initial. The publication gate stops deployment if a covered full name remains.",
-        "The Markdown data dictionary remains the best place for exact formulas and implementation details.",
-    ]:
-        add_bullet(doc, text)
+    add_callout(
+        doc,
+        "Freshness and source structure",
+        "The dashboard is only as current as the most recent successful refresh and GitHub Pages deployment. Freshness times display in the viewer's local timezone. Workbook labels and sheet names matter; a source-structure change can require a code update. The website's ? controls give quick panel context, while the Markdown data dictionary remains the exact formula reference.",
+    )
+    add_callout(
+        doc,
+        "Training and camping readiness",
+        "Training and SYT expiration checks use the viewer browser's current date. SYT applies to all leaders; Hazardous Weather, BALOO, and IOLS flags apply where role and unit type make them relevant. Pack and Troop Camping Readiness uses the published roster snapshot and does not confirm campout attendance or approval.",
+    )
+    add_callout(
+        doc,
+        "Service Area, TAY, and Popcorn interpretation",
+        "Official district charts exclude non-official monday.com labels. Service Area filters and district leadership use the run-specific Service Areas capture rather than workbook columns. Program TAY values are overlapping estimates and must not be added together. Popcorn participation counts all published unit rows in the denominator and only Committed rows in the numerator.",
+    )
+    add_callout(
+        doc,
+        "Public-data privacy",
+        "Popcorn contacts are excluded from public JSON. Across the Council Summary and Commissioner outputs, person names display as first name plus last initial, and publication stops if a covered full name remains.",
+    )
 
     add_heading(doc, "Appendix: Quick Formula Reference", 1)
     add_table(
@@ -908,8 +933,8 @@ def build_doc():
             ["Registered commissioners", "Unique normalized commissioner names."],
             ["Unit commissioners", "Unique normalized people with at least one Unit Commissioner role."],
             ["Connections (12 Mo.)", "Completed Commissioner Connection History rows in the 365 days ending on the report date, limited to official districts."],
-            ["PIN state", "Stale when a matched BeAScout PIN last-modified date is blank or earlier than the same calendar date one year before publication; otherwise retain Active or Inactive."],
-            ["Inactive + stale PINs", "Count of PIN rows in either Inactive or Stale state, divided by all units in the current master program view for the funnel percentage."],
+            ["PIN state", "Stale when a matched BeAScout PIN last-modified date is blank or unusable, or earlier than the same calendar date one year before publication; otherwise retain Active or Inactive. No match displays n/a."],
+            ["Inactive + stale PINs", "Count of matched PIN rows in either Inactive or Stale state, divided by all tracked membership-dashboard units in the current master program view; unmatched units remain in the denominator."],
             ["Service Area", "Run-specific monday.com Service Areas hierarchy applied after official district normalization."],
         ],
         [2700, 6660],

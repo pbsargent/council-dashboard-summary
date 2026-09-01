@@ -81,6 +81,18 @@ Both pages belong under **People & Readiness**, after Training and SYT. Commissi
 
 This is enforced in `tools/validate_site_structure.py` through `DETAIL_PAGES`, `NAVIGATION_ROUTES`, and `NAVIGATION_HIERARCHY`. The scheduled updater runs that validator after loading the current site code and again immediately before publication. A future build that removes either page, changes its route or page identity, or moves it to the wrong navigation parent must fail before publishing.
 
+### Persistent BeAScout PIN Freshness Contract
+
+`work/commissioner_site/build_site.py` joins the complete unit-level metric population to the main dashboard workbook's `Units` and `Pin` tabs and publishes matched rows as `dashboard.unit_pin_statuses`. The display state is calculated at publication time:
+
+- `Stale`: the matched `lastmodifieddate` is blank, unusable, or earlier than the same calendar date one year before publication.
+- `Active` or `Inactive`: the matched date is on or after that cutoff, so the source `pinstatus` is retained.
+- `n/a`: no PIN record is matched to the unit; this is not an inactive or stale classification.
+
+Use this one classification in the Unit Health page's complete Unit Follow-up metric bands, the first KPI on Unit-Level Detail, and the Unit Health Funnel. The funnel numerator counts matched `Inactive` and `Stale` rows after the master program filter. Its denominator is all membership-dashboard units in that view, including units without a matched PIN. The percentage therefore can differ from a calculation that divides only by `dashboard.unit_pin_statuses.length`.
+
+The focused safeguards are `tools/test_pin_status.py`, `tools/test_unit_health_pin_funnel.js`, `tools/test_unit_level_pin_status.js`, and the PIN assertions in `tools/validate_site_structure.py`. Keep the Help page, Markdown data dictionary, reader-facing DOCX/PDF guide, and documentation ZIP synchronized with this contract.
+
 ## 2. Data Acquisition Requirements
 
 The dashboard does not read Google Drive, OneDrive, or monday.com from the browser. Data is acquired by local scripts, converted to JSON in an isolated staging tree, checksum-verified, and served through a GitHub Pages artifact.
@@ -415,6 +427,10 @@ After any refresh or rebuild, check:
 - Both pages classify qualification depth as zero (Gap), one (Fragile), two-plus (Preferred Depth), or unclassifiable (Unknown), and their default tables include all reviewed units.
 - The Status filter returns those four leadership-depth categories. Hazardous Weather is independently filterable as Current or Gap and can be combined with Status, District, Sort, and Search.
 - Unit-Level Detail shows the same Camping Readiness status for Packs and Troops in both its KPI strip and Training Readiness row; unmatched Training-tab units show Unknown.
+- `dashboard.unit_pin_statuses` contains the expected matched unit-level PIN population and only `Active`, `Inactive`, or `Stale` display states; an unmatched unit renders `n/a` in Unit Follow-up and Unit-Level Detail.
+- A PIN row is `Stale` when its last-modified date is blank, unusable, or earlier than the same calendar date one year before publication. The boundary date itself is not stale.
+- Unit Health Funnel `Inactive + stale PINs` equals the filtered count of both states and divides by all membership-dashboard units in the selected program view, including unmatched `n/a` units in the denominator.
+- Unit Follow-up Metric bands `0-2`, `3`, and `4-5` display only rows within the selected band and retain the matching PIN state.
 - Neither page represents campout approval or claims that roster data proves two-deep, female-leader, registration, or actual-attendance compliance.
 - Renewal board page loads, honors light/dark mode, and links back to the Council Summary page.
 - Panel `?` controls display active help popovers on hover, focus, or click/tap.
@@ -451,6 +467,8 @@ curl -I https://pbsargent.github.io/council-dashboard-summary/data/monday-latest
 | Service Area filter missing or empty | Stale JavaScript/HTML or missing mapping in JSON | Check cache-busted script URL, `dashboard.service_areas`, and `service_area` fields |
 | CAC deck fails with `Worksheet Membership does not exist` | CAC deck builder selected a Unit Level Metrics workbook instead of the `Dashboard - CAC` workbook | Verify `update_from_google_folder.zsh` filters to `*_Dashboard - CAC.xlsx`; confirm the log line `Newest workbook:` shows the dated Dashboard file, not `*_CAC - Unit Metric Scorecard.xlsx` |
 | Unit & Youth trends missing/stale | Injector not present in scheduled launcher or `Units-Youth` tab changed layout | Check `UNIT_YOUTH_INJECTOR` lines in `/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary/update_daily.zsh`, run `tools/inject_unit_youth_trends.py`, verify `dashboard.unit_youth_trends` |
+| PIN status is missing or unexpectedly `n/a` | Unit identity did not join between Unit Metrics, Units, and Pin tabs | Check district/unit identity fields, `dashboard.unit_pin_statuses`, and the selected unit's Unit ID in the source workbook |
+| PIN funnel count is correct but its percentage looks lower | The numerator uses matched Inactive + Stale rows while the denominator uses all membership-dashboard units | Reconcile the numerator to `unit_pin_statuses`, then divide by the displayed Total units value rather than by matched PIN rows only |
 | Membership trend charts show legend but no 2024 values | Published JSON lacks 2024 series or stale script/data cache | Verify `dashboard.unit_youth_trends.series.*.values.2024`, refresh page, confirm cache-busted `membership-detail.20260626.js` |
 | Commissioner publisher diverges | A legacy checkout still has production push access | Confirm only `/Users/petersargent/CACDashboardPlatform/sites/council-commissioner-dashboard` can push |
 | Workbook quality concern | Concentrated formula errors in source workbook | Scan actual Excel error cells; current 2026-07-01 CAC workbook has concentrated errors in `Renewal Prep` and `Objectives - Commissioners`, not a mostly-error workbook |

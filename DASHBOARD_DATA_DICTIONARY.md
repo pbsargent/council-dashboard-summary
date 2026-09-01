@@ -161,7 +161,7 @@ Important `dashboard` fields:
 | `districts` | One row per district with membership, training, unit health, coverage, and status metrics |
 | `council` | Council-wide rollups computed from district and roster rows |
 | `priority_units` | Top 30 unit metric rows where unit metric is 0-2 |
-| `unit_pin_statuses` | Complete matched unit-level BeAScout PIN display states used to enrich all Metric bands in Unit Follow-up |
+| `unit_pin_statuses` | Matched unit-level BeAScout PIN display states used to enrich every Metric band in Unit Follow-up and the Unit-Level PIN Status KPI; unmatched units are absent from this array and display as `n/a` after the page join |
 | `unit_metric_compare` | Sectioned detail extracted from the Unit Metric Compare tab |
 | `unit_youth_trends` | Councilwide monthly Unit & Youth Trends extracted from the Units-Youth tab |
 | `training_people` | Person-level training rows from the Training tab |
@@ -297,9 +297,9 @@ Each district receives a status in `build_site.py`:
 | Healthy units | Count of Unit Metrics rows where `Unit Metric >= 4` |
 | At-risk rate | `at_risk_units / units` |
 | Healthy rate | `healthy_units / units` |
-| Priority Units | Unit-level rows where `Unit Metric <= 2`, sorted by metric ascending, youth descending, then district; limited to 30 |
+| Unit Follow-up | Complete unit-level rows in the selected Metric band (`0-2`, `3`, or `4-5`), further constrained by the master program view; the legacy `priority_units` array supplies commissioner/PIN enrichment when available but is not the table's row limit |
 | PIN | For a matched `Pin` row, `Stale` when `lastmodifieddate` is blank or earlier than the same calendar date one year before publication; otherwise the source `pinstatus` (`Active` or `Inactive`). An unmatched PIN row remains `n/a`. |
-| Inactive + stale PINs | Count of complete `unit_pin_statuses` rows whose display state is `Inactive` or `Stale`; the displayed rate divides that count by all units in the current master program view. |
+| Inactive + stale PINs | Count of matched `unit_pin_statuses` rows whose display state is `Inactive` or `Stale`; the displayed rate divides that count by all membership-dashboard units in the current master program view. Units without a matched PIN remain in the denominator, so the rate can differ from `(Inactive + Stale) / unit_pin_statuses.length`. |
 
 ### Today's Read / Signals
 
@@ -463,7 +463,7 @@ Retention is calculated as `(current members - members new in the prior 12 month
 
 The Unit-Level Detail page reads `data/unit-level-latest.js`, generated from the newest Unit Level Metrics workbook. Its direct `unit_type` field is the source of truth for the master program filter. Unit records expose the selected unit's health and growth metrics plus the published member-due-to-renew detail; long member tables remain inside a bounded, scrollable region on desktop and mobile and expand fully only for print.
 
-The page also matches the selected unit to `dashboard.unit_pin_statuses` in `data/latest.json` and displays the result in the first KPI card. The card uses the same PIN display state as Unit Follow-up: `Stale` when the matched PIN update date is blank or earlier than the same calendar date one year before publication, otherwise `Active` or `Inactive`; an unmatched unit displays `n/a`.
+The page also matches the selected unit to `dashboard.unit_pin_statuses` in `data/latest.json` and displays the result in the first KPI card. The card uses the same PIN display state as Unit Follow-up: `Stale` when the matched PIN update date is blank or earlier than the same calendar date one year before publication, otherwise `Active` or `Inactive`; an unmatched unit displays `n/a`. This KPI is a unit-level state and is not inferred from the Unit Health Funnel percentage.
 
 For Packs and Troops, the page also reads `dashboard.training_people` from `data/latest.json` and applies the same district-plus-unit join and `outdoor-readiness.js` classification used by the Camping Readiness pages. The KPI strip and Training Readiness panel both display Gap, Fragile, Preferred Depth, or Unknown. Pack status uses BALOO depth; Troop status uses IOLS-trained Scoutmaster/Assistant Scoutmaster depth. The KPI detail also reports the recorded qualification count and Hazardous Weather Current/Gap signal. If no matching Training-tab unit is found, the status is Unknown rather than Gap. Crews, Ships, and Posts do not display this camping-readiness KPI.
 
