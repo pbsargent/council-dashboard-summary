@@ -1,4 +1,4 @@
-const state = { data: null, readinessData: null, outdoorUnits: { Pack: [], Troop: [] }, unit: null };
+const state = { data: null, readinessData: null, pinByUnit: new Map(), outdoorUnits: { Pack: [], Troop: [] }, unit: null };
 const fmt = new Intl.NumberFormat("en-US");
 const pct = new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 0 });
 const signed = new Intl.NumberFormat("en-US", { signDisplay: "always", maximumFractionDigits: 0 });
@@ -21,6 +21,29 @@ function metricStatus(metric) {
   if (metric >= 4) return ["Healthy", "good"];
   if (metric === 3) return ["Monitor", "warning"];
   return ["Priority attention", "danger"];
+}
+
+function unitKey(district, unit) {
+  return `${ProgramFilter.cleanDistrict(district)}|${String(unit || "").trim()}`;
+}
+
+function unitDisplayName(unit) {
+  return [unit.unit_type, unit.number, unit.gender]
+    .filter((part) => part != null && part !== "")
+    .join(" ") || unit.name;
+}
+
+function pinSummary(unit) {
+  const recordedStatus = state.pinByUnit.get(unitKey(unit.district, unitDisplayName(unit)));
+  const presentations = {
+    Active: ["Current BeAScout PIN record", "good"],
+    Inactive: ["Current PIN is inactive", "warning"],
+    Stale: ["Update date is over 12 months old or missing", "danger"],
+    "n/a": ["No matched BeAScout PIN record", "warning"],
+  };
+  const status = Object.hasOwn(presentations, recordedStatus) ? recordedStatus : "n/a";
+  const [detail, tone] = presentations[status];
+  return { status, detail, tone };
 }
 
 function outdoorSummary(unit) {
@@ -88,7 +111,9 @@ function renderKpis() {
   const districtUnits = unitsForDistrict(unit.district);
   const rank = [...districtUnits].sort((a, b) => b.metric - a.metric).findIndex((row) => row.unit_id === unit.unit_id) + 1;
   const outdoor = outdoorSummary(unit);
+  const pin = pinSummary(unit);
   const tiles = [
+    ["PIN Status", pin.status, pin.detail, pin.tone],
     ["Youth", n(unit.youth), `${change} from ${n(unit.youth_prior)}`, unit.youth_change >= 0 ? "good" : "danger"],
     ["Retention", pct100(unit.retention_pct), "Rounded to nearest whole percent; may exceed 100%", unit.retention_pct >= 90 ? "good" : "warning"],
     ["Direct Contact Trained", p(training.direct_contact_trained_rate), "Unit leadership readiness", training.direct_contact_trained_rate >= .8 ? "good" : "warning"],
@@ -175,6 +200,7 @@ async function init() {
   const readinessResponse = await readinessPromise;
   if (readinessResponse.ok) {
     state.readinessData = await readinessResponse.json();
+    state.pinByUnit = new Map((state.readinessData.dashboard?.unit_pin_statuses || []).map((row) => [unitKey(row.district, row.unit), row.pin_status]));
     const people = state.readinessData.dashboard?.training_people || [];
     state.outdoorUnits.Pack = CACOutdoorReadiness.buildUnits(people, "Pack", state.readinessData.generated_date);
     state.outdoorUnits.Troop = CACOutdoorReadiness.buildUnits(people, "Troop", state.readinessData.generated_date);

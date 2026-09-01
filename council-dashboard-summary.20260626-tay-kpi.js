@@ -207,26 +207,31 @@ function matchesPriorityMetricBand(value) {
 
 function priorityUnitRows() {
   const existingRows = state.data?.dashboard?.priority_units || [];
+  const pinRows = state.data?.dashboard?.unit_pin_statuses || [];
   if (!state.unitData?.units?.length) return existingRows;
 
   const rowKey = (district, unit) => `${ProgramFilter.cleanDistrict(district)}|${String(unit || "").trim()}`;
   const existingByUnit = new Map(existingRows.map((row) => [rowKey(row.district, row.unit), row]));
+  const pinByUnit = new Map(pinRows.map((row) => [rowKey(row.district, row.unit), row.pin_status]));
 
   return state.unitData.units.map((unit) => {
     const district = ProgramFilter.cleanDistrict(unit.district);
     const unitName = [unit.unit_type, unit.number, unit.gender]
       .filter((part) => part != null && part !== "")
       .join(" ");
-    const existing = existingByUnit.get(rowKey(district, unitName));
-    if (existing) return existing;
-    return {
+    const key = rowKey(district, unitName);
+    const existing = existingByUnit.get(key);
+    const baseRow = existing || {
       district,
       unit: unitName || unit.name,
       unit_type: unit.unit_type,
       metric: unit.metric,
       youth: unit.youth,
       commissioners: unit.commissioner ? [unit.commissioner] : [],
-      pin_status: null,
+    };
+    return {
+      ...baseRow,
+      pin_status: pinByUnit.get(key) ?? baseRow.pin_status ?? null,
     };
   });
 }
@@ -679,16 +684,22 @@ function renderSignals() {
 
 function renderHealthFunnel() {
   const c = dashboardCouncil();
+  const pinRows = (state.data?.dashboard?.unit_pin_statuses || [])
+    .filter((row) => ProgramFilter.matchesUnitType(row.unit_type));
+  const pinFollowup = pinRows.length
+    ? pinRows.filter((row) => ["Inactive", "Stale"].includes(row.pin_status)).length
+    : null;
+  const pinFollowupRate = c.units && pinFollowup != null ? pinFollowup / c.units : null;
   const steps = [
-    ["Total units", c.units, 1, "All units currently tracked in the membership dashboard."],
-    ["Commissioner assigned", c.assigned_units, c.assigned_pct, "Units with named commissioner coverage."],
-    ["Healthy units", c.healthy_units, c.healthy_rate, "Units in the 4-5 metric band."],
-    ["At-risk units", c.at_risk_units, c.at_risk_rate, "Units in the 0-2 metric band requiring follow-up."],
+    ["Total units", c.units, 1, "All units currently tracked in the membership dashboard.", ""],
+    ["Commissioner assigned", c.assigned_units, c.assigned_pct, "Units with named commissioner coverage.", ""],
+    ["Healthy units", c.healthy_units, c.healthy_rate, "Units in the 4-5 metric band.", "good"],
+    ["At-risk units", c.at_risk_units, c.at_risk_rate, "Units in the 0-2 metric band requiring follow-up.", "risk"],
+    ["Inactive + stale PINs", pinFollowup, pinFollowupRate, "BeAScout PINs that are inactive, over 12 months old, or missing an update date.", "risk"],
   ];
 
-  document.getElementById("healthFunnel").innerHTML = steps.map(([label, value, rate, note], index) => {
+  document.getElementById("healthFunnel").innerHTML = steps.map(([label, value, rate, note, tone]) => {
     const width = Math.max(12, Math.min(100, (rate || 0) * 100));
-    const tone = index === 3 ? "risk" : index === 2 ? "good" : "";
     return `
       <article class="funnel-step">
         <div>

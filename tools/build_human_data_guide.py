@@ -223,6 +223,10 @@ def add_body(doc: Document, text: str):
 
 def add_bullet(doc: Document, text: str):
     paragraph = doc.add_paragraph(style="List Bullet")
+    paragraph.paragraph_format.space_before = Pt(1)
+    paragraph.paragraph_format.space_after = Pt(4)
+    paragraph.paragraph_format.keep_together = True
+    paragraph.paragraph_format.keep_with_next = False
     paragraph.add_run(text)
     return paragraph
 
@@ -641,7 +645,7 @@ def build_doc():
             ["Council Comparison", "How Capitol Area Council compares with other Service Territory 07 councils."],
             ["District Performance", "Which districts lead or lag across membership, unit health, training, SYT, and commissioner coverage."],
             ["Membership & Growth", "Where membership opportunity, TAY penetration, unit health risk, prospects, and renewals combine into priority signals."],
-            ["Unit Health & Renewal", "Where unit health, assignment, and renewal follow-up require action."],
+            ["Unit Health & Renewal", "Where unit health, assignment, combined Inactive + Stale BeAScout PINs, and renewal follow-up require action."],
             ["People & Readiness", "Where leader training, safeguarding, and camping-readiness gaps are concentrated."],
             ["Training", "Which people are trained, which leaders are direct-contact, and where direct-contact training gaps exist."],
             ["SYT", "Safeguarding Youth Training follow-up plus applicable Hazardous Weather and IOLS position-training issues; BALOO is informational at person level."],
@@ -651,7 +655,7 @@ def build_doc():
             ["Cub Scout JSN", "How school recruiting plans, dates, locations, materials, and uncovered schools compare with the monday.com source dashboard."],
             ["Popcorn", "How unit commitments, goals, prior sales, onboarding, and training roll up from Service Area to District to Unit."],
             ["Unit Metrics", "How districts and unit sections compare across unit health, training, outdoor, advancement, and the current workbook retention metric."],
-            ["Unit-Level Detail", "Which individual units and members drive program-specific youth, growth, training, SYT, health, assignment, and Pack/Troop camping-readiness status."],
+            ["Unit-Level Detail", "Which individual units and members drive program-specific youth, growth, training, SYT, health, assignment, BeAScout PIN status, and Pack/Troop camping-readiness status."],
             ["Renewal Status", "Which units are initiated, submitted, pending acceptance, posted, or otherwise need renewal follow-up."],
             ["Data & Help", "Which source workbooks are current, how values are calculated, where to report a problem, and which external training references apply."],
         ],
@@ -904,6 +908,8 @@ def build_doc():
             ["Registered commissioners", "Unique normalized commissioner names."],
             ["Unit commissioners", "Unique normalized people with at least one Unit Commissioner role."],
             ["Connections (12 Mo.)", "Completed Commissioner Connection History rows in the 365 days ending on the report date, limited to official districts."],
+            ["PIN state", "Stale when a matched BeAScout PIN last-modified date is blank or earlier than the same calendar date one year before publication; otherwise retain Active or Inactive."],
+            ["Inactive + stale PINs", "Count of PIN rows in either Inactive or Stale state, divided by all units in the current master program view for the funnel percentage."],
             ["Service Area", "Run-specific monday.com Service Areas hierarchy applied after official district normalization."],
         ],
         [2700, 6660],

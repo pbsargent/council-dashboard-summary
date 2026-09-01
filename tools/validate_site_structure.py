@@ -239,6 +239,11 @@ def main() -> int:
 
     unit_health_path = root / "unit-health.html"
     priority_script_path = root / "council-dashboard-summary.20260626-tay-kpi.js"
+    shared_dashboard_script = "council-dashboard-summary.20260626-tay-kpi.js?v=20260831-pin-funnel-2"
+    for page_name in ("index.html", "comparison.html", "districts.html", "unit-health.html", "people.html", "sources.html"):
+        page_source = (root / page_name).read_text(encoding="utf-8")
+        if shared_dashboard_script not in page_source:
+            errors.append(f"{page_name}: missing cache-busted shared PIN-funnel script")
     districts_path = root / "districts.html"
     if districts_path.is_file():
         districts_source = districts_path.read_text(encoding="utf-8")
@@ -280,12 +285,24 @@ def main() -> int:
         for required in (
             'document.getElementById("priorityMetricSelect")',
             'matchesPriorityMetricBand(row.metric)',
+            'state.data?.dashboard?.unit_pin_statuses',
+            'pinByUnit.get(key)',
             '"priorityMetricSelect"',
         ):
             if required not in priority_script:
                 errors.append(
                     "council-dashboard-summary.20260626-tay-kpi.js: "
                     f"missing Priority Units metric-filter binding {required!r}"
+                )
+        for required in (
+            '["Inactive", "Stale"].includes(row.pin_status)',
+            '["Inactive + stale PINs", pinFollowup, pinFollowupRate',
+            'pinFollowup / c.units',
+        ):
+            if required not in priority_script:
+                errors.append(
+                    "council-dashboard-summary.20260626-tay-kpi.js: "
+                    f"missing Unit Health Funnel PIN-follow-up binding {required!r}"
                 )
         for required in (
             'state.data.dashboard.council.volunteers',
@@ -303,6 +320,10 @@ def main() -> int:
             errors.append("help.html: missing Volunteers measure definition")
         if "<dt>Connections (12 Mo.)</dt>" not in help_source:
             errors.append("help.html: missing Connections (12 Mo.) measure definition")
+        if "<dt>PIN</dt>" not in help_source or "Stale means" not in help_source:
+            errors.append("help.html: missing PIN Stale-state definition")
+        if "Unit Health Funnel combines Inactive and Stale PINs" not in help_source:
+            errors.append("help.html: missing Unit Health Funnel combined PIN-follow-up definition")
         if "<dt>Outdoor Leadership Depth</dt>" not in help_source:
             errors.append("help.html: missing Outdoor Leadership Depth measure definition")
         if "first name and last initial" not in help_source:
@@ -395,11 +416,14 @@ def main() -> int:
     if unit_level_path.is_file() and unit_level_script_path.is_file():
         unit_level_page = unit_level_path.read_text(encoding="utf-8")
         unit_level_script = unit_level_script_path.read_text(encoding="utf-8")
-        if "unit-level-dashboard.js?v=20260830-unit-readiness-status-1" not in unit_level_page:
-            errors.append("unit-level.html: missing cache-busted Unit-Level readiness-status script")
+        if "unit-level-dashboard.js?v=20260831-pin-status-kpi-1" not in unit_level_page:
+            errors.append("unit-level.html: missing cache-busted Unit-Level PIN-status script")
         for required in ('"Camping Readiness"', 'preferred: "Preferred Depth"', "CACOutdoorReadiness.depthStatus(null)"):
             if required not in unit_level_script:
                 errors.append(f"unit-level-dashboard.js: missing Unit-Level readiness status contract {required!r}")
+        for required in ('"PIN Status"', "dashboard?.unit_pin_statuses", "state.pinByUnit.get", 'Stale: ["Update date is over 12 months old or missing"'):
+            if required not in unit_level_script:
+                errors.append(f"unit-level-dashboard.js: missing Unit-Level PIN status contract {required!r}")
 
     documentation_contracts = {
         "README.md": ("Gap / Fragile / Preferred Depth / Unknown", "Unit-Level Detail uses the same shared classification"),
@@ -588,7 +612,7 @@ def main() -> int:
         f"{len(SUMMARY_PAGES)} summary pages, {len(DETAIL_PAGES)} detail pages, "
         f"{len(NAVIGATION_ROUTES)} routes, {len(NAVIGATION_HIERARCHY)} hierarchy groups, "
         f"{len(REQUIRED_ASSETS)} shared assets, {len(HELP_ASSETS)} help assets, Cub Scout JSN pie-chart parity, "
-        "District Operational Detail retention and plain-percentage safeguards, Priority Units metric filtering, "
+        "District Operational Detail retention and plain-percentage safeguards, Priority Units metric filtering, Unit-Level PIN status, Unit Health PIN follow-up, "
         "public person-name privacy, and scroll-table safeguards."
     )
     return 0
