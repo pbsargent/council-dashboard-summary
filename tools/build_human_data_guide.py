@@ -647,7 +647,7 @@ def build_doc():
         [
             ["Active", "The matched PIN is current and the source state is Active."],
             ["Inactive", "The matched PIN is current and the source state is Inactive."],
-            ["Stale", "The matched last-modified date is blank or unusable, or is before the same calendar date one year prior to publication."],
+            ["Stale", "More than 12 months have passed since the matched PIN's last update, or its update date is blank or unusable."],
             ["n/a", "No PIN record was matched to the unit. This does not mean inactive or stale."],
         ],
         [1800, 7560],
@@ -933,7 +933,7 @@ def build_doc():
             ["Registered commissioners", "Unique normalized commissioner names."],
             ["Unit commissioners", "Unique normalized people with at least one Unit Commissioner role."],
             ["Connections (12 Mo.)", "Completed Commissioner Connection History rows in the 365 days ending on the report date, limited to official districts."],
-            ["PIN state", "Stale when a matched BeAScout PIN last-modified date is blank or unusable, or earlier than the same calendar date one year before publication; otherwise retain Active or Inactive. No match displays n/a."],
+            ["PIN state", "Stale when more than 12 months have passed since a matched BeAScout PIN's last update, or its update date is blank or unusable; otherwise retain Active or Inactive. No match displays n/a."],
             ["Inactive + stale PINs", "Count of matched PIN rows in either Inactive or Stale state, divided by all tracked membership-dashboard units in the current master program view; unmatched units remain in the denominator."],
             ["Service Area", "Run-specific monday.com Service Areas hierarchy applied after official district normalization."],
         ],

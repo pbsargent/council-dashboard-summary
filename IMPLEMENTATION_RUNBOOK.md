@@ -85,7 +85,7 @@ This is enforced in `tools/validate_site_structure.py` through `DETAIL_PAGES`, `
 
 `work/commissioner_site/build_site.py` joins the complete unit-level metric population to the main dashboard workbook's `Units` and `Pin` tabs and publishes matched rows as `dashboard.unit_pin_statuses`. The display state is calculated at publication time:
 
-- `Stale`: the matched `lastmodifieddate` is blank, unusable, or earlier than the same calendar date one year before publication.
+- `Stale`: more than 12 months have passed since the matched `lastmodifieddate`, or that date is blank or unusable. Operationally, the implementation uses a date earlier than the same calendar date one year before publication.
 - `Active` or `Inactive`: the matched date is on or after that cutoff, so the source `pinstatus` is retained.
 - `n/a`: no PIN record is matched to the unit; this is not an inactive or stale classification.
 
@@ -428,7 +428,7 @@ After any refresh or rebuild, check:
 - The Status filter returns those four leadership-depth categories. Hazardous Weather is independently filterable as Current or Gap and can be combined with Status, District, Sort, and Search.
 - Unit-Level Detail shows the same Camping Readiness status for Packs and Troops in both its KPI strip and Training Readiness row; unmatched Training-tab units show Unknown.
 - `dashboard.unit_pin_statuses` contains the expected matched unit-level PIN population and only `Active`, `Inactive`, or `Stale` display states; an unmatched unit renders `n/a` in Unit Follow-up and Unit-Level Detail.
-- A PIN row is `Stale` when its last-modified date is blank, unusable, or earlier than the same calendar date one year before publication. The boundary date itself is not stale.
+- A PIN row is `Stale` when more than 12 months have passed since its last update, or its update date is blank or unusable. The boundary date exactly one year before publication is not stale.
 - Unit Health Funnel `Inactive + stale PINs` equals the filtered count of both states and divides by all membership-dashboard units in the selected program view, including unmatched `n/a` units in the denominator.
 - Unit Follow-up Metric bands `0-2`, `3`, and `4-5` display only rows within the selected band and retain the matching PIN state.
 - Neither page represents campout approval or claims that roster data proves two-deep, female-leader, registration, or actual-attendance compliance.

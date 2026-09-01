@@ -33,7 +33,7 @@ Membership Intelligence uses the Council dashboard workbook `Units-Youth` tab fo
 
 The Unit Level Dashboard uses the latest dated Unit Level Metrics workbook, stored as `CAC - Unit Metric Scorecard.xlsx` and captured by `CACDashboardAutomation`. The daily publisher rebuilds `data/unit-level-latest.json` and `data/unit-level-latest.js` through `tools/build_unit_level_dashboard.py` before publishing.
 
-BeAScout PIN follow-up uses the main dashboard workbook's `Pin` tab. A matched PIN is `Stale` when its last-modified date is blank or earlier than the same calendar date one year before publication; otherwise its source `Active` or `Inactive` state is retained. The same state appears in every Unit Follow-up metric band and in the first Unit-Level Detail KPI. The Unit Health Funnel combines `Inactive` and `Stale` matched PINs, then divides by all membership-dashboard units in the selected program view. A unit without a matched PIN displays `n/a` and remains in that funnel denominator.
+BeAScout PIN follow-up uses the main dashboard workbook's `Pin` tab. A matched PIN is `Stale` when more than 12 months have passed since its last update, or its update date is blank or unusable; otherwise its source `Active` or `Inactive` state is retained. The same state appears in every Unit Follow-up metric band and in the first Unit-Level Detail KPI. The Unit Health Funnel combines `Inactive` and `Stale` matched PINs, then divides by all membership-dashboard units in the selected program view. A unit without a matched PIN displays `n/a` and remains in that funnel denominator.
 
 The scheduled Council Summary publisher uses the `CACDashboardAutomation/.venv` Python environment and does not require the Codex application or a Codex-managed runtime to be running.
 

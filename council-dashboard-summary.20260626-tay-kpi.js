@@ -695,7 +695,7 @@ function renderHealthFunnel() {
     ["Commissioner assigned", c.assigned_units, c.assigned_pct, "Units with named commissioner coverage.", ""],
     ["Healthy units", c.healthy_units, c.healthy_rate, "Units in the 4-5 metric band.", "good"],
     ["At-risk units", c.at_risk_units, c.at_risk_rate, "Units in the 0-2 metric band requiring follow-up.", "risk"],
-    ["Inactive + stale PINs", pinFollowup, pinFollowupRate, "BeAScout PINs that are inactive, over 12 months old, or missing an update date.", "risk"],
+    ["Inactive + stale PINs", pinFollowup, pinFollowupRate, "Inactive PINs, plus PINs with more than 12 months since the last update or a missing update date.", "risk"],
   ];
 
   document.getElementById("healthFunnel").innerHTML = steps.map(([label, value, rate, note, tone]) => {

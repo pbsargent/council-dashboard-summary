@@ -38,7 +38,7 @@ function pinSummary(unit) {
   const presentations = {
     Active: ["Current BeAScout PIN record", "good"],
     Inactive: ["Current PIN is inactive", "warning"],
-    Stale: ["Update date is over 12 months old or missing", "danger"],
+    Stale: ["More than 12 months since the last update, or update date is missing", "danger"],
     "n/a": ["No matched BeAScout PIN record", "warning"],
   };
   const status = Object.hasOwn(presentations, recordedStatus) ? recordedStatus : "n/a";

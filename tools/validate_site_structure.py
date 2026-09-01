@@ -239,7 +239,7 @@ def main() -> int:
 
     unit_health_path = root / "unit-health.html"
     priority_script_path = root / "council-dashboard-summary.20260626-tay-kpi.js"
-    shared_dashboard_script = "council-dashboard-summary.20260626-tay-kpi.js?v=20260831-pin-funnel-2"
+    shared_dashboard_script = "council-dashboard-summary.20260626-tay-kpi.js?v=20260831-pin-funnel-3"
     for page_name in ("index.html", "comparison.html", "districts.html", "unit-health.html", "people.html", "sources.html"):
         page_source = (root / page_name).read_text(encoding="utf-8")
         if shared_dashboard_script not in page_source:
@@ -418,12 +418,12 @@ def main() -> int:
     if unit_level_path.is_file() and unit_level_script_path.is_file():
         unit_level_page = unit_level_path.read_text(encoding="utf-8")
         unit_level_script = unit_level_script_path.read_text(encoding="utf-8")
-        if "unit-level-dashboard.js?v=20260831-pin-status-kpi-1" not in unit_level_page:
+        if "unit-level-dashboard.js?v=20260831-pin-status-kpi-2" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-status script")
         for required in ('"Camping Readiness"', 'preferred: "Preferred Depth"', "CACOutdoorReadiness.depthStatus(null)"):
             if required not in unit_level_script:
                 errors.append(f"unit-level-dashboard.js: missing Unit-Level readiness status contract {required!r}")
-        for required in ('"PIN Status"', "dashboard?.unit_pin_statuses", "state.pinByUnit.get", 'Stale: ["Update date is over 12 months old or missing"'):
+        for required in ('"PIN Status"', "dashboard?.unit_pin_statuses", "state.pinByUnit.get", 'Stale: ["More than 12 months since the last update, or update date is missing"'):
             if required not in unit_level_script:
                 errors.append(f"unit-level-dashboard.js: missing Unit-Level PIN status contract {required!r}")
 
