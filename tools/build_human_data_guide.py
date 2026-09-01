@@ -639,7 +639,7 @@ def build_doc():
     add_heading(doc, "BeAScout PIN status and follow-up", 2)
     add_body(
         doc,
-        "The dashboard uses one PIN classification in Unit Follow-up, the first Unit-Level Detail KPI, and the Unit Health Funnel. It does not treat a missing match as an inactive PIN.",
+        "The dashboard uses one PIN classification in Unit Follow-up, the first Unit-Level Detail KPI, the Unit Health Funnel, and the District Performance scorecard. It does not treat a missing match as an inactive PIN.",
     )
     add_table(
         doc,
@@ -665,7 +665,7 @@ def build_doc():
         [
             ["Overview", "What the Council's current KPI picture is and which operating areas need attention first."],
             ["Council Comparison", "How Capitol Area Council compares with other Service Territory 07 councils."],
-            ["District Performance", "Which districts lead or lag across membership, unit health, training, SYT, and commissioner coverage."],
+            ["District Performance", "Which districts lead or lag across membership, unit health, PIN currency, training, SYT, and commissioner coverage."],
             ["Membership & Growth", "Where membership opportunity, TAY penetration, unit health risk, prospects, and renewals combine into priority signals."],
             ["Unit Health & Renewal", "Where unit health, assignment, combined Inactive + Stale BeAScout PINs, and renewal follow-up require action."],
             ["People & Readiness", "Where leader training, safeguarding, and camping-readiness gaps are concentrated."],
@@ -934,6 +934,7 @@ def build_doc():
             ["Unit commissioners", "Unique normalized people with at least one Unit Commissioner role."],
             ["Connections (12 Mo.)", "Completed Commissioner Connection History rows in the 365 days ending on the report date, limited to official districts."],
             ["PIN state", "Stale when more than 12 months have passed since a matched BeAScout PIN's last update, or its update date is blank or unusable; otherwise retain Active or Inactive. No match displays n/a."],
+            ["PIN Currency", "Matched PIN rows in current Active or Inactive display states divided by all tracked units in the selected district/program view; Stale and unmatched n/a units remain in the denominator and do not count as current."],
             ["Inactive + stale PINs", "Count of matched PIN rows in either Inactive or Stale state, divided by all tracked membership-dashboard units in the current master program view; unmatched units remain in the denominator."],
             ["Service Area", "Run-specific monday.com Service Areas hierarchy applied after official district normalization."],
         ],

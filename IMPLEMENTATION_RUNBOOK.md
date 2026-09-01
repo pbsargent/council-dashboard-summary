@@ -430,6 +430,7 @@ After any refresh or rebuild, check:
 - `dashboard.unit_pin_statuses` contains the expected matched unit-level PIN population and only `Active`, `Inactive`, or `Stale` display states; an unmatched unit renders `n/a` in Unit Follow-up and Unit-Level Detail.
 - A PIN row is `Stale` when more than 12 months have passed since its last update, or its update date is blank or unusable. The boundary date exactly one year before publication is not stale.
 - Unit Health Funnel `Inactive + stale PINs` equals the filtered count of both states and divides by all membership-dashboard units in the selected program view, including unmatched `n/a` units in the denominator.
+- District Performance → District Scorecard shows `PIN Currency` in place of the former `At Risk` column. It equals matched current `Active` or `Inactive` PIN rows divided by all tracked units in the selected district/program view; `Stale` and unmatched `n/a` units remain in the denominator. Service Area rows aggregate counts before calculating the percentage.
 - Unit Follow-up Metric bands `0-2`, `3`, and `4-5` display only rows within the selected band and retain the matching PIN state.
 - Neither page represents campout approval or claims that roster data proves two-deep, female-leader, registration, or actual-attendance compliance.
 - Renewal board page loads, honors light/dark mode, and links back to the Council Summary page.

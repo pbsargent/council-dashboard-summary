@@ -299,6 +299,7 @@ Each district receives a status in `build_site.py`:
 | Healthy rate | `healthy_units / units` |
 | Unit Follow-up | Complete unit-level rows in the selected Metric band (`0-2`, `3`, or `4-5`), further constrained by the master program view; the legacy `priority_units` array supplies commissioner/PIN enrichment when available but is not the table's row limit |
 | PIN | For a matched `Pin` row, `Stale` when more than 12 months have passed since `lastmodifieddate`, or that date is blank or unusable; otherwise the source `pinstatus` (`Active` or `Inactive`). The implementation treats a date earlier than the same calendar date one year before publication as more than 12 months since the last update. An unmatched PIN row remains `n/a`. |
+| PIN Currency | District Performance scorecard count of matched unit PIN rows whose display state is current (`Active` or `Inactive`), divided by all tracked units in the selected district/program view. `Stale` and unmatched `n/a` units remain in the denominator and do not count as current. Service Area values sum the current-PIN and tracked-unit counts for the displayed districts before division. |
 | Inactive + stale PINs | Count of matched `unit_pin_statuses` rows whose display state is `Inactive` or `Stale`; the displayed rate divides that count by all membership-dashboard units in the current master program view. Units without a matched PIN remain in the denominator, so the rate can differ from `(Inactive + Stale) / unit_pin_statuses.length`. |
 
 ### Today's Read / Signals

@@ -133,8 +133,12 @@ Unit-Level Detail.
 Preserve the compact scorecard table in **District Performance → District
 scorecard → Operational Detail**.
 
-- Show **At Risk** and **Assigned** as plain numeric percentages. Do not restore
-  mini-meters, progress bars, or other decorative bars inside these table cells.
+- Show **PIN Currency** and **Assigned** as plain numeric percentages. PIN
+  Currency is the number of matched PIN rows in current `Active` or `Inactive`
+  display states divided by all tracked units in the selected district/program
+  view. `Stale` and unmatched `n/a` units remain in the denominator and do not
+  count as current. Do not restore mini-meters, progress bars, or other
+  decorative bars inside these table cells.
 - Keep the **Retention** column immediately after **Avg Metric** for both
   district and Service Area rows. District values come from the workbook's
   `retention_rate`; the master program filter does not recalculate that source

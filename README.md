@@ -35,6 +35,8 @@ The Unit Level Dashboard uses the latest dated Unit Level Metrics workbook, stor
 
 BeAScout PIN follow-up uses the main dashboard workbook's `Pin` tab. A matched PIN is `Stale` when more than 12 months have passed since its last update, or its update date is blank or unusable; otherwise its source `Active` or `Inactive` state is retained. The same state appears in every Unit Follow-up metric band and in the first Unit-Level Detail KPI. The Unit Health Funnel combines `Inactive` and `Stale` matched PINs, then divides by all membership-dashboard units in the selected program view. A unit without a matched PIN displays `n/a` and remains in that funnel denominator.
 
+The District Performance scorecard uses the same classification for `PIN Currency`: matched current `Active` or `Inactive` PIN rows divided by all tracked units in the selected district/program view. `Stale` and unmatched `n/a` units remain in the denominator and do not count as current.
+
 The scheduled Council Summary publisher uses the `CACDashboardAutomation/.venv` Python environment and does not require the Codex application or a Codex-managed runtime to be running.
 
 Both the Council Summary and Commissioner portal deploy daily data as verified

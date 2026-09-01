@@ -239,7 +239,7 @@ def main() -> int:
 
     unit_health_path = root / "unit-health.html"
     priority_script_path = root / "council-dashboard-summary.20260626-tay-kpi.js"
-    shared_dashboard_script = "council-dashboard-summary.20260626-tay-kpi.js?v=20260831-pin-funnel-3"
+    shared_dashboard_script = "council-dashboard-summary.20260626-tay-kpi.js?v=20260901-district-pin-currency-1"
     for page_name in ("index.html", "comparison.html", "districts.html", "unit-health.html", "people.html", "sources.html"):
         page_source = (root / page_name).read_text(encoding="utf-8")
         if shared_dashboard_script not in page_source:
@@ -249,6 +249,10 @@ def main() -> int:
         districts_source = districts_path.read_text(encoding="utf-8")
         if '<th class="num">Retention</th>' not in districts_source:
             errors.append("districts.html: Operational Detail must include the Retention column")
+        if '<th class="num">PIN Currency</th>' not in districts_source:
+            errors.append("districts.html: Operational Detail must include the PIN Currency column")
+        if '<th class="num">At Risk</th>' in districts_source:
+            errors.append("districts.html: Operational Detail must not restore the former At Risk column")
     if unit_health_path.is_file():
         unit_health_source = unit_health_path.read_text(encoding="utf-8")
         if 'id="priorityMetricSelect"' not in unit_health_source:
@@ -276,12 +280,30 @@ def main() -> int:
             for required in (
                 'pWhole(serviceAreaSummary(service.rows, "retention_rate"))',
                 "pWhole(row.retention_rate)",
+                "pinCurrencySummary(service.rows, currentByDistrict)",
+                "pinCurrencySummary([row], currentByDistrict)",
             ):
                 if required not in district_rows_source:
                     errors.append(
                         "council-dashboard-summary.20260626-tay-kpi.js: "
                         f"missing District Operational Detail retention binding {required!r}"
                     )
+            if 'serviceAreaSummary(service.rows, "at_risk_rate")' in district_rows_source or "p(row.at_risk_rate)" in district_rows_source:
+                errors.append(
+                    "council-dashboard-summary.20260626-tay-kpi.js: "
+                    "District Operational Detail must use PIN Currency instead of At Risk"
+                )
+        for required in (
+            "function pinCurrencyByDistrict()",
+            'row.pin_status === "Active" || row.pin_status === "Inactive"',
+            "function pinCurrencySummary(rows, currentByDistrict)",
+            "current / units",
+        ):
+            if required not in priority_script:
+                errors.append(
+                    "council-dashboard-summary.20260626-tay-kpi.js: "
+                    f"missing District PIN Currency safeguard {required!r}"
+                )
         for required in (
             'document.getElementById("priorityMetricSelect")',
             'matchesPriorityMetricBand(row.metric)',
@@ -632,7 +654,7 @@ def main() -> int:
         f"{len(SUMMARY_PAGES)} summary pages, {len(DETAIL_PAGES)} detail pages, "
         f"{len(NAVIGATION_ROUTES)} routes, {len(NAVIGATION_HIERARCHY)} hierarchy groups, "
         f"{len(REQUIRED_ASSETS)} shared assets, {len(HELP_ASSETS)} help assets, Cub Scout JSN pie-chart parity, "
-        "District Operational Detail retention and plain-percentage safeguards, Priority Units metric filtering, Unit-Level PIN status, Unit Health PIN follow-up, "
+        "District Operational Detail retention, PIN Currency, and plain-percentage safeguards, Priority Units metric filtering, Unit-Level PIN status, Unit Health PIN follow-up, "
         "public person-name privacy, and scroll-table safeguards."
     )
     return 0

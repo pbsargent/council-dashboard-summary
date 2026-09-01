@@ -184,6 +184,28 @@ function serviceAreaSummary(rows, key) {
   return rows.reduce((total, row) => total + (row[key] || 0), 0);
 }
 
+function pinCurrencyByDistrict() {
+  const counts = new Map();
+  const rows = (state.data?.dashboard?.unit_pin_statuses || [])
+    .filter((row) => ProgramFilter.matchesUnitType(row.unit_type));
+  for (const row of rows) {
+    const district = ProgramFilter.cleanDistrict(row.district);
+    if (!district) continue;
+    const count = counts.get(district) || 0;
+    counts.set(district, count + (row.pin_status === "Active" || row.pin_status === "Inactive" ? 1 : 0));
+  }
+  return counts;
+}
+
+function pinCurrencySummary(rows, currentByDistrict) {
+  const units = rows.reduce((total, row) => total + (Number(row.units) || 0), 0);
+  const current = rows.reduce(
+    (total, row) => total + (currentByDistrict.get(ProgramFilter.cleanDistrict(row.district)) || 0),
+    0,
+  );
+  return { current, units, rate: units ? current / units : null };
+}
+
 function selectedDistrict() {
   return document.getElementById("districtSelect")?.value || "";
 }
@@ -737,13 +759,17 @@ function renderQualityChecks() {
 }
 
 function renderDistrictRows() {
-  const rows = currentDistricts().sort((a, b) => (b.at_risk_rate || 0) - (a.at_risk_rate || 0));
+  const currentByDistrict = pinCurrencyByDistrict();
+  const rows = currentDistricts().sort((a, b) => {
+    const aRate = pinCurrencySummary([a], currentByDistrict).rate ?? -1;
+    const bRate = pinCurrencySummary([b], currentByDistrict).rate ?? -1;
+    return aRate - bRate || String(a.district || "").localeCompare(String(b.district || ""));
+  });
   const forceOpen = Boolean(selectedDistrict() || searchQuery());
   document.getElementById("districtRows").innerHTML = serviceAreaGroups(rows).map((service) => {
     const open = forceOpen || state.openServiceAreas.has(service.name);
     const status = serviceAreaSummary(service.rows, "status");
-    const atRiskUnits = serviceAreaSummary(service.rows, "at_risk_units");
-    const units = serviceAreaSummary(service.rows, "units");
+    const servicePinCurrency = pinCurrencySummary(service.rows, currentByDistrict);
     const serviceRow = `
       <tr class="service-area-row" data-service-area="${esc(service.name)}" aria-expanded="${open ? "true" : "false"}">
         <td><button class="service-toggle" type="button" data-service-area="${esc(service.name)}"><span class="disclosure">${open ? "-" : "+"}</span><strong>${esc(service.name)}</strong></button><div class="subtle">${n(service.rows.length)} districts · ${esc(service.fieldDirector || "No field director")}</div></td>
@@ -752,14 +778,16 @@ function renderDistrictRows() {
         <td class="num">${sp(serviceAreaSummary(service.rows, "yoy_pct"))}</td>
         <td class="num">${metric(serviceAreaSummary(service.rows, "avg_metric"))}</td>
         <td class="num">${pWhole(serviceAreaSummary(service.rows, "retention_rate"))}</td>
-        <td class="num">${p(serviceAreaSummary(service.rows, "at_risk_rate"))}<div class="subtle">${n(atRiskUnits)} / ${n(units)}</div></td>
+        <td class="num">${p(servicePinCurrency.rate)}<div class="subtle">${n(servicePinCurrency.current)} / ${n(servicePinCurrency.units)}</div></td>
         <td class="num">${p(serviceAreaSummary(service.rows, "assigned_pct"))}</td>
         <td class="num">${p(serviceAreaSummary(service.rows, "syt_pct"))}</td>
         <td class="num">${p(serviceAreaSummary(service.rows, "training_pct"))}</td>
         <td></td>
       </tr>
     `;
-    const districtRows = open ? service.rows.map((row) => `
+    const districtRows = open ? service.rows.map((row) => {
+      const districtPinCurrency = pinCurrencySummary([row], currentByDistrict);
+      return `
     <tr>
       <td><strong>${esc(row.district)}</strong><div class="subtle">${n(row.units)} units</div></td>
       <td><span class="status ${statusClass(row.status)}">${esc(row.status)}</span></td>
@@ -767,13 +795,14 @@ function renderDistrictRows() {
       <td class="num">${sp(row.yoy_pct)}</td>
       <td class="num">${metric(row.avg_metric)}</td>
       <td class="num">${pWhole(row.retention_rate)}</td>
-      <td class="num">${p(row.at_risk_rate)}</td>
+      <td class="num">${p(districtPinCurrency.rate)}<div class="subtle">${n(districtPinCurrency.current)} / ${n(districtPinCurrency.units)}</div></td>
       <td class="num">${p(row.assigned_pct)}</td>
       <td class="num">${p(row.syt_pct)}</td>
       <td class="num">${p(row.training_pct)}</td>
       <td>${esc(row.district_commissioner || "TBA")}<div class="subtle">${esc(row.field_exec || "")}</div></td>
     </tr>
-  `).join("") : "";
+  `;
+    }).join("") : "";
     return serviceRow + districtRows;
   }).join("");
 }
