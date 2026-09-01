@@ -83,15 +83,17 @@ This is enforced in `tools/validate_site_structure.py` through `DETAIL_PAGES`, `
 
 ### Persistent BeAScout PIN Freshness Contract
 
-`work/commissioner_site/build_site.py` joins the complete unit-level metric population to the main dashboard workbook's `Units` and `Pin` tabs and publishes matched rows as `dashboard.unit_pin_statuses`. The display state is calculated at publication time:
+`work/commissioner_site/build_site.py` joins the complete unit-level metric population to the main dashboard workbook's `Units` and `Pin` tabs and publishes matched rows as `dashboard.unit_pin_statuses`. The display state is calculated from the dated workbook's report as-of date:
 
-- `Stale`: more than 12 months have passed since the matched `lastmodifieddate`, or that date is blank or unusable. Operationally, the implementation uses a date earlier than the same calendar date one year before publication.
+- `Stale`: more than 12 months have passed since the matched `lastmodifieddate`, or that date is blank or unusable. Operationally, the implementation uses a date earlier than the same calendar date one year before the report as-of date.
 - `Active` or `Inactive`: the matched date is on or after that cutoff, so the source `pinstatus` is retained.
 - `n/a`: no PIN record is matched to the unit; this is not an inactive or stale classification.
 
 Use this one classification in the Unit Health page's complete Unit Follow-up metric bands, the first KPI on Unit-Level Detail, and the Unit Health Funnel. The funnel numerator counts matched `Inactive` and `Stale` rows after the master program filter. Its denominator is all membership-dashboard units in that view, including units without a matched PIN. The percentage therefore can differ from a calculation that divides only by `dashboard.unit_pin_statuses.length`.
 
-The focused safeguards are `tools/test_pin_status.py`, `tools/test_unit_health_pin_funnel.js`, `tools/test_unit_level_pin_status.js`, and the PIN assertions in `tools/validate_site_structure.py`. Keep the Help page, Markdown data dictionary, reader-facing DOCX/PDF guide, and documentation ZIP synchronized with this contract.
+The builder also publishes four Boolean completeness flags on each matched `unit_pin_statuses` row: `pin_status_complete`, `pin_contact_complete`, `pin_meeting_complete`, and `pin_details_complete`. Required PIN Details is true only when status, contact name plus either email or phone, meeting location, and meeting details are present. Website, fee, fundraising, and availability are not counted, and freshness remains a separate PIN Currency measure. The PIN Status & Completeness page divides complete matched rows by all tracked units in the selected district/program view, including unmatched units. Do not publish the underlying contact or meeting values; only the Boolean flags are allowed in public JSON.
+
+The focused safeguards are `tools/test_pin_status.py`, `tools/test_pin_status_page.js`, `tools/test_unit_health_pin_funnel.js`, `tools/test_unit_level_pin_status.js`, and the PIN assertions in `tools/validate_site_structure.py`. Keep the Help page, Markdown data dictionary, reader-facing DOCX/PDF guide, and documentation ZIP synchronized with this contract.
 
 ## 2. Data Acquisition Requirements
 
@@ -428,9 +430,10 @@ After any refresh or rebuild, check:
 - The Status filter returns those four leadership-depth categories. Hazardous Weather is independently filterable as Current or Gap and can be combined with Status, District, Sort, and Search.
 - Unit-Level Detail shows the same Camping Readiness status for Packs and Troops in both its KPI strip and Training Readiness row; unmatched Training-tab units show Unknown.
 - `dashboard.unit_pin_statuses` contains the expected matched unit-level PIN population and only `Active`, `Inactive`, or `Stale` display states; an unmatched unit renders `n/a` in Unit Follow-up and Unit-Level Detail.
-- A PIN row is `Stale` when more than 12 months have passed since its last update, or its update date is blank or unusable. The boundary date exactly one year before publication is not stale.
+- A PIN row is `Stale` when more than 12 months have passed since its last update, or its update date is blank or unusable. The boundary date exactly one year before the dated report's as-of date is not stale.
 - Unit Health Funnel `Inactive + stale PINs` equals the filtered count of both states and divides by all membership-dashboard units in the selected program view, including unmatched `n/a` units in the denominator.
 - District Performance → District Scorecard shows `PIN Currency` in place of the former `At Risk` column. It equals matched current `Active` or `Inactive` PIN rows divided by all tracked units in the selected district/program view; `Stale` and unmatched `n/a` units remain in the denominator. Service Area rows aggregate counts before calculating the percentage.
+- District Performance → PIN Status & Completeness shows PIN status, currency, and Required PIN Details by district. Required PIN Details equals matched rows with all essential completion flags divided by all tracked units; the public JSON contains only Boolean completion flags and no PIN contact or meeting values.
 - Unit Follow-up Metric bands `0-2`, `3`, and `4-5` display only rows within the selected band and retain the matching PIN state.
 - Neither page represents campout approval or claims that roster data proves two-deep, female-leader, registration, or actual-attendance compliance.
 - Renewal board page loads, honors light/dark mode, and links back to the Council Summary page.

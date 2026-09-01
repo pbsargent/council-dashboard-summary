@@ -657,6 +657,11 @@ def build_doc():
         "How the funnel percentage works",
         "Inactive + Stale is the matched follow-up count. The percentage divides that count by all tracked membership-dashboard units in the selected program view. Units without a matched PIN stay in the denominator, so do not divide only by the number of PIN-status rows.",
     )
+    add_callout(
+        doc,
+        "Required PIN Details is separate from freshness",
+        "A matched PIN is complete when status, contact name plus either email or phone, meeting location, and meeting details are present. Website, fee, fundraising, and availability are not counted. Complete matched PINs are divided by all tracked units, including units without a matched PIN. The public data contains only completion flags, not contact or meeting values.",
+    )
 
     add_heading(doc, "6. What Each Dashboard Page Adds", 1)
     add_table(
@@ -666,6 +671,7 @@ def build_doc():
             ["Overview", "What the Council's current KPI picture is and which operating areas need attention first."],
             ["Council Comparison", "How Capitol Area Council compares with other Service Territory 07 councils."],
             ["District Performance", "Which districts lead or lag across membership, unit health, PIN currency, training, SYT, and commissioner coverage."],
+            ["PIN Status & Completeness", "Which districts need PIN freshness or essential contact-and-meeting detail follow-up, without publishing the private field values."],
             ["Membership & Growth", "Where membership opportunity, TAY penetration, unit health risk, prospects, and renewals combine into priority signals."],
             ["Unit Health & Renewal", "Where unit health, assignment, combined Inactive + Stale BeAScout PINs, and renewal follow-up require action."],
             ["People & Readiness", "Where leader training, safeguarding, and camping-readiness gaps are concentrated."],
@@ -935,6 +941,7 @@ def build_doc():
             ["Connections (12 Mo.)", "Completed Commissioner Connection History rows in the 365 days ending on the report date, limited to official districts."],
             ["PIN state", "Stale when more than 12 months have passed since a matched BeAScout PIN's last update, or its update date is blank or unusable; otherwise retain Active or Inactive. No match displays n/a."],
             ["PIN Currency", "Matched PIN rows in current Active or Inactive display states divided by all tracked units in the selected district/program view; Stale and unmatched n/a units remain in the denominator and do not count as current."],
+            ["Required PIN Details", "Matched PIN rows with status, contact name plus email or phone, meeting location, and meeting details divided by all tracked units. Unmatched units remain in the denominator; freshness is measured separately."],
             ["Inactive + stale PINs", "Count of matched PIN rows in either Inactive or Stale state, divided by all tracked membership-dashboard units in the current master program view; unmatched units remain in the denominator."],
             ["Service Area", "Run-specific monday.com Service Areas hierarchy applied after official district normalization."],
         ],

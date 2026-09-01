@@ -19,6 +19,7 @@
       label: "District Performance",
       path: "districts.html",
       items: [
+        { key: "pin-status", label: "PIN Status & Completeness", path: "pin-status.html" },
         { key: "popcorn", label: "Popcorn", path: "popcorn.html" },
       ],
     },

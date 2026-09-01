@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>PIN Status &amp; Completeness - Council Dashboard Summary</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260821-scrollable-tables-v1">
+  <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
+  <link rel="stylesheet" href="pin-status.css?v=20260901-pin-status-1">
+</head>
+<body data-page="pin-status">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Council dashboard navigation">
+      <div class="brand"><img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council"></div>
+      <nav aria-label="Council dashboard"><a href="index.html">Overview</a></nav>
+      <a class="report-problem" data-report-problem href="mailto:scouting@imetpetersargent.com">Report a problem</a>
+      <div class="sidebar-note"><span id="generatedDate">Loading</span><strong>PIN Status &amp; Completeness</strong></div>
+    </aside>
+
+    <main>
+      <header class="hero detail-hero">
+        <div>
+          <p class="eyebrow">District performance</p>
+          <h1>PIN Status &amp; Completeness <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">See whether unit BeAScout PIN information is current and whether the required contact and meeting details are complete.</p>
+        </div>
+        <div class="hero-actions"><a class="detail-link" href="districts.html">Back to District Performance</a></div>
+      </header>
+
+      <section class="kpi-grid pin-kpi-grid" id="pinKpis" aria-label="PIN status metrics"></section>
+
+      <section class="detail-toolbar" aria-label="PIN status filters">
+        <label class="control">
+          <span>Service Area</span>
+          <select id="serviceAreaSelect"><option value="">All Service Areas</option></select>
+        </label>
+        <label class="control">
+          <span>District</span>
+          <select id="districtSelect"><option value="">All Districts</option></select>
+        </label>
+        <div class="control pin-status-control">
+          <span>Focus</span>
+          <div class="segmented" id="pinFocus" role="group" aria-label="PIN follow-up focus">
+            <button type="button" class="active" data-focus="all" aria-pressed="true">All</button>
+            <button type="button" data-focus="stale" aria-pressed="false">Stale</button>
+            <button type="button" data-focus="inactive" aria-pressed="false">Inactive</button>
+            <button type="button" data-focus="details" aria-pressed="false">Details gaps</button>
+            <button type="button" data-focus="unmatched" aria-pressed="false">No PIN</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-grid pin-insight-grid">
+        <section class="panel" aria-labelledby="currencyTitle">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">Freshness by district</p>
+              <div class="panel-title-row">
+                <h2 id="currencyTitle">District PIN Currency</h2>
+                <button class="panel-help" type="button" aria-label="District PIN Currency source help" title="PIN Currency is Active plus Inactive PINs updated within the last 12 months, divided by every tracked unit. Stale and unmatched units stay in the denominator.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="pin-ranking" id="currencyRanking"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="compositionTitle">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">Selected population</p>
+              <div class="panel-title-row">
+                <h2 id="compositionTitle">PIN Status Composition</h2>
+                <button class="panel-help" type="button" aria-label="PIN Status Composition source help" title="Stale means more than 12 months since the last update, or the update date is blank or unusable. Units without a matched PIN are shown separately.">?</button>
+              </div>
+            </div>
+          </div>
+          <div class="pin-composition" id="pinComposition"></div>
+        </section>
+      </section>
+
+      <section class="panel pin-details-panel" aria-labelledby="detailsTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Field completeness</p>
+            <div class="panel-title-row">
+              <h2 id="detailsTitle">Required PIN Details</h2>
+              <button class="panel-help" type="button" aria-label="Required PIN Details source help" title="Complete means the matched PIN has a status, a contact name with either email or phone, a meeting location, and meeting details. Website, fee, fundraising, and availability fields are not counted. Freshness is measured separately as PIN Currency.">?</button>
+            </div>
+          </div>
+          <strong class="pin-details-total" id="detailsTotal"></strong>
+        </div>
+        <p class="subtle pin-definition">Required details are intentionally limited to the essential fields needed for a family to understand and contact the unit. Only completion flags are published; contact and meeting values are not exposed.</p>
+        <div class="pin-outcomes" id="detailsOutcomes"></div>
+      </section>
+
+      <section class="panel table-panel" aria-labelledby="districtPinTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">District follow-up</p>
+            <div class="panel-title-row">
+              <h2 id="districtPinTitle">District PIN Detail</h2>
+              <button class="panel-help" type="button" aria-label="District PIN Detail source help" title="All percentages use every tracked unit in the selected district and program population. Unmatched units remain in the denominator.">?</button>
+            </div>
+          </div>
+          <span class="count-pill" id="districtCount"></span>
+        </div>
+        <div class="table-wrap">
+          <table class="pin-table">
+            <thead><tr><th>District</th><th class="num">Units</th><th class="num">Active</th><th class="num">Inactive</th><th class="num">Stale</th><th class="num">No PIN</th><th class="num">PIN Currency</th><th>Required PIN Details</th></tr></thead>
+            <tbody id="districtPinRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="site-navigation.js?v=20260901-pin-status-page-1"></script>
+  <script src="program-filter.js?v=20260717-master-filter-3"></script>
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="report-problem.js?v=20260712"></script>
+  <script src="pin-status.js?v=20260901-pin-status-1"></script>
+</body>
+</html>

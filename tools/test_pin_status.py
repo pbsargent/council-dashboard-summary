@@ -7,6 +7,7 @@ import importlib.util
 import unittest
 from datetime import date, datetime
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 
 BUILD_SITE_PATH = Path(__file__).resolve().parents[3] / "work" / "commissioner_site" / "build_site.py"
@@ -51,6 +52,53 @@ class PinDisplayStatusTests(unittest.TestCase):
 
     def test_leap_day_cutoff_uses_calendar_year(self) -> None:
         self.assertEqual(BUILD_SITE.twelve_month_cutoff(date(2024, 2, 29)), date(2023, 2, 28))
+
+    def test_report_date_comes_from_dated_workbook_name(self) -> None:
+        with NamedTemporaryFile(prefix="2026-08-31_Dashboard - CAC", suffix=".xlsx") as workbook:
+            self.assertEqual(BUILD_SITE.report_date_for_path(Path(workbook.name)), self.AS_OF)
+
+
+class PinFieldCompletenessTests(unittest.TestCase):
+    COMPLETE_ROW = {
+        "pinstatus": "Active",
+        "BeAScout Contact": "Contact Name",
+        "BeAScout email": "contact@example.invalid",
+        "BeAScout phone#": "",
+        "Meeting Location": "Community Center",
+        "Meeting": "Tuesdays",
+    }
+
+    def test_complete_pin_has_all_privacy_safe_flags(self) -> None:
+        self.assertEqual(
+            BUILD_SITE.pin_field_completeness(self.COMPLETE_ROW),
+            {
+                "pin_status_complete": True,
+                "pin_contact_complete": True,
+                "pin_meeting_complete": True,
+                "pin_details_complete": True,
+            },
+        )
+
+    def test_contact_requires_name_and_at_least_one_method(self) -> None:
+        no_name = {**self.COMPLETE_ROW, "BeAScout Contact": ""}
+        no_method = {**self.COMPLETE_ROW, "BeAScout email": "", "BeAScout phone#": ""}
+        self.assertFalse(BUILD_SITE.pin_field_completeness(no_name)["pin_contact_complete"])
+        self.assertFalse(BUILD_SITE.pin_field_completeness(no_method)["pin_contact_complete"])
+        self.assertFalse(BUILD_SITE.pin_field_completeness(no_name)["pin_details_complete"])
+
+    def test_meeting_requires_location_and_details(self) -> None:
+        no_location = {**self.COMPLETE_ROW, "Meeting Location": ""}
+        no_details = {**self.COMPLETE_ROW, "Meeting": ""}
+        self.assertFalse(BUILD_SITE.pin_field_completeness(no_location)["pin_meeting_complete"])
+        self.assertFalse(BUILD_SITE.pin_field_completeness(no_details)["pin_meeting_complete"])
+
+    def test_status_is_required(self) -> None:
+        flags = BUILD_SITE.pin_field_completeness({**self.COMPLETE_ROW, "pinstatus": ""})
+        self.assertFalse(flags["pin_status_complete"])
+        self.assertFalse(flags["pin_details_complete"])
+
+    def test_unmatched_pin_has_no_complete_fields(self) -> None:
+        self.assertFalse(any(BUILD_SITE.pin_field_completeness(None).values()))
 
 
 if __name__ == "__main__":

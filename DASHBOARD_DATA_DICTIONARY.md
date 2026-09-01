@@ -161,7 +161,7 @@ Important `dashboard` fields:
 | `districts` | One row per district with membership, training, unit health, coverage, and status metrics |
 | `council` | Council-wide rollups computed from district and roster rows |
 | `priority_units` | Top 30 unit metric rows where unit metric is 0-2 |
-| `unit_pin_statuses` | Matched unit-level BeAScout PIN display states used to enrich every Metric band in Unit Follow-up and the Unit-Level PIN Status KPI; unmatched units are absent from this array and display as `n/a` after the page join |
+| `unit_pin_statuses` | Matched unit-level BeAScout PIN display states plus privacy-safe `pin_status_complete`, `pin_contact_complete`, `pin_meeting_complete`, and `pin_details_complete` Boolean flags. Unmatched units are absent and display as `n/a` after the page join. Contact names, email addresses, phone numbers, meeting locations, and meeting details are never published in this array. |
 | `unit_metric_compare` | Sectioned detail extracted from the Unit Metric Compare tab |
 | `unit_youth_trends` | Councilwide monthly Unit & Youth Trends extracted from the Units-Youth tab |
 | `training_people` | Person-level training rows from the Training tab |
@@ -298,9 +298,14 @@ Each district receives a status in `build_site.py`:
 | At-risk rate | `at_risk_units / units` |
 | Healthy rate | `healthy_units / units` |
 | Unit Follow-up | Complete unit-level rows in the selected Metric band (`0-2`, `3`, or `4-5`), further constrained by the master program view; the legacy `priority_units` array supplies commissioner/PIN enrichment when available but is not the table's row limit |
-| PIN | For a matched `Pin` row, `Stale` when more than 12 months have passed since `lastmodifieddate`, or that date is blank or unusable; otherwise the source `pinstatus` (`Active` or `Inactive`). The implementation treats a date earlier than the same calendar date one year before publication as more than 12 months since the last update. An unmatched PIN row remains `n/a`. |
+| PIN | For a matched `Pin` row, `Stale` when more than 12 months have passed since `lastmodifieddate`, or that date is blank or unusable; otherwise the source `pinstatus` (`Active` or `Inactive`). The implementation treats a date earlier than the same calendar date one year before the dated report's as-of date as more than 12 months since the last update. An unmatched PIN row remains `n/a`. |
 | PIN Currency | District Performance scorecard count of matched unit PIN rows whose display state is current (`Active` or `Inactive`), divided by all tracked units in the selected district/program view. `Stale` and unmatched `n/a` units remain in the denominator and do not count as current. Service Area values sum the current-PIN and tracked-unit counts for the displayed districts before division. |
+| Required PIN Details | Count of matched PIN rows where `pin_details_complete` is true, divided by all tracked units in the selected district/program view. A row is complete only when `pinstatus`, `BeAScout Contact`, either `BeAScout email` or `BeAScout phone#`, `Meeting Location`, and `Meeting` are present. Website, fee, fundraising, and availability fields are excluded. Unmatched units remain in the denominator. Freshness is not part of this metric because PIN Currency measures it separately. |
 | Inactive + stale PINs | Count of matched `unit_pin_statuses` rows whose display state is `Inactive` or `Stale`; the displayed rate divides that count by all membership-dashboard units in the current master program view. Units without a matched PIN remain in the denominator, so the rate can differ from `(Inactive + Stale) / unit_pin_statuses.length`. |
+
+### PIN Status & Completeness page
+
+`pin-status.html` is a District Performance child page. It combines the shared PIN display-state classification with the Required PIN Details metric, supports the master program filter plus Service Area and District filters, and offers follow-up focuses for Stale, Inactive, details gaps, and no matched PIN. Every displayed percentage uses all tracked units in the selected view as its denominator. The page renders district aggregates only and does not expose the private source values used to calculate the completion flags.
 
 ### Today's Read / Signals
 

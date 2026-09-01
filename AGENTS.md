@@ -153,6 +153,30 @@ scorecard → Operational Detail**.
   `tools/validate_site_structure.py`, render `districts.html`, and confirm zero
   `.mini-meter` elements in `#districtRows` before publishing.
 
+## PIN Status & Completeness page contract
+
+Preserve `pin-status.html` as the **PIN Status & Completeness** child page under
+District Performance.
+
+- Keep freshness and field completeness separate. PIN Currency uses matched
+  current `Active` or `Inactive` rows divided by all tracked units. Required
+  PIN Details uses matched rows where `pin_details_complete` is true divided
+  by all tracked units. Stale and unmatched units remain in both denominators.
+- A PIN has Required PIN Details only when status, contact name plus at least
+  one contact method (email or phone), meeting location, and meeting details
+  are present. Website, fee, fundraising, and availability fields are not
+  counted unless this product definition is explicitly revised.
+- Publish only the Boolean flags `pin_status_complete`,
+  `pin_contact_complete`, `pin_meeting_complete`, and
+  `pin_details_complete`. Never publish the underlying PIN contact names,
+  email addresses, phone numbers, meeting locations, or meeting details.
+- Preserve the master program filter, Service Area and District filters,
+  Stale/Inactive/details-gap/no-PIN focuses, district aggregates, and the
+  approved reader wording for Stale.
+- Keep the builder, focused tests, validator, Dashboard Guide, README, data
+  dictionary, runbook, generated calculation guide, cache-busting strings, and
+  live page synchronized.
+
 ## Data & Help training-reference contract
 
 Keep the official Scouting America Training Codes workbook and Position Trained

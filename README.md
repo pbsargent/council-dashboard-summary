@@ -21,7 +21,7 @@ The scheduled daily updater runs from the active working copy at `/Users/petersa
 
 The normal web refresh also rebuilds `data/fall-recruitment-latest.js` from monday.com board `18420720719` for the Cub Scout JSN Dashboard. Its pre-publish validation requires both school-planning graphics to remain pie charts, matching the monday.com dashboard.
 
-Global navigation is defined once in `site-navigation.js`. Major navigation selections open focused summary pages: `index.html` (Overview), `comparison.html`, `districts.html`, `membership.html`, `unit-health.html`, `people.html`, and `sources.html`. Existing operational detail pages remain indented beneath their parent summaries. CAC typography, color tokens, approved logo treatment, topo pattern usage, responsive navigation, and Overview action-path styling are defined in `cac-theme.css`.
+Global navigation is defined once in `site-navigation.js`. Major navigation selections open focused summary pages: `index.html` (Overview), `comparison.html`, `districts.html`, `membership.html`, `unit-health.html`, `people.html`, and `sources.html`. `pin-status.html` is the PIN Status & Completeness child page under District Performance. Existing operational detail pages remain indented beneath their parent summaries. CAC typography, color tokens, approved logo treatment, topo pattern usage, responsive navigation, and Overview action-path styling are defined in `cac-theme.css`.
 
 Reader help is layered across the panel-level `?` controls, the print-friendly `help.html` dashboard guide, and the deeper source and calculation material linked from `sources.html`. The guide reads current refresh metadata from the published JSON bundles so its freshness label advances with the normal daily data deployment.
 
@@ -36,6 +36,8 @@ The Unit Level Dashboard uses the latest dated Unit Level Metrics workbook, stor
 BeAScout PIN follow-up uses the main dashboard workbook's `Pin` tab. A matched PIN is `Stale` when more than 12 months have passed since its last update, or its update date is blank or unusable; otherwise its source `Active` or `Inactive` state is retained. The same state appears in every Unit Follow-up metric band and in the first Unit-Level Detail KPI. The Unit Health Funnel combines `Inactive` and `Stale` matched PINs, then divides by all membership-dashboard units in the selected program view. A unit without a matched PIN displays `n/a` and remains in that funnel denominator.
 
 The District Performance scorecard uses the same classification for `PIN Currency`: matched current `Active` or `Inactive` PIN rows divided by all tracked units in the selected district/program view. `Stale` and unmatched `n/a` units remain in the denominator and do not count as current.
+
+PIN Status & Completeness separates freshness from field completeness. A matched PIN has `Required PIN Details` only when status, contact name plus at least one contact method (email or phone), meeting location, and meeting details are present. Website, fee, fundraising, and availability fields are not counted. The percentage divides complete matched PINs by all tracked units; unmatched units stay in the denominator. Public `unit_pin_statuses` rows contain only Boolean completion flags, never contact names, email addresses, phone numbers, or meeting values.
 
 The scheduled Council Summary publisher uses the `CACDashboardAutomation/.venv` Python environment and does not require the Codex application or a Codex-managed runtime to be running.
 

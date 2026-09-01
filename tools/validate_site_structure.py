@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from html.parser import HTMLParser
@@ -56,6 +57,7 @@ SUMMARY_PAGES = {
     "index.html": ("overview", ("Council Overview", "Signals to Watch", "Council Dashboard Areas")),
     "comparison.html": ("comparison", ("Council Comparison", "Service Territory Council Comparison")),
     "districts.html": ("districts", ("District Performance", "District Membership and Unit Health", "Operational Detail")),
+    "pin-status.html": ("pin-status", ("PIN Status & Completeness", "District PIN Currency", "PIN Status Composition", "Required PIN Details", "District PIN Detail")),
     "membership.html": ("membership", ("Membership Intelligence", "Unit & Youth Trends")),
     "unit-health.html": ("unit-health", ("Unit Health & Renewal", "Unit Health Funnel", "Exceptions", "Priority Units")),
     "people.html": ("people", ("People & Readiness", "All-Scouter Training", "Safeguarding Youth Training", "Commissioner Coverage Roster", "Coverage Snapshot")),
@@ -84,6 +86,7 @@ NAVIGATION_ROUTES = {
     "overview": "index.html",
     "comparison": "comparison.html",
     "districts": "districts.html",
+    "pin-status": "pin-status.html",
     "membership": "membership.html",
     "monday": "monday.html",
     "fall-recruitment": "fall-recruitment.html",
@@ -103,7 +106,7 @@ NAVIGATION_ROUTES = {
 
 NAVIGATION_HIERARCHY = {
     "overview": ("commissioner-portal", "comparison"),
-    "districts": ("popcorn",),
+    "districts": ("pin-status", "popcorn"),
     "membership": ("monday", "fall-recruitment"),
     "unit-health": ("unit-metrics", "unit-level", "renewal"),
     # Persistent user-approved placement: both camping readiness pages belong
@@ -134,6 +137,7 @@ SHARED_TABLE_STYLE_PAGES = (
     "index.html",
     "comparison.html",
     "districts.html",
+    "pin-status.html",
     "membership.html",
     "unit-health.html",
     "people.html",
@@ -212,7 +216,7 @@ def main() -> int:
                 errors.append(f"{relative}: missing required heading {heading!r}")
         if not any("cac-theme.css?v=20260812-discrete-pages-1" in href for href in parsed.stylesheets):
             errors.append(f"{relative}: missing discrete-page CAC theme reference")
-        if not any("site-navigation.js?v=20260827-commissioner-nav-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20260901-pin-status-page-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
 
     help_page_path = root / "help.html"
@@ -253,6 +257,66 @@ def main() -> int:
             errors.append("districts.html: Operational Detail must include the PIN Currency column")
         if '<th class="num">At Risk</th>' in districts_source:
             errors.append("districts.html: Operational Detail must not restore the former At Risk column")
+    pin_status_path = root / "pin-status.html"
+    pin_status_script_path = root / "pin-status.js"
+    pin_status_style_path = root / "pin-status.css"
+    if pin_status_path.is_file():
+        pin_page_source = pin_status_path.read_text(encoding="utf-8")
+        for required in (
+            'pin-status.css?v=20260901-pin-status-1',
+            'pin-status.js?v=20260901-pin-status-1',
+            'data-focus="stale"',
+            'data-focus="inactive"',
+            'data-focus="details"',
+            'data-focus="unmatched"',
+            "Only completion flags are published",
+        ):
+            if required not in pin_page_source:
+                errors.append(f"pin-status.html: missing PIN page contract {required!r}")
+    if pin_status_script_path.is_file():
+        pin_script_source = pin_status_script_path.read_text(encoding="utf-8")
+        for required in (
+            "function unitCountsByDistrict",
+            "function summarizeDistricts",
+            "function rollup",
+            'row.pin_details_complete === true',
+            'row.pin_contact_complete !== true',
+            "ratio(active + inactive, units)",
+            "ratio(complete, units)",
+            "Math.max(0, units - pinRows.length)",
+            "More than 12 months since the last update",
+        ):
+            if required not in pin_script_source:
+                errors.append(f"pin-status.js: missing PIN calculation contract {required!r}")
+        for forbidden in ("BeAScout Contact", "BeAScout email", "BeAScout phone#", "Meeting Location"):
+            if forbidden in pin_script_source:
+                errors.append(f"pin-status.js: must not request private source field {forbidden!r}")
+    if not pin_status_style_path.is_file() or pin_status_style_path.stat().st_size == 0:
+        errors.append("missing required PIN status page stylesheet: pin-status.css")
+
+    builder_candidates = [
+        Path(os.environ["CAC_DASHBOARD_ROOT"]) / "work" / "commissioner_site" / "build_site.py"
+        if os.environ.get("CAC_DASHBOARD_ROOT") else None,
+        root.parents[1] / "work" / "commissioner_site" / "build_site.py",
+        root.parents[2] / "work" / "commissioner_site" / "build_site.py" if len(root.parents) > 2 else None,
+    ]
+    builder_path = next((path for path in builder_candidates if path is not None and path.is_file()), None)
+    if builder_path is None:
+        errors.append("missing production PIN-aware work/commissioner_site/build_site.py")
+    else:
+        builder_source = builder_path.read_text(encoding="utf-8")
+        for required in (
+            "def report_date_for_path",
+            "def pin_field_completeness",
+            '"pin_status_complete"',
+            '"pin_contact_complete"',
+            '"pin_meeting_complete"',
+            '"pin_details_complete"',
+            "**pin_field_completeness(pin_row)",
+            "pin_display_status(pin_row, report_as_of)",
+        ):
+            if required not in builder_source:
+                errors.append(f"build_site.py: missing privacy-safe PIN completeness contract {required!r}")
     if unit_health_path.is_file():
         unit_health_source = unit_health_path.read_text(encoding="utf-8")
         if 'id="priorityMetricSelect"' not in unit_health_source:
@@ -350,6 +414,10 @@ def main() -> int:
             errors.append("help.html: missing Unit Health Funnel combined PIN-follow-up definition")
         if "Units without a matched PIN remain in the denominator" not in help_source:
             errors.append("help.html: missing Unit Health Funnel PIN-denominator explanation")
+        if '<a href="pin-status.html"><strong>PIN Status &amp; Completeness</strong>' not in help_source:
+            errors.append("help.html: missing PIN Status & Completeness page directory entry")
+        if "<dt>Required PIN Details</dt>" not in help_source or "Only completion flags" not in help_source:
+            errors.append("help.html: missing privacy-safe Required PIN Details definition")
         if "<dt>Outdoor Leadership Depth</dt>" not in help_source:
             errors.append("help.html: missing Outdoor Leadership Depth measure definition")
         if "first name and last initial" not in help_source:
@@ -381,7 +449,7 @@ def main() -> int:
         parsed = parse_page(path)
         if parsed.body_page != page_key:
             errors.append(f"{relative}: expected data-page={page_key!r}, found {parsed.body_page!r}")
-        if not any("site-navigation.js?v=20260827-commissioner-nav-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20260901-pin-status-page-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
         if relative in REQUIRED_PARENT_LINKS:
             expected_href, expected_label = REQUIRED_PARENT_LINKS[relative]
@@ -478,6 +546,18 @@ def main() -> int:
         for phrase in required_phrases:
             if phrase not in source:
                 errors.append(f"{relative}: missing camping-readiness documentation contract {phrase!r}")
+
+    pin_documentation_contracts = {
+        "README.md": ("PIN Status & Completeness", "Public `unit_pin_statuses` rows contain only Boolean completion flags"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("Required PIN Details", "pin_contact_complete", "does not expose the private source values"),
+        "IMPLEMENTATION_RUNBOOK.md": ("PIN Status & Completeness", "Do not publish the underlying contact or meeting values"),
+        "tools/build_human_data_guide.py": ("Required PIN Details is separate from freshness", "The public data contains only completion flags"),
+    }
+    for relative, required_phrases in pin_documentation_contracts.items():
+        source = (root / relative).read_text(encoding="utf-8")
+        for phrase in required_phrases:
+            if phrase not in source:
+                errors.append(f"{relative}: missing PIN completeness documentation contract {phrase!r}")
 
     for relative, forbidden in {
         "camping-readiness.html": "Packs Missing Camping Leadership Coverage",
