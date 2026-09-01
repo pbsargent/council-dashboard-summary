@@ -322,6 +322,8 @@ def main() -> int:
             errors.append("help.html: missing Connections (12 Mo.) measure definition")
         if "<dt>PIN</dt>" not in help_source or "Stale means" not in help_source:
             errors.append("help.html: missing PIN Stale-state definition")
+        if "more than 12 months have passed since" not in help_source:
+            errors.append("help.html: missing approved PIN freshness wording")
         if "Unit Health Funnel combines Inactive and Stale PINs" not in help_source:
             errors.append("help.html: missing Unit Health Funnel combined PIN-follow-up definition")
         if "Units without a matched PIN remain in the denominator" not in help_source:
@@ -332,6 +334,22 @@ def main() -> int:
             errors.append("help.html: missing public person-name privacy guidance")
         if "<strong>Data &amp; Help</strong>" not in help_source or "training reference links" not in help_source:
             errors.append("help.html: missing Data & Help training-reference guidance")
+
+    deprecated_pin_wording = "over 12 months " + "old"
+    pin_wording_files = (
+        "README.md",
+        "DASHBOARD_DATA_DICTIONARY.md",
+        "IMPLEMENTATION_RUNBOOK.md",
+        "help.html",
+        "unit-health.html",
+        "unit-level-dashboard.js",
+        "council-dashboard-summary.20260626-tay-kpi.js",
+        "tools/build_human_data_guide.py",
+    )
+    for relative in pin_wording_files:
+        wording_path = root / relative
+        if wording_path.is_file() and deprecated_pin_wording in wording_path.read_text(encoding="utf-8").casefold():
+            errors.append(f"{relative}: contains deprecated PIN freshness wording")
 
     for relative, page_key in DETAIL_PAGES.items():
         path = root / relative
