@@ -314,6 +314,7 @@ Each district receives a status in `build_site.py`:
 | Units need assignment | `dashboard.council.units - dashboard.council.assigned_units` |
 | Highest risk district | District with highest `at_risk_rate` |
 | Best growth district | District with highest `yoy_pct` |
+| PIN state | Matched PIN rows grouped as Active, Inactive, or Stale after the master program filter; unmatched is `max(0, tracked units - matched rows)`. PIN Currency shown in the same signal is `(Active + Inactive) / tracked units`. |
 | Unit commissioners | Count of unique commissioner names with at least one `Unit Commissioner` role |
 | Training gap district | District with lowest `training_pct` |
 
@@ -469,7 +470,7 @@ Retention is calculated as `(current members - members new in the prior 12 month
 
 The Unit-Level Detail page reads `data/unit-level-latest.js`, generated from the newest Unit Level Metrics workbook. Its direct `unit_type` field is the source of truth for the master program filter. Unit records expose the selected unit's health and growth metrics plus the published member-due-to-renew detail; long member tables remain inside a bounded, scrollable region on desktop and mobile and expand fully only for print.
 
-The page also matches the selected unit to `dashboard.unit_pin_statuses` in `data/latest.json` and displays the result in the first KPI card. The card uses the same PIN display state as Unit Follow-up: `Stale` when more than 12 months have passed since the matched PIN's last update, or its update date is blank or unusable; otherwise it displays `Active` or `Inactive`. An unmatched unit displays `n/a`. This KPI is a unit-level state and is not inferred from the Unit Health Funnel percentage.
+The page also matches the selected unit to `dashboard.unit_pin_statuses` in `data/latest.json` and displays the result in the first KPI card. The card uses the same PIN display state as Unit Follow-up: `Stale` when more than 12 months have passed since the matched PIN's last update, or its update date is blank or unusable; otherwise it displays `Active` or `Inactive`. An unmatched unit displays `n/a`. Commissioner Context repeats the status as a badge beside a separate Required PIN Details badge (`Details complete`, `Details need follow-up`, `Details unavailable`, or `Details n/a`). Neither indicator is inferred from the Unit Health Funnel percentage, and no underlying contact or meeting value is published.
 
 For Packs and Troops, the page also reads `dashboard.training_people` from `data/latest.json` and applies the same district-plus-unit join and `outdoor-readiness.js` classification used by the Camping Readiness pages. The KPI strip and Training Readiness panel both display Gap, Fragile, Preferred Depth, or Unknown. Pack status uses BALOO depth; Troop status uses IOLS-trained Scoutmaster/Assistant Scoutmaster depth. The KPI detail also reports the recorded qualification count and Hazardous Weather Current/Gap signal. If no matching Training-tab unit is found, the status is Unknown rather than Gap. Crews, Ships, and Posts do not display this camping-readiness KPI.
 

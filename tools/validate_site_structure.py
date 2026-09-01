@@ -243,7 +243,7 @@ def main() -> int:
 
     unit_health_path = root / "unit-health.html"
     priority_script_path = root / "council-dashboard-summary.20260626-tay-kpi.js"
-    shared_dashboard_script = "council-dashboard-summary.20260626-tay-kpi.js?v=20260901-district-pin-currency-1"
+    shared_dashboard_script = "council-dashboard-summary.20260626-tay-kpi.js?v=20260901-overview-pin-signal-1"
     for page_name in ("index.html", "comparison.html", "districts.html", "unit-health.html", "people.html", "sources.html"):
         page_source = (root / page_name).read_text(encoding="utf-8")
         if shared_dashboard_script not in page_source:
@@ -257,6 +257,13 @@ def main() -> int:
             errors.append("districts.html: Operational Detail must include the PIN Currency column")
         if '<th class="num">At Risk</th>' in districts_source:
             errors.append("districts.html: Operational Detail must not restore the former At Risk column")
+    index_path = root / "index.html"
+    if index_path.is_file():
+        index_source = index_path.read_text(encoding="utf-8")
+        if '<a class="overview-path" href="pin-status.html"><strong>PIN Status &amp; Completeness</strong>' not in index_source:
+            errors.append("index.html: Overview Explore must link to PIN Status & Completeness")
+        if "BeAScout PIN state" not in index_source:
+            errors.append("index.html: Signals to Watch help must describe BeAScout PIN state")
     pin_status_path = root / "pin-status.html"
     pin_status_script_path = root / "pin-status.js"
     pin_status_style_path = root / "pin-status.css"
@@ -389,6 +396,19 @@ def main() -> int:
                 errors.append(
                     "council-dashboard-summary.20260626-tay-kpi.js: "
                     f"missing Unit Health Funnel PIN-follow-up binding {required!r}"
+                )
+        for required in (
+            'PIN state: ${n(inactivePins + stalePins)} need follow-up',
+            'row.pin_status === "Active"',
+            'row.pin_status === "Inactive"',
+            'row.pin_status === "Stale"',
+            "Math.max(0, (c.units || 0) - pinRows.length)",
+            "(activePins + inactivePins) / c.units",
+        ):
+            if required not in priority_script:
+                errors.append(
+                    "council-dashboard-summary.20260626-tay-kpi.js: "
+                    f"missing Overview PIN-state signal contract {required!r}"
                 )
         for required in (
             'state.data.dashboard.council.volunteers',
@@ -526,14 +546,26 @@ def main() -> int:
     if unit_level_path.is_file() and unit_level_script_path.is_file():
         unit_level_page = unit_level_path.read_text(encoding="utf-8")
         unit_level_script = unit_level_script_path.read_text(encoding="utf-8")
-        if "unit-level-dashboard.js?v=20260831-pin-status-kpi-2" not in unit_level_page:
-            errors.append("unit-level.html: missing cache-busted Unit-Level PIN-status script")
+        if "unit-level-dashboard.js?v=20260901-pin-context-1" not in unit_level_page:
+            errors.append("unit-level.html: missing cache-busted Unit-Level PIN-context script")
+        if "panel-help.js?v=20260630-active-help" not in unit_level_page:
+            errors.append("unit-level.html: Commissioner Context PIN help must load panel help")
         for required in ('"Camping Readiness"', 'preferred: "Preferred Depth"', "CACOutdoorReadiness.depthStatus(null)"):
             if required not in unit_level_script:
                 errors.append(f"unit-level-dashboard.js: missing Unit-Level readiness status contract {required!r}")
         for required in ('"PIN Status"', "dashboard?.unit_pin_statuses", "state.pinByUnit.get", 'Stale: ["More than 12 months since the last update, or update date is missing"'):
             if required not in unit_level_script:
                 errors.append(f"unit-level-dashboard.js: missing Unit-Level PIN status contract {required!r}")
+        for required in (
+            "record.pin_details_complete === true",
+            "record.pin_details_complete === false",
+            "PIN status / completeness",
+            "Details complete",
+            "Details need follow-up",
+            "[unitKey(row.district, row.unit), row]",
+        ):
+            if required not in unit_level_script:
+                errors.append(f"unit-level-dashboard.js: missing Commissioner Context PIN completeness contract {required!r}")
 
     documentation_contracts = {
         "README.md": ("Gap / Fragile / Preferred Depth / Unknown", "Unit-Level Detail uses the same shared classification"),
@@ -548,10 +580,10 @@ def main() -> int:
                 errors.append(f"{relative}: missing camping-readiness documentation contract {phrase!r}")
 
     pin_documentation_contracts = {
-        "README.md": ("PIN Status & Completeness", "Public `unit_pin_statuses` rows contain only Boolean completion flags"),
-        "DASHBOARD_DATA_DICTIONARY.md": ("Required PIN Details", "pin_contact_complete", "does not expose the private source values"),
-        "IMPLEMENTATION_RUNBOOK.md": ("PIN Status & Completeness", "Do not publish the underlying contact or meeting values"),
-        "tools/build_human_data_guide.py": ("Required PIN Details is separate from freshness", "The public data contains only completion flags"),
+        "README.md": ("PIN Status & Completeness", "Public `unit_pin_statuses` rows contain only Boolean completion flags", "Overview includes PIN state in Signals to Watch"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("Required PIN Details", "pin_contact_complete", "does not expose the private source values", "Commissioner Context repeats the status as a badge"),
+        "IMPLEMENTATION_RUNBOOK.md": ("PIN Status & Completeness", "Do not publish the underlying contact or meeting values", "Overview's Signals to Watch groups filtered matched rows"),
+        "tools/build_human_data_guide.py": ("Required PIN Details is separate from freshness", "The public data contains only completion flags", "PIN state in Signals to Watch"),
     }
     for relative, required_phrases in pin_documentation_contracts.items():
         source = (root / relative).read_text(encoding="utf-8")

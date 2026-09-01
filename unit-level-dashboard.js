@@ -34,7 +34,8 @@ function unitDisplayName(unit) {
 }
 
 function pinSummary(unit) {
-  const recordedStatus = state.pinByUnit.get(unitKey(unit.district, unitDisplayName(unit)));
+  const record = state.pinByUnit.get(unitKey(unit.district, unitDisplayName(unit)));
+  const recordedStatus = typeof record === "string" ? record : record?.pin_status;
   const presentations = {
     Active: ["Current BeAScout PIN record", "good"],
     Inactive: ["Current PIN is inactive", "warning"],
@@ -43,7 +44,14 @@ function pinSummary(unit) {
   };
   const status = Object.hasOwn(presentations, recordedStatus) ? recordedStatus : "n/a";
   const [detail, tone] = presentations[status];
-  return { status, detail, tone };
+  const completeness = !record
+    ? { label: "Details n/a", tone: "warning" }
+    : record.pin_details_complete === true
+      ? { label: "Details complete", tone: "good" }
+      : record.pin_details_complete === false
+        ? { label: "Details need follow-up", tone: "warning" }
+        : { label: "Details unavailable", tone: "warning" };
+  return { status, detail, tone, completeness };
 }
 
 function outdoorSummary(unit) {
@@ -179,11 +187,19 @@ function renderRenewal() {
 
 function renderProfile() {
   const unit = state.unit;
+  const pin = pinSummary(unit);
+  const chipTone = (tone) => tone === "good" ? "good" : tone === "danger" ? "bad" : "warn";
   const fields = [
     ["District", unit.district], ["Unit ID", unit.unit_id], ["Chartered organization", unit.chartered_organization || "Not recorded"],
     ["Assigned commissioner", unit.commissioner || "Not recorded"], ["Last connection", dateLabel(unit.last_connection)], ["Last outdoor activity", dateLabel(unit.last_outdoor_date)],
   ];
-  document.getElementById("unitProfile").innerHTML = fields.map(([label, value]) => `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`).join("");
+  document.getElementById("unitProfile").innerHTML = `
+    <dt>PIN status / completeness</dt>
+    <dd class="pin-context-indicator">
+      <span class="status ${chipTone(pin.tone)}">${esc(pin.status)}</span>
+      <span class="status ${chipTone(pin.completeness.tone)}">${esc(pin.completeness.label)}</span>
+    </dd>
+    ${fields.map(([label, value]) => `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`).join("")}`;
 }
 
 function renderAll() { renderHero(); renderKpis(); renderDrivers(); renderTraining(); renderRenewal(); renderProfile(); }
@@ -200,7 +216,7 @@ async function init() {
   const readinessResponse = await readinessPromise;
   if (readinessResponse.ok) {
     state.readinessData = await readinessResponse.json();
-    state.pinByUnit = new Map((state.readinessData.dashboard?.unit_pin_statuses || []).map((row) => [unitKey(row.district, row.unit), row.pin_status]));
+    state.pinByUnit = new Map((state.readinessData.dashboard?.unit_pin_statuses || []).map((row) => [unitKey(row.district, row.unit), row]));
     const people = state.readinessData.dashboard?.training_people || [];
     state.outdoorUnits.Pack = CACOutdoorReadiness.buildUnits(people, "Pack", state.readinessData.generated_date);
     state.outdoorUnits.Troop = CACOutdoorReadiness.buildUnits(people, "Troop", state.readinessData.generated_date);

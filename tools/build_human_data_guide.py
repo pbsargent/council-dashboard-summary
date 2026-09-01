@@ -668,7 +668,7 @@ def build_doc():
         doc,
         ["Page", "What it answers"],
         [
-            ["Overview", "What the Council's current KPI picture is and which operating areas need attention first."],
+            ["Overview", "What the Council's current KPI picture is, including PIN state in Signals to Watch, and which operating areas need attention first. Explore links directly to PIN Status & Completeness."],
             ["Council Comparison", "How Capitol Area Council compares with other Service Territory 07 councils."],
             ["District Performance", "Which districts lead or lag across membership, unit health, PIN currency, training, SYT, and commissioner coverage."],
             ["PIN Status & Completeness", "Which districts need PIN freshness or essential contact-and-meeting detail follow-up, without publishing the private field values."],
@@ -683,7 +683,7 @@ def build_doc():
             ["Cub Scout JSN", "How school recruiting plans, dates, locations, materials, and uncovered schools compare with the monday.com source dashboard."],
             ["Popcorn", "How unit commitments, goals, prior sales, onboarding, and training roll up from Service Area to District to Unit."],
             ["Unit Metrics", "How districts and unit sections compare across unit health, training, outdoor, advancement, and the current workbook retention metric."],
-            ["Unit-Level Detail", "Which individual units and members drive program-specific youth, growth, training, SYT, health, assignment, BeAScout PIN status, and Pack/Troop camping-readiness status."],
+            ["Unit-Level Detail", "Which individual units and members drive program-specific youth, growth, training, SYT, health, assignment, BeAScout PIN status, Required PIN Details in Commissioner Context, and Pack/Troop camping-readiness status."],
             ["Renewal Status", "Which units are initiated, submitted, pending acceptance, posted, or otherwise need renewal follow-up."],
             ["Data & Help", "Which source workbooks are current, how values are calculated, where to report a problem, and which external training references apply."],
         ],

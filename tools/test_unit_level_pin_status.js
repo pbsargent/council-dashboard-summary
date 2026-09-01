@@ -21,21 +21,21 @@ vm.runInContext(source, context);
 assert.equal(vm.runInContext('unitKey("Armadillo 02", "Pack 14 F")', context), "Armadillo|Pack 14 F");
 vm.runInContext(`
   state.pinByUnit = new Map([
-    ["Armadillo|Crew 4", "Active"],
-    ["Armadillo|Crew 3", "Inactive"],
-    ["Armadillo|Crew 8787", "Stale"],
+    ["Armadillo|Crew 4", { pin_status: "Active", pin_details_complete: true }],
+    ["Armadillo|Crew 3", { pin_status: "Inactive", pin_details_complete: false }],
+    ["Armadillo|Crew 8787", { pin_status: "Stale", pin_details_complete: true }],
   ]);
 `, context);
 
 assert.deepEqual(
   JSON.parse(JSON.stringify(vm.runInContext('pinSummary({ district: "Armadillo 02", unit_type: "Crew", number: 4, gender: null, name: "Crew 4" })', context))),
-  { status: "Active", detail: "Current BeAScout PIN record", tone: "good" },
+  { status: "Active", detail: "Current BeAScout PIN record", tone: "good", completeness: { label: "Details complete", tone: "good" } },
 );
 assert.equal(vm.runInContext('pinSummary({ district: "Armadillo 02", unit_type: "Crew", number: 3, name: "Crew 3" }).status', context), "Inactive");
 assert.equal(vm.runInContext('pinSummary({ district: "Armadillo 02", unit_type: "Crew", number: 8787, name: "Crew 8787" }).status', context), "Stale");
 assert.deepEqual(
   JSON.parse(JSON.stringify(vm.runInContext('pinSummary({ district: "Armadillo 02", unit_type: "Ship", number: 999, name: "Ship 999" })', context))),
-  { status: "n/a", detail: "No matched BeAScout PIN record", tone: "warning" },
+  { status: "n/a", detail: "No matched BeAScout PIN record", tone: "warning", completeness: { label: "Details n/a", tone: "warning" } },
 );
 
 const unitKpis = { innerHTML: "" };
@@ -50,5 +50,12 @@ vm.runInContext(`
   renderKpis();
 `, context);
 assert.match(unitKpis.innerHTML, /^<article class="kpi good"><div><div class="kpi-label">PIN Status<\/div><div class="kpi-value">Active<\/div>/);
+
+const unitProfile = { innerHTML: "" };
+context.document = { getElementById(id) { return id === "unitProfile" ? unitProfile : null; } };
+vm.runInContext("renderProfile()", context);
+assert.match(unitProfile.innerHTML, /PIN status \/ completeness/);
+assert.match(unitProfile.innerHTML, /status good">Active<\/span>/);
+assert.match(unitProfile.innerHTML, /status good">Details complete<\/span>/);
 
 console.log("Unit-Level PIN status tests passed.");

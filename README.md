@@ -39,6 +39,8 @@ The District Performance scorecard uses the same classification for `PIN Currenc
 
 PIN Status & Completeness separates freshness from field completeness. A matched PIN has `Required PIN Details` only when status, contact name plus at least one contact method (email or phone), meeting location, and meeting details are present. Website, fee, fundraising, and availability fields are not counted. The percentage divides complete matched PINs by all tracked units; unmatched units stay in the denominator. Public `unit_pin_statuses` rows contain only Boolean completion flags, never contact names, email addresses, phone numbers, or meeting values.
 
+Overview includes PIN state in Signals to Watch and links directly to PIN Status & Completeness from Explore. Unit-Level Detail keeps the existing PIN Status KPI and also presents separate PIN status and Required PIN Details badges in the Commissioner Context panel. These surfaces reuse the shared `unit_pin_statuses` classification and completion flags rather than recalculating PIN state.
+
 The scheduled Council Summary publisher uses the `CACDashboardAutomation/.venv` Python environment and does not require the Codex application or a Codex-managed runtime to be running.
 
 Both the Council Summary and Commissioner portal deploy daily data as verified

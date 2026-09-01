@@ -173,6 +173,10 @@ District Performance.
 - Preserve the master program filter, Service Area and District filters,
   Stale/Inactive/details-gap/no-PIN focuses, district aggregates, and the
   approved reader wording for Stale.
+- Preserve PIN state in Overview Signals to Watch, the direct PIN Status &
+  Completeness link in Overview Explore, and the separate status/completeness
+  badges in Unit-Level Commissioner Context. All three reuse the shared
+  privacy-safe row and established denominators.
 - Keep the builder, focused tests, validator, Dashboard Guide, README, data
   dictionary, runbook, generated calculation guide, cache-busting strings, and
   live page synchronized.

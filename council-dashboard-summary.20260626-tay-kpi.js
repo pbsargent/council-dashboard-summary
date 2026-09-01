@@ -690,9 +690,17 @@ function renderSignals() {
   const weakestTraining = [...sourceRows].sort((a, b) => (a.training_pct || 0) - (b.training_pct || 0))[0] || {};
   const unassigned = Math.max(0, (c.units || 0) - (c.assigned_units || 0));
   const unitCommissioners = unitCommissionerSummary(data.dashboard.commissioners, c);
+  const pinRows = (data.dashboard.unit_pin_statuses || [])
+    .filter((row) => ProgramFilter.matchesUnitType(row.unit_type));
+  const activePins = pinRows.filter((row) => row.pin_status === "Active").length;
+  const inactivePins = pinRows.filter((row) => row.pin_status === "Inactive").length;
+  const stalePins = pinRows.filter((row) => row.pin_status === "Stale").length;
+  const unmatchedPins = Math.max(0, (c.units || 0) - pinRows.length);
+  const pinCurrency = c.units ? (activePins + inactivePins) / c.units : null;
 
   const cards = [
     [`${n(unassigned)} units need assignment`, `${p(c.assigned_pct)} of units currently have commissioner assignment.`],
+    [`PIN state: ${n(inactivePins + stalePins)} need follow-up`, `${n(activePins)} Active · ${n(inactivePins)} Inactive · ${n(stalePins)} Stale · ${n(unmatchedPins)} unmatched. ${p(pinCurrency)} current.`],
     [`${esc(worstRisk.district)} has highest risk`, `${p(worstRisk.at_risk_rate)} of units are in the 0-2 metric band.`],
     [`${esc(bestGrowth.district)} leads growth`, `${sp(bestGrowth.yoy_pct)} year over year, with ${n(bestGrowth.members)} youth.`],
     [`${n(c.assigned_units)} units with commissioner coverage`, `${n(matchingPriorityUnits().length)} priority units in the filtered work queue.`],
