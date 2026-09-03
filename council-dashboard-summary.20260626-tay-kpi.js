@@ -4,6 +4,7 @@ const state = {
   unitData: null,
   chartMetric: "members",
   openServiceAreas: new Set(),
+  openOperationalDistricts: new Set(),
 };
 
 const fmt = new Intl.NumberFormat("en-US");
@@ -204,6 +205,107 @@ function pinCurrencySummary(rows, currentByDistrict) {
     0,
   );
   return { current, units, rate: units ? current / units : null };
+}
+
+function operationalUnitName(unit) {
+  return String(unit?.name || [unit?.unit_type, unit?.number, unit?.gender]
+    .filter((part) => part != null && part !== "")
+    .join(" ")).trim();
+}
+
+function operationalUnitNumber(value) {
+  return String(value ?? "").match(/\d+/)?.[0].replace(/^0+(?=\d)/, "") || "";
+}
+
+function operationalUnitKey(district, unit) {
+  return `${ProgramFilter.cleanDistrict(district)}|${String(unit || "").trim()}`;
+}
+
+function operationalUnitBaseKey(district, unitType, unit) {
+  return `${ProgramFilter.cleanDistrict(district)}|${String(unitType || "").trim()}|${operationalUnitNumber(unit)}`;
+}
+
+function operationalUnitHealth(metricValue) {
+  if (metricValue == null || metricValue === "") return { label: "Unknown", tone: "warn" };
+  const value = Number(metricValue);
+  if (Number.isFinite(value) && value >= 4) return { label: "Healthy", tone: "good" };
+  if (value === 3) return { label: "Monitor", tone: "warn" };
+  return { label: "Priority attention", tone: "bad" };
+}
+
+function operationalPinTone(status) {
+  if (status === "Active") return "good";
+  if (status === "Inactive") return "warn";
+  return "bad";
+}
+
+function operationalUnitsForDistrict(district) {
+  const cleanDistrict = ProgramFilter.cleanDistrict(district);
+  const units = programUnits().filter((unit) => ProgramFilter.cleanDistrict(unit.district) === cleanDistrict);
+  const pins = (state.data?.dashboard?.unit_pin_statuses || [])
+    .filter((row) => ProgramFilter.matchesUnitType(row.unit_type)
+      && ProgramFilter.cleanDistrict(row.district) === cleanDistrict);
+  const pinByUnit = new Map(pins.map((row) => [operationalUnitKey(row.district, row.unit), row]));
+  const pinsByBase = new Map();
+  const unitsByBase = new Map();
+  for (const pin of pins) {
+    const key = operationalUnitBaseKey(pin.district, pin.unit_type, pin.unit);
+    if (!pinsByBase.has(key)) pinsByBase.set(key, []);
+    pinsByBase.get(key).push(pin);
+  }
+  for (const unit of units) {
+    const key = operationalUnitBaseKey(unit.district, unit.unit_type, unit.number ?? operationalUnitName(unit));
+    unitsByBase.set(key, (unitsByBase.get(key) || 0) + 1);
+  }
+  const rows = units.map((unit) => {
+    const name = operationalUnitName(unit);
+    const baseKey = operationalUnitBaseKey(unit.district, unit.unit_type, unit.number ?? name);
+    const baseMatches = pinsByBase.get(baseKey) || [];
+    const pin = pinByUnit.get(operationalUnitKey(unit.district, name))
+      || (unitsByBase.get(baseKey) === 1 && baseMatches.length === 1 ? baseMatches[0] : null);
+    return { ...unit, displayName: name, pinStatus: pin?.pin_status || "n/a", matchedUnit: true };
+  });
+  const expected = programDistrictRows()
+    .find((row) => ProgramFilter.cleanDistrict(row.district) === cleanDistrict)?.units || rows.length;
+  while (rows.length < expected) {
+    rows.push({
+      unit_id: null,
+      displayName: "Tracked unit identity unavailable",
+      unit_type: "n/a",
+      metric: null,
+      youth: null,
+      youth_prior: null,
+      youth_change: null,
+      retention_pct: null,
+      commissioner: null,
+      training: {},
+      pinStatus: "n/a",
+      matchedUnit: false,
+    });
+  }
+  return rows.sort((a, b) => (a.matchedUnit ? Number(a.metric) || 0 : -1) - (b.matchedUnit ? Number(b.metric) || 0 : -1)
+    || a.displayName.localeCompare(b.displayName, undefined, { numeric: true }));
+}
+
+function renderOperationalUnitRows(district) {
+  const units = operationalUnitsForDistrict(district);
+  if (!units.length) return '<p class="subtle operational-unit-empty">No units match the current program view.</p>';
+  return `<div class="operational-unit-table-wrap"><table class="operational-unit-table">
+    <thead><tr><th>Unit</th><th>Unit Health</th><th class="num">Youth</th><th class="num">YoY</th><th class="num">Metric</th><th class="num">Retention</th><th>PIN Status</th><th>Assigned</th><th class="num">SYT</th><th class="num">Training</th><th>Action</th></tr></thead>
+    <tbody>${units.map((unit) => {
+      const health = operationalUnitHealth(unit.metric);
+      const prior = Number(unit.youth_prior);
+      const yoy = Number.isFinite(prior) && prior > 0 ? (Number(unit.youth_change) || 0) / prior : null;
+      const retention = Number(unit.retention_pct);
+      const retentionLabel = Number.isFinite(retention) ? `${Math.round(retention)}%` : "n/a";
+      const pinStatus = unit.pinStatus || "n/a";
+      const assignment = unit.matchedUnit ? (unit.commissioner ? "Yes" : "No") : "n/a";
+      const action = unit.unit_id != null
+        ? `<a class="operational-unit-link" href="unit-level.html?unit=${encodeURIComponent(unit.unit_id)}">View unit</a>`
+        : "";
+      return `<tr><td><strong>${esc(unit.displayName)}</strong><div class="subtle">${esc(unit.unit_type || "n/a")}</div></td><td><span class="status ${health.tone}">${esc(health.label)}</span></td><td class="num">${n(unit.youth)}</td><td class="num">${sp(yoy)}</td><td class="num">${metric(unit.metric)}</td><td class="num">${retentionLabel}</td><td><span class="status ${operationalPinTone(pinStatus)}">${esc(pinStatus)}</span></td><td>${assignment}</td><td class="num">${p(unit.training?.syt_compliance_rate)}</td><td class="num">${p(unit.training?.all_leaders_trained_rate)}</td><td>${action}</td></tr>`;
+    }).join("")}</tbody>
+  </table></div>`;
 }
 
 function selectedDistrict() {
@@ -793,11 +895,14 @@ function renderDistrictRows() {
         <td></td>
       </tr>
     `;
-    const districtRows = open ? service.rows.map((row) => {
+    const districtRows = open ? service.rows.map((row, index) => {
       const districtPinCurrency = pinCurrencySummary([row], currentByDistrict);
+      const detailId = `operational-units-${String(service.order).replace(/[^a-z0-9]+/gi, "-")}-${index}`;
+      const districtOpen = state.openOperationalDistricts.has(row.district);
+      const unitCount = operationalUnitsForDistrict(row.district).length;
       return `
-    <tr>
-      <td><strong>${esc(row.district)}</strong><div class="subtle">${n(row.units)} units</div></td>
+    <tr class="operational-district-row">
+      <td><button class="operational-district-toggle" type="button" data-operational-district="${esc(row.district)}" aria-expanded="${districtOpen}" aria-controls="${detailId}"><span class="disclosure" aria-hidden="true">${districtOpen ? "−" : "+"}</span><span><strong>${esc(row.district)}</strong><span class="subtle">${n(row.units)} units</span></span></button></td>
       <td><span class="status ${statusClass(row.status)}">${esc(row.status)}</span></td>
       <td class="num">${n(row.members)}</td>
       <td class="num">${sp(row.yoy_pct)}</td>
@@ -809,6 +914,7 @@ function renderDistrictRows() {
       <td class="num">${p(row.training_pct)}</td>
       <td>${esc(row.district_commissioner || "TBA")}<div class="subtle">${esc(row.field_exec || "")}</div></td>
     </tr>
+    <tr class="operational-unit-detail-row" id="${detailId}"${districtOpen ? "" : " hidden"}><td colspan="11"><div class="operational-unit-detail"><div class="operational-unit-detail-head"><strong>Individual Unit Status</strong><span>${n(unitCount)} units in the current program view</span></div>${renderOperationalUnitRows(row.district)}</div></td></tr>
   `;
     }).join("") : "";
     return serviceRow + districtRows;
@@ -1003,11 +1109,19 @@ function bindEvents() {
   });
 
   document.getElementById("districtRows")?.addEventListener("click", (event) => {
-    const button = event.target.closest(".service-toggle");
-    if (!button) return;
-    const name = button.dataset.serviceArea;
-    if (state.openServiceAreas.has(name)) state.openServiceAreas.delete(name);
-    else state.openServiceAreas.add(name);
+    const serviceButton = event.target.closest(".service-toggle");
+    if (serviceButton) {
+      const name = serviceButton.dataset.serviceArea;
+      if (state.openServiceAreas.has(name)) state.openServiceAreas.delete(name);
+      else state.openServiceAreas.add(name);
+      renderDistrictRows();
+      return;
+    }
+    const districtButton = event.target.closest(".operational-district-toggle");
+    if (!districtButton) return;
+    const district = districtButton.dataset.operationalDistrict;
+    if (state.openOperationalDistricts.has(district)) state.openOperationalDistricts.delete(district);
+    else state.openOperationalDistricts.add(district);
     renderDistrictRows();
   });
   window.addEventListener("programfilterchange", () => { renderControls(); renderAll(); });

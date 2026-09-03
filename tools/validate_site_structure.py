@@ -133,6 +133,7 @@ HELP_ASSETS = (
 PERSON_NAME_PRIVACY_ASSET = "tools/sanitize_public_person_names.py"
 
 SCROLL_ASSET_VERSION = "20260821-scrollable-tables-v1"
+SHARED_TABLE_ASSET_VERSION = "20260903-operational-unit-detail-1"
 SHARED_TABLE_STYLE_PAGES = (
     "index.html",
     "comparison.html",
@@ -243,7 +244,7 @@ def main() -> int:
 
     unit_health_path = root / "unit-health.html"
     priority_script_path = root / "council-dashboard-summary.20260626-tay-kpi.js"
-    shared_dashboard_script = "council-dashboard-summary.20260626-tay-kpi.js?v=20260901-overview-pin-signal-1"
+    shared_dashboard_script = "council-dashboard-summary.20260626-tay-kpi.js?v=20260903-operational-unit-detail-1"
     for page_name in ("index.html", "comparison.html", "districts.html", "unit-health.html", "people.html", "sources.html"):
         page_source = (root / page_name).read_text(encoding="utf-8")
         if shared_dashboard_script not in page_source:
@@ -257,6 +258,8 @@ def main() -> int:
             errors.append("districts.html: Operational Detail must include the PIN Currency column")
         if '<th class="num">At Risk</th>' in districts_source:
             errors.append("districts.html: Operational Detail must not restore the former At Risk column")
+        if "Expand a Service Area, then a district" not in districts_source:
+            errors.append("districts.html: Operational Detail help must explain the district-to-unit drill-down")
     index_path = root / "index.html"
     if index_path.is_file():
         index_source = index_path.read_text(encoding="utf-8")
@@ -373,6 +376,18 @@ def main() -> int:
                     "council-dashboard-summary.20260626-tay-kpi.js: "
                     "District Operational Detail must use PIN Currency instead of At Risk"
                 )
+            for required in (
+                'class="operational-district-toggle"',
+                'aria-expanded="${districtOpen}"',
+                "Individual Unit Status",
+                "renderOperationalUnitRows(row.district)",
+                'colspan="11"',
+            ):
+                if required not in district_rows_source:
+                    errors.append(
+                        "council-dashboard-summary.20260626-tay-kpi.js: "
+                        f"missing District Operational Detail drill-down binding {required!r}"
+                    )
         for required in (
             "function pinCurrencyByDistrict()",
             'row.pin_status === "Active" || row.pin_status === "Inactive"',
@@ -383,6 +398,19 @@ def main() -> int:
                 errors.append(
                     "council-dashboard-summary.20260626-tay-kpi.js: "
                     f"missing District PIN Currency safeguard {required!r}"
+                )
+        for required in (
+            "function operationalUnitsForDistrict",
+            "function renderOperationalUnitRows",
+            "function operationalUnitHealth",
+            "unit-level.html?unit=",
+            "state.openOperationalDistricts",
+            'unit.commissioner ? "Yes" : "No"',
+        ):
+            if required not in priority_script:
+                errors.append(
+                    "council-dashboard-summary.20260626-tay-kpi.js: "
+                    f"missing operational district-to-unit safeguard {required!r}"
                 )
         for required in (
             'document.getElementById("priorityMetricSelect")',
@@ -604,6 +632,18 @@ def main() -> int:
             if phrase not in source:
                 errors.append(f"{relative}: missing PIN completeness documentation contract {phrase!r}")
 
+    operational_detail_documentation_contracts = {
+        "README.md": ("Operational Detail district rows expand", "Unit-Level Detail"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("District Operational Detail drill-down", "priority attention"),
+        "IMPLEMENTATION_RUNBOOK.md": ("Operational Detail district rows", "direct Unit-Level Detail link"),
+        "tools/build_human_data_guide.py": ("expandable district rows", "individual unit health"),
+    }
+    for relative, required_phrases in operational_detail_documentation_contracts.items():
+        source = (root / relative).read_text(encoding="utf-8")
+        for phrase in required_phrases:
+            if phrase not in source:
+                errors.append(f"{relative}: missing Operational Detail documentation contract {phrase!r}")
+
     for relative, forbidden in {
         "camping-readiness.html": "Packs Missing Camping Leadership Coverage",
         "troop-camping-readiness.html": "Troops Missing Camping Leadership Coverage",
@@ -695,6 +735,8 @@ def main() -> int:
         required_scroll_css = (
             ".panel.detail-table {\n  max-height: none;\n}",
             ".panel.detail-table > .table-wrap {\n  max-height: clamp(240px, calc(100vh - 310px), 560px);\n}",
+            ".operational-unit-table-wrap {",
+            ".operational-unit-detail-row[hidden] {",
             "overscroll-behavior: contain;",
             "scrollbar-gutter: stable;",
         )
@@ -714,7 +756,7 @@ def main() -> int:
         if not path.is_file():
             continue
         parsed = parse_page(path)
-        expected = f"council-dashboard-summary.css?v={SCROLL_ASSET_VERSION}"
+        expected = f"council-dashboard-summary.css?v={SHARED_TABLE_ASSET_VERSION}"
         if expected not in parsed.stylesheets:
             errors.append(f"{relative}: missing scroll-table cache-busted stylesheet {expected!r}")
 

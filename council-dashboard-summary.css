@@ -765,6 +765,100 @@ tbody tr:hover {
   font-weight: 800;
 }
 
+.operational-district-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.operational-district-toggle .disclosure {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--cyan);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.operational-district-toggle strong,
+.operational-district-toggle .subtle {
+  display: block;
+}
+
+.operational-district-toggle:focus-visible {
+  border-radius: 5px;
+  outline: 3px solid var(--cyan);
+  outline-offset: 4px;
+}
+
+.operational-unit-detail-row[hidden] {
+  display: none;
+}
+
+.operational-unit-detail-row > td {
+  padding: 0;
+  background: var(--panel-2);
+}
+
+.operational-unit-detail {
+  padding: 14px 16px 16px 48px;
+}
+
+.operational-unit-detail-head {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.operational-unit-detail-head span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.operational-unit-table-wrap {
+  width: 100%;
+  max-height: 360px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.operational-unit-table {
+  min-width: 980px;
+}
+
+.operational-unit-table th,
+.operational-unit-table td {
+  padding: 8px 10px;
+}
+
+.operational-unit-link {
+  color: var(--cyan);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.operational-unit-empty {
+  margin: 0;
+}
+
 .subtle {
   color: var(--muted);
   font-size: 12px;
@@ -1705,6 +1799,15 @@ tbody tr:hover {
     grid-template-columns: 1fr;
     min-width: 0;
     padding: 12px;
+  }
+
+  .operational-unit-detail {
+    padding: 12px;
+  }
+
+  .operational-unit-detail-head {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

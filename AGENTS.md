@@ -149,6 +149,12 @@ scorecard → Operational Detail**.
 - Keep the header and every rendered row at the same column count. Whenever the
   shared dashboard JavaScript changes, bump its cache-busting query on every
   page that loads it.
+- Preserve the Service Area to district hierarchy and the expandable district
+  rows that reveal every matching unit in the active master program view. Unit
+  detail rows show unit health, youth, YoY, metric, retention, PIN status,
+  assignment presence, SYT, and training; sort lowest metrics first; and link
+  directly to the selected Unit-Level Detail record. Keep the nested unit table
+  bounded and scrollable and do not expose private PIN contact or meeting data.
 - Preserve the District Operational Detail assertions in
   `tools/validate_site_structure.py`, render `districts.html`, and confirm zero
   `.mini-meter` elements in `#districtRows` before publishing.

@@ -37,6 +37,8 @@ BeAScout PIN follow-up uses the main dashboard workbook's `Pin` tab. A matched P
 
 The District Performance scorecard uses the same classification for `PIN Currency`: matched current `Active` or `Inactive` PIN rows divided by all tracked units in the selected district/program view. `Stale` and unmatched `n/a` units remain in the denominator and do not count as current.
 
+Operational Detail district rows expand to an individual-unit table beneath the selected district. The unit rows inherit the master program filter, sort lowest unit metrics first, summarize health, youth movement, retention, PIN status, commissioner assignment, SYT, and training, and link directly to the selected Unit-Level Detail record. Service Area and district rollups remain compact until opened.
+
 PIN Status & Completeness separates freshness from field completeness. A matched PIN has `Required PIN Details` only when status, contact name plus at least one contact method (email or phone), meeting location, and meeting details are present. Website, fee, fundraising, and availability fields are not counted. The percentage divides complete matched PINs by all tracked units; unmatched units stay in the denominator. Public `unit_pin_statuses` rows contain only Boolean completion flags, never contact names, email addresses, phone numbers, or meeting values.
 
 District PIN Detail includes an expandable individual-unit drill-down. Expanded rows respect the master program, Service Area, District, and follow-up focus filters; prioritize unmatched, Stale, Inactive, and incomplete units; show only privacy-safe status, completion, and missing-category indicators; and link to the selected Unit-Level Detail record.
