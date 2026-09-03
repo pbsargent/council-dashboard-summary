@@ -270,13 +270,14 @@ def main() -> int:
     if pin_status_path.is_file():
         pin_page_source = pin_status_path.read_text(encoding="utf-8")
         for required in (
-            'pin-status.css?v=20260901-pin-status-1',
-            'pin-status.js?v=20260901-pin-status-1',
+            'pin-status.css?v=20260903-district-unit-detail-1',
+            'pin-status.js?v=20260903-district-unit-detail-1',
             'data-focus="stale"',
             'data-focus="inactive"',
             'data-focus="details"',
             'data-focus="unmatched"',
             "Only completion flags are published",
+            "Expand a district to see its individual unit PIN status",
         ):
             if required not in pin_page_source:
                 errors.append(f"pin-status.html: missing PIN page contract {required!r}")
@@ -284,6 +285,7 @@ def main() -> int:
         pin_script_source = pin_status_script_path.read_text(encoding="utf-8")
         for required in (
             "function unitCountsByDistrict",
+            "function unitDetailsByDistrict",
             "function summarizeDistricts",
             "function rollup",
             'row.pin_details_complete === true',
@@ -292,6 +294,13 @@ def main() -> int:
             "ratio(complete, units)",
             "Math.max(0, units - pinRows.length)",
             "More than 12 months since the last update",
+            'class="pin-district-toggle"',
+            'aria-expanded="${expanded}"',
+            "Individual Unit Status",
+            "unit-level.html?unit=",
+            'pin.pin_status_complete === true ? null : "Status"',
+            'pin.pin_contact_complete === true ? null : "Contact"',
+            'pin.pin_meeting_complete === true ? null : "Meeting"',
         ):
             if required not in pin_script_source:
                 errors.append(f"pin-status.js: missing PIN calculation contract {required!r}")
@@ -438,6 +447,8 @@ def main() -> int:
             errors.append("help.html: missing PIN Status & Completeness page directory entry")
         if "<dt>Required PIN Details</dt>" not in help_source or "Only completion flags" not in help_source:
             errors.append("help.html: missing privacy-safe Required PIN Details definition")
+        if "expand a District PIN Detail row" not in help_source or "individual-unit status" not in help_source:
+            errors.append("help.html: missing District PIN Detail unit-drill-down guidance")
         if "<dt>Outdoor Leadership Depth</dt>" not in help_source:
             errors.append("help.html: missing Outdoor Leadership Depth measure definition")
         if "first name and last initial" not in help_source:
@@ -546,7 +557,7 @@ def main() -> int:
     if unit_level_path.is_file() and unit_level_script_path.is_file():
         unit_level_page = unit_level_path.read_text(encoding="utf-8")
         unit_level_script = unit_level_script_path.read_text(encoding="utf-8")
-        if "unit-level-dashboard.js?v=20260901-pin-context-1" not in unit_level_page:
+        if "unit-level-dashboard.js?v=20260903-pin-detail-link-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-context script")
         if "panel-help.js?v=20260630-active-help" not in unit_level_page:
             errors.append("unit-level.html: Commissioner Context PIN help must load panel help")
@@ -563,6 +574,8 @@ def main() -> int:
             "Details complete",
             "Details need follow-up",
             "[unitKey(row.district, row.unit), row]",
+            "function preferredUnit",
+            'new URLSearchParams(window.location.search).get("unit")',
         ):
             if required not in unit_level_script:
                 errors.append(f"unit-level-dashboard.js: missing Commissioner Context PIN completeness contract {required!r}")
@@ -580,10 +593,10 @@ def main() -> int:
                 errors.append(f"{relative}: missing camping-readiness documentation contract {phrase!r}")
 
     pin_documentation_contracts = {
-        "README.md": ("PIN Status & Completeness", "Public `unit_pin_statuses` rows contain only Boolean completion flags", "Overview includes PIN state in Signals to Watch"),
-        "DASHBOARD_DATA_DICTIONARY.md": ("Required PIN Details", "pin_contact_complete", "does not expose the private source values", "Commissioner Context repeats the status as a badge"),
-        "IMPLEMENTATION_RUNBOOK.md": ("PIN Status & Completeness", "Do not publish the underlying contact or meeting values", "Overview's Signals to Watch groups filtered matched rows"),
-        "tools/build_human_data_guide.py": ("Required PIN Details is separate from freshness", "The public data contains only completion flags", "PIN state in Signals to Watch"),
+        "README.md": ("PIN Status & Completeness", "Public `unit_pin_statuses` rows contain only Boolean completion flags", "Overview includes PIN state in Signals to Watch", "expandable individual-unit drill-down"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("Required PIN Details", "pin_contact_complete", "privacy-safe individual-unit rows", "Commissioner Context repeats the status as a badge"),
+        "IMPLEMENTATION_RUNBOOK.md": ("PIN Status & Completeness", "Do not publish the underlying contact or meeting values", "Overview's Signals to Watch groups filtered matched rows", "expanded district unit rows"),
+        "tools/build_human_data_guide.py": ("Required PIN Details is separate from freshness", "The public data contains only completion flags", "PIN state in Signals to Watch", "expandable district rows"),
     }
     for relative, required_phrases in pin_documentation_contracts.items():
         source = (root / relative).read_text(encoding="utf-8")

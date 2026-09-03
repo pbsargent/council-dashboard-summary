@@ -79,10 +79,16 @@ function unitsForDistrict(district) {
   return state.data.units.filter((unit) => ProgramFilter.matchesUnitType(unit.unit_type) && unit.district === district);
 }
 
-function renderControls() {
+function preferredUnit(matchingUnits, requestedUnitId, defaultUnitId) {
+  return matchingUnits.find((unit) => unit.unit_id === requestedUnitId)
+    || matchingUnits.find((unit) => unit.unit_id === defaultUnitId)
+    || matchingUnits[0];
+}
+
+function renderControls(requestedUnitId = null) {
   const matchingUnits = state.data.units.filter((unit) => ProgramFilter.matchesUnitType(unit.unit_type));
   const districts = [...new Set(matchingUnits.map((unit) => unit.district).filter(Boolean))].sort();
-  const defaultUnit = matchingUnits.find((unit) => unit.unit_id === state.data.default_unit_id) || matchingUnits[0];
+  const defaultUnit = preferredUnit(matchingUnits, requestedUnitId, state.data.default_unit_id);
   document.getElementById("districtSelect").innerHTML = districts.map((district) => `<option value="${esc(district)}">${esc(district)}</option>`).join("");
   if (!defaultUnit) return;
   document.getElementById("districtSelect").value = defaultUnit.district;
@@ -224,7 +230,8 @@ async function init() {
   document.getElementById("generatedDate").textContent = `Data ${dateLabel(state.data.data_date)}`;
   document.getElementById("printSource").textContent = `Source: ${state.data.source.name} · ${state.data.source.sheets.join(", ")}`;
   document.getElementById("printGenerated").textContent = `Data current ${dateLabel(state.data.data_date)}`;
-  renderControls();
+  const requestedUnitId = Number(new URLSearchParams(window.location.search).get("unit"));
+  renderControls(Number.isFinite(requestedUnitId) && requestedUnitId > 0 ? requestedUnitId : null);
   document.getElementById("districtSelect").addEventListener("change", () => renderUnitOptions());
   document.getElementById("unitSelect").addEventListener("change", selectUnit);
   document.getElementById("printButton").addEventListener("click", () => window.print());

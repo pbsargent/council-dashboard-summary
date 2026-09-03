@@ -173,6 +173,10 @@ District Performance.
 - Preserve the master program filter, Service Area and District filters,
   Stale/Inactive/details-gap/no-PIN focuses, district aggregates, and the
   approved reader wording for Stale.
+- Preserve expandable District PIN Detail rows that list every unit matching
+  the active filters, prioritize follow-up units, show only privacy-safe PIN
+  status/completeness and missing-category indicators, and deep-link to the
+  selected Unit-Level Detail record.
 - Preserve PIN state in Overview Signals to Watch, the direct PIN Status &
   Completeness link in Overview Explore, and the separate status/completeness
   badges in Unit-Level Commissioner Context. All three reuse the shared

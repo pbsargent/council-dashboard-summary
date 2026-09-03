@@ -19,6 +19,8 @@ const context = vm.createContext({
 vm.runInContext(source, context);
 
 assert.equal(vm.runInContext('unitKey("Armadillo 02", "Pack 14 F")', context), "Armadillo|Pack 14 F");
+assert.equal(vm.runInContext('preferredUnit([{ unit_id: 1 }, { unit_id: 2 }], 2, 1).unit_id', context), 2, "deep links select the requested unit");
+assert.equal(vm.runInContext('preferredUnit([{ unit_id: 1 }, { unit_id: 2 }], 9, 1).unit_id', context), 1, "unknown deep links fall back to the configured default");
 vm.runInContext(`
   state.pinByUnit = new Map([
     ["Armadillo|Crew 4", { pin_status: "Active", pin_details_complete: true }],

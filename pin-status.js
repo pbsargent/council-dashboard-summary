@@ -1,5 +1,5 @@
 (() => {
-  const state = { dashboard: null, unitData: null, focus: "all" };
+  const state = { dashboard: null, unitData: null, focus: "all", expandedDistricts: new Set() };
   const integer = new Intl.NumberFormat("en-US");
   const percent = new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 1 });
 
@@ -10,6 +10,73 @@
   const p = (value) => Number.isFinite(value) ? percent.format(value) : "n/a";
   const ratio = (numerator, denominator) => denominator ? numerator / denominator : null;
   const cleanDistrict = (value) => window.ProgramFilter?.cleanDistrict(value) || String(value || "").replace(/\s+\d+$/, "").trim();
+  const unitName = (unit) => String(unit?.name || [unit?.unit_type, unit?.number, unit?.gender].filter((part) => part != null && part !== "").join(" ")).trim();
+  const unitKey = (district, unit) => `${cleanDistrict(district)}|${String(unit || "").trim()}`;
+  const unitNumber = (value) => String(value ?? "").match(/\d+/)?.[0].replace(/^0+(?=\d)/, "") || "";
+  const unitBaseKey = (district, unitType, unit) => `${cleanDistrict(district)}|${String(unitType || "").trim()}|${unitNumber(unit)}`;
+
+  function unitDetailsByDistrict(dashboard, unitData, programFilter = window.ProgramFilter) {
+    const pins = (dashboard?.unit_pin_statuses || []).filter((row) => programFilter.matchesUnitType(row.unit_type));
+    const units = (unitData?.units || []).filter((unit) => programFilter.matchesUnitType(unit.unit_type));
+    const pinByUnit = new Map(pins.map((row) => [unitKey(row.district, row.unit), row]));
+    const pinsByBase = new Map();
+    const unitsByBase = new Map();
+    for (const pin of pins) {
+      const key = unitBaseKey(pin.district, pin.unit_type, pin.unit);
+      if (!pinsByBase.has(key)) pinsByBase.set(key, []);
+      pinsByBase.get(key).push(pin);
+    }
+    for (const unit of units) {
+      const key = unitBaseKey(unit.district, unit.unit_type, unit.number ?? unitName(unit));
+      unitsByBase.set(key, (unitsByBase.get(key) || 0) + 1);
+    }
+    const details = new Map();
+    for (const unit of units) {
+      const district = cleanDistrict(unit.district);
+      const name = unitName(unit);
+      const baseKey = unitBaseKey(district, unit.unit_type, unit.number ?? name);
+      const baseMatches = pinsByBase.get(baseKey) || [];
+      const pin = pinByUnit.get(unitKey(district, name))
+        || (unitsByBase.get(baseKey) === 1 && baseMatches.length === 1 ? baseMatches[0] : null);
+      const missing = pin ? [
+        pin.pin_status_complete === true ? null : "Status",
+        pin.pin_contact_complete === true ? null : "Contact",
+        pin.pin_meeting_complete === true ? null : "Meeting",
+      ].filter(Boolean) : ["No matched PIN"];
+      if (!details.has(district)) details.set(district, []);
+      details.get(district).push({
+        district,
+        unitId: unit.unit_id,
+        unit: name,
+        unitType: unit.unit_type || "n/a",
+        pinStatus: pin?.pin_status || "n/a",
+        detailsComplete: pin?.pin_details_complete === true,
+        matched: Boolean(pin),
+        missing,
+      });
+    }
+    const expectedCounts = unitCountsByDistrict(dashboard, unitData, programFilter);
+    for (const [district, expected] of expectedCounts) {
+      if (!details.has(district)) details.set(district, []);
+      const rows = details.get(district);
+      while (rows.length < expected) {
+        rows.push({
+          district,
+          unitId: null,
+          unit: "Tracked unit identity unavailable",
+          unitType: "n/a",
+          pinStatus: "n/a",
+          detailsComplete: false,
+          matched: false,
+          missing: ["No matched PIN"],
+        });
+      }
+    }
+    for (const rows of details.values()) {
+      rows.sort((a, b) => unitPriority(a) - unitPriority(b) || a.unit.localeCompare(b.unit, undefined, { numeric: true }));
+    }
+    return details;
+  }
 
   function unitCountsByDistrict(dashboard, unitData, programFilter = window.ProgramFilter) {
     if (programFilter.isCouncil()) {
@@ -26,6 +93,7 @@
 
   function summarizeDistricts(dashboard, unitData, programFilter = window.ProgramFilter) {
     const unitCounts = unitCountsByDistrict(dashboard, unitData, programFilter);
+    const unitDetails = unitDetailsByDistrict(dashboard, unitData, programFilter);
     const rowsByDistrict = new Map();
     for (const row of dashboard?.unit_pin_statuses || []) {
       if (!programFilter.matchesUnitType(row.unit_type)) continue;
@@ -44,6 +112,7 @@
       const unmatched = Math.max(0, units - pinRows.length);
       return {
         district, units, active, inactive, stale, unmatched, complete, contactGaps, otherDetailGaps,
+        unitRows: unitDetails.get(district) || [],
         currency: ratio(active + inactive, units),
         completeness: ratio(complete, units),
       };
@@ -75,6 +144,44 @@
     if (state.focus === "details") return row.units - row.complete - row.unmatched > 0;
     if (state.focus === "unmatched") return row.unmatched > 0;
     return true;
+  }
+
+  function unitFocusMatches(row) {
+    if (state.focus === "stale") return row.pinStatus === "Stale";
+    if (state.focus === "inactive") return row.pinStatus === "Inactive";
+    if (state.focus === "details") return row.matched && !row.detailsComplete;
+    if (state.focus === "unmatched") return !row.matched;
+    return true;
+  }
+
+  function unitPriority(row) {
+    if (!row.matched) return 0;
+    if (row.pinStatus === "Stale") return 1;
+    if (row.pinStatus === "Inactive") return 2;
+    if (!row.detailsComplete) return 3;
+    return 4;
+  }
+
+  function statusTone(status) {
+    if (status === "Active") return "good";
+    if (status === "Stale") return "bad";
+    return "warn";
+  }
+
+  function renderUnitRows(row) {
+    const units = row.unitRows.filter(unitFocusMatches);
+    if (!units.length) return '<p class="subtle pin-unit-empty">No units match the selected focus.</p>';
+    return `<div class="pin-unit-table-wrap"><table class="pin-unit-table">
+      <thead><tr><th>Unit</th><th>Program</th><th>PIN Status</th><th>Required PIN Details</th><th>Missing</th><th><span class="visually-hidden">Action</span></th></tr></thead>
+      <tbody>${units.map((unit) => {
+        const detailsLabel = unit.matched ? (unit.detailsComplete ? "Complete" : "Needs follow-up") : "n/a";
+        const missingLabel = unit.missing.length ? unit.missing.join(" · ") : "None";
+        const link = unit.unitId != null
+          ? `<a class="pin-unit-link" href="unit-level.html?unit=${encodeURIComponent(unit.unitId)}">View unit</a>`
+          : "";
+        return `<tr><td><strong>${esc(unit.unit)}</strong></td><td>${esc(unit.unitType)}</td><td><span class="status ${statusTone(unit.pinStatus)}">${esc(unit.pinStatus)}</span></td><td><span class="status ${unit.detailsComplete ? "good" : "warn"}">${esc(detailsLabel)}</span></td><td>${esc(missingLabel)}</td><td>${link}</td></tr>`;
+      }).join("")}</tbody>
+    </table></div>`;
   }
 
   function renderControls(allRows) {
@@ -145,9 +252,13 @@
   function renderTable(rows) {
     const shown = rows.filter(focusMatches).sort((a, b) => (a.currency ?? 2) - (b.currency ?? 2) || a.district.localeCompare(b.district));
     document.getElementById("districtCount").textContent = `${n(shown.length)} districts`;
-    document.getElementById("districtPinRows").innerHTML = shown.length ? shown.map((row) => {
+    document.getElementById("districtPinRows").innerHTML = shown.length ? shown.map((row, index) => {
       const gaps = Math.max(0, row.units - row.complete - row.unmatched);
-      return `<tr><td><strong>${esc(row.district)}</strong><span class="subtle">${esc(serviceAreaForDistrict(row.district))}</span></td><td class="num">${n(row.units)}</td><td class="num">${n(row.active)}</td><td class="num">${n(row.inactive)}</td><td class="num">${n(row.stale)}</td><td class="num">${n(row.unmatched)}</td><td class="num"><strong>${p(row.currency)}</strong></td><td><div class="pin-detail-summary"><strong>${n(row.complete)} complete · ${p(row.completeness)}</strong><span>${n(gaps)} need details · ${n(row.unmatched)} no PIN</span></div></td></tr>`;
+      const detailId = `district-pin-units-${index}`;
+      const expanded = state.expandedDistricts.has(row.district);
+      const focusCount = row.unitRows.filter(unitFocusMatches).length;
+      return `<tr class="pin-district-row"><td><button class="pin-district-toggle" type="button" data-district="${esc(row.district)}" aria-expanded="${expanded}" aria-controls="${detailId}"><span class="disclosure" aria-hidden="true">${expanded ? "−" : "+"}</span><span><strong>${esc(row.district)}</strong><span class="subtle">${esc(serviceAreaForDistrict(row.district))}</span></span></button></td><td class="num">${n(row.units)}</td><td class="num">${n(row.active)}</td><td class="num">${n(row.inactive)}</td><td class="num">${n(row.stale)}</td><td class="num">${n(row.unmatched)}</td><td class="num"><strong>${p(row.currency)}</strong></td><td><div class="pin-detail-summary"><strong>${n(row.complete)} complete · ${p(row.completeness)}</strong><span>${n(gaps)} need details · ${n(row.unmatched)} no PIN</span></div></td></tr>
+        <tr class="pin-unit-detail-row" id="${detailId}"${expanded ? "" : " hidden"}><td colspan="8"><div class="pin-unit-detail"><div class="pin-unit-detail-head"><strong>Individual Unit Status</strong><span>${n(focusCount)} of ${n(row.unitRows.length)} units in current focus</span></div>${renderUnitRows(row)}</div></td></tr>`;
     }).join("") : '<tr><td colspan="8">No districts match the selected focus.</td></tr>';
   }
 
@@ -177,6 +288,18 @@
       });
       render();
     });
+    document.getElementById("districtPinRows").addEventListener("click", (event) => {
+      const button = event.target.closest(".pin-district-toggle");
+      if (!button) return;
+      const district = button.dataset.district;
+      const detail = document.getElementById(button.getAttribute("aria-controls"));
+      const expanded = button.getAttribute("aria-expanded") !== "true";
+      button.setAttribute("aria-expanded", String(expanded));
+      button.querySelector(".disclosure").textContent = expanded ? "−" : "+";
+      detail.hidden = !expanded;
+      if (expanded) state.expandedDistricts.add(district);
+      else state.expandedDistricts.delete(district);
+    });
     window.addEventListener("programfilterchange", render);
   }
 
@@ -196,7 +319,7 @@
     }
   }
 
-  window.PinStatusPage = { unitCountsByDistrict, summarizeDistricts, rollup };
+  window.PinStatusPage = { unitCountsByDistrict, unitDetailsByDistrict, summarizeDistricts, rollup };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
 })();

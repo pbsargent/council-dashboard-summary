@@ -305,7 +305,7 @@ Each district receives a status in `build_site.py`:
 
 ### PIN Status & Completeness page
 
-`pin-status.html` is a District Performance child page. It combines the shared PIN display-state classification with the Required PIN Details metric, supports the master program filter plus Service Area and District filters, and offers follow-up focuses for Stale, Inactive, details gaps, and no matched PIN. Every displayed percentage uses all tracked units in the selected view as its denominator. The page renders district aggregates only and does not expose the private source values used to calculate the completion flags.
+`pin-status.html` is a District Performance child page. It combines the shared PIN display-state classification with the Required PIN Details metric, supports the master program filter plus Service Area and District filters, and offers follow-up focuses for Stale, Inactive, details gaps, and no matched PIN. Every displayed percentage uses all tracked units in the selected view as its denominator. District PIN Detail rows expand to privacy-safe individual-unit rows showing program type, PIN status, Required PIN Details state, missing categories, and a Unit-Level Detail link. Expanded units follow the active filters and are prioritized as unmatched, Stale, Inactive, incomplete, then complete Active. The page does not expose the private source values used to calculate the completion flags.
 
 ### Today's Read / Signals
 

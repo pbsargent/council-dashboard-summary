@@ -32,19 +32,19 @@ const dashboard = {
     { district: "Beta", units: 2 },
   ],
   unit_pin_statuses: [
-    { district: "Alpha", unit_type: "Pack", pin_status: "Active", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: true },
-    { district: "Alpha", unit_type: "Pack", pin_status: "Inactive", pin_status_complete: true, pin_contact_complete: false, pin_meeting_complete: true, pin_details_complete: false },
-    { district: "Beta", unit_type: "Troop", pin_status: "Stale", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: true },
-    { district: "Beta", unit_type: "Troop", pin_status: "Stale", pin_status_complete: false, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: false },
+    { district: "Alpha", unit: "Pack 1 F", unit_type: "Pack", pin_status: "Active", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: true },
+    { district: "Alpha", unit: "Pack 2 F", unit_type: "Pack", pin_status: "Inactive", pin_status_complete: true, pin_contact_complete: false, pin_meeting_complete: true, pin_details_complete: false },
+    { district: "Beta", unit: "Troop 4 F", unit_type: "Troop", pin_status: "Stale", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: true },
+    { district: "Beta", unit: "Troop 5 B", unit_type: "Troop", pin_status: "Stale", pin_status_complete: false, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: false },
   ],
 };
 const unitData = {
   units: [
-    { district: "Alpha 01", unit_type: "Pack" },
-    { district: "Alpha 01", unit_type: "Pack" },
-    { district: "Alpha 01", unit_type: "Troop" },
-    { district: "Beta 02", unit_type: "Troop" },
-    { district: "Beta 02", unit_type: "Troop" },
+    { unit_id: 1, name: "Pack 1 F", district: "Alpha 01", unit_type: "Pack" },
+    { unit_id: 2, name: "Pack 2 F", district: "Alpha 01", unit_type: "Pack" },
+    { unit_id: 3, name: "Troop 3 B", district: "Alpha 01", unit_type: "Troop" },
+    { unit_id: 4, name: "Troop 4 B", district: "Beta 02", unit_type: "Troop" },
+    { unit_id: 5, name: "Troop 5 B", district: "Beta 02", unit_type: "Troop" },
   ],
 };
 
@@ -59,6 +59,18 @@ assert.equal(council.complete, 2);
 assert.equal(council.currency, 2 / 5);
 assert.equal(council.completeness, 2 / 5);
 assert.equal(council.detailGaps, 2);
+const alphaUnits = councilRows.find((row) => row.district === "Alpha").unitRows;
+assert.deepEqual(JSON.parse(JSON.stringify(alphaUnits.map((row) => row.unit))), ["Troop 3 B", "Pack 2 F", "Pack 1 F"], "unit detail prioritizes no PIN, Inactive, then complete Active");
+assert.equal(alphaUnits[0].pinStatus, "n/a");
+assert.deepEqual(JSON.parse(JSON.stringify(alphaUnits[0].missing)), ["No matched PIN"]);
+assert.equal(alphaUnits[1].detailsComplete, false);
+assert.deepEqual(JSON.parse(JSON.stringify(alphaUnits[1].missing)), ["Contact"]);
+assert.equal(alphaUnits[2].detailsComplete, true);
+assert.deepEqual(JSON.parse(JSON.stringify(alphaUnits[2].missing)), []);
+assert.equal(alphaUnits[2].unitId, 1, "unit detail retains the Unit-Level Detail deep-link identifier");
+const betaUnits = councilRows.find((row) => row.district === "Beta").unitRows;
+assert.equal(betaUnits[0].pinStatus, "Stale", "unique district, program, and unit-number identity tolerates display-label differences");
+assert.equal(betaUnits[0].matched, true);
 
 selectedType = "Pack";
 const pack = api.rollup(api.summarizeDistricts(dashboard, unitData, programFilter));

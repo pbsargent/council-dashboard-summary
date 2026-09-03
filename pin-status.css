@@ -142,6 +142,109 @@
   min-width: 900px;
 }
 
+.pin-district-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  padding: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pin-district-toggle .disclosure {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--cyan);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.pin-district-toggle strong,
+.pin-district-toggle .subtle {
+  display: block;
+}
+
+.pin-district-toggle:focus-visible {
+  border-radius: 5px;
+  outline: 3px solid var(--cyan);
+  outline-offset: 4px;
+}
+
+.pin-unit-detail-row[hidden] {
+  display: none;
+}
+
+.pin-unit-detail-row > td {
+  padding: 0;
+  background: var(--panel-2);
+}
+
+.pin-unit-detail {
+  padding: 14px 16px 16px 48px;
+}
+
+.pin-unit-detail-head {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.pin-unit-detail-head span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pin-unit-table-wrap {
+  width: 100%;
+  max-height: 360px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.pin-unit-table {
+  min-width: 760px;
+}
+
+.pin-unit-table th,
+.pin-unit-table td {
+  padding: 8px 10px;
+}
+
+.pin-unit-link {
+  color: var(--cyan);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.pin-unit-empty {
+  margin: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 @media (max-width: 1080px) {
   .pin-kpi-grid { grid-template-columns: repeat(3, minmax(128px, 1fr)); }
   .pin-insight-grid { grid-template-columns: 1fr; }
@@ -151,4 +254,6 @@
   .pin-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pin-outcomes { grid-template-columns: 1fr; }
   .pin-rank-row { grid-template-columns: minmax(100px, 1fr) minmax(90px, 1.5fr) 52px; }
+  .pin-unit-detail { padding: 12px; }
+  .pin-unit-detail-head { align-items: flex-start; flex-direction: column; }
 }

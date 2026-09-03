@@ -671,7 +671,7 @@ def build_doc():
             ["Overview", "What the Council's current KPI picture is, including PIN state in Signals to Watch, and which operating areas need attention first. Explore links directly to PIN Status & Completeness."],
             ["Council Comparison", "How Capitol Area Council compares with other Service Territory 07 councils."],
             ["District Performance", "Which districts lead or lag across membership, unit health, PIN currency, training, SYT, and commissioner coverage."],
-            ["PIN Status & Completeness", "Which districts need PIN freshness or essential contact-and-meeting detail follow-up, without publishing the private field values."],
+            ["PIN Status & Completeness", "Which districts need PIN freshness or essential contact-and-meeting detail follow-up, with expandable district rows that identify individual unit status and missing categories without publishing private field values."],
             ["Membership & Growth", "Where membership opportunity, TAY penetration, unit health risk, prospects, and renewals combine into priority signals."],
             ["Unit Health & Renewal", "Where unit health, assignment, combined Inactive + Stale BeAScout PINs, and renewal follow-up require action."],
             ["People & Readiness", "Where leader training, safeguarding, and camping-readiness gaps are concentrated."],
