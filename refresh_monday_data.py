@@ -14,6 +14,7 @@ from urllib.request import Request, urlopen
 
 from openpyxl import load_workbook
 from openpyxl.utils.datetime import from_excel
+from tools.validate_monday_snapshot import validate_snapshot
 
 
 API_URL = "https://api.monday.com/v2"
@@ -36,6 +37,13 @@ BOARDS = {
             "district": "label__1",
             "projected_start": "color_mknw6473",
             "status": "status",
+            "unit_type": "tag_mkvkd79y",
+            "unit_numbers": "text_mkvkz2cm",
+            "contact_stage": "status8__1",
+            "first_visit": "status7__1",
+            "charter_stage": "status4__1",
+            "posted": "status1__1",
+            "first_meeting": "date3__1",
         },
     },
     "renewals": {
@@ -45,6 +53,11 @@ BOARDS = {
         "columns": {
             "intent": "color_mkx5j65h",
             "posted": "color_mkx59sx7",
+            "district": "color_mkx5nk4d",
+            "initiated": "color_mkx5h0xv",
+            "submitted": "color_mkx5ynqc",
+            "pending_acceptance": "color_mkx52pkz",
+            "timeline": "timerange_mkx5q36z",
         },
     },
     "schools": {
@@ -54,11 +67,20 @@ BOARDS = {
         "columns": {
             "status": "dropdown_mm3gpfex",
             "district": "dropdown_mkqzfzs3",
+            "school_district": "text_mkqz1pqj",
+            "unit_associated": "board_relation_mkqzymsp",
+            "tay": "text_mkqzzhs5",
+            "grades": "text_mkqzxf7q",
+            "principal_meeting": "date_mktdyxqp",
+            "city": "text_mkqzd9jj",
+            "county": "text_mm3cvs9s",
+            "district_type": "text_mm3cxysd",
+            "instruction_type": "text_mm3c9adz",
         },
     },
     "popcorn": {
         "id": 18413898198,
-        "name": "Popcorn Committments",
+        "name": "Popcorn Details",
         "display_name": "Popcorn Commitments",
         "url": "https://capitolareacouncil564.monday.com/boards/18413898198",
         "columns": {
@@ -163,10 +185,12 @@ def fetch_board_items(token: str, board_id: int, column_ids: list[str]) -> list[
             id
             name
             updated_at
+            group { title }
             column_values(ids: $columnIds) {
               id
               text
               value
+              ... on BoardRelationValue { display_value }
             }
           }
         }
@@ -191,7 +215,7 @@ def fetch_board_items(token: str, board_id: int, column_ids: list[str]) -> list[
 
 def column_map(item: dict[str, Any]) -> dict[str, str]:
     return {
-        value.get("id"): (value.get("text") or "").strip()
+        value.get("id"): (value.get("display_value") or value.get("text") or "").strip()
         for value in item.get("column_values", [])
     }
 
@@ -341,7 +365,7 @@ def compact_prospect_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         "contact_stage": as_text(row.get("Step 2")),
         "first_visit": as_text(row.get("Step 3")),
         "charter_stage": as_text(row.get("Step 10")),
-        "posted": as_text(row.get("ONLY CLICK COMPLETE WHEN unit posts!!Unit in my.scouting?")),
+        "posted": as_text(row.get("ONLY CLICK COMPLETE WHEN unit posts!!Unit in my.scouting?")) or as_text(row.get("Step 11")),
         "first_meeting": as_text(row.get("Date of First Meeting")),
         "updated_at": excel_timestamp(row.get("Updated At")),
     } for row in rows]
@@ -381,6 +405,32 @@ def compact_school_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         "status": as_text(row.get("School Status")) or "Unlabeled",
         "updated_at": excel_timestamp(row.get("Updated At")),
     } for row in rows]
+
+
+def compact_detail_items(items: list[dict[str, Any]], board: str) -> list[dict[str, Any]]:
+    """API fallback uses the same public field allowlist as workbook ingestion."""
+    columns = BOARDS[board]["columns"]
+    defaults = {
+        "prospects": {"district": "Unassigned", "projected_start": "Unscheduled", "status": "Unlabeled"},
+        "renewals": {"district": "Unassigned", "intent": "Unlabeled", "posted": "Not posted"},
+        "schools": {"school_district": "Unassigned", "scouting_district": "Unassigned", "status": "Unlabeled"},
+    }[board]
+    rows = []
+    for item in items:
+        values = column_map(item)
+        if board == "schools" and any(columns[field] not in values for field in ("tay", "grades", "district")):
+            raise RuntimeError("Schools API response is missing required TAY, Grades, or Scouting District columns")
+        row = {
+            "item_id": as_text(item.get("id")),
+            "name": as_text(item.get("name")),
+            "group": as_text((item.get("group") or {}).get("title")),
+            "updated_at": item.get("updated_at"),
+        }
+        for field, column_id in columns.items():
+            output_field = "scouting_district" if board == "schools" and field == "district" else field
+            row[output_field] = values.get(column_id) or defaults.get(output_field, "")
+        rows.append(row)
+    return rows
 
 
 def is_eligible_popcorn_unit(name: Any, district: Any) -> bool:
@@ -517,7 +567,7 @@ def build_snapshot_from_workbook(path: Path) -> dict[str, Any]:
     prospects_rows = workbook_rows(workbook, "New unit Hot Prospects")
     renewals_rows = workbook_rows(workbook, "2026 Unit Renewal")
     schools_rows = workbook_rows(workbook, "Schools", "CAC Schools")
-    popcorn_rows = workbook_rows(workbook, "Popcorn Committments")
+    popcorn_rows = workbook_rows(workbook, "Popcorn Details", "Popcorn Committments", "Popcorn Commitments")
     compact_popcorn = compact_popcorn_rows(popcorn_rows)
 
     return {
@@ -585,6 +635,7 @@ def build_snapshot(token: str) -> dict[str, Any]:
                 "status": count_labels(prospects_items, prospects_columns["status"]),
                 "districts": count_labels(prospects_items, prospects_columns["district"], "Unassigned"),
                 "projected_start_months": count_labels(prospects_items, prospects_columns["projected_start"], "Unscheduled"),
+                "rows": compact_detail_items(prospects_items, "prospects"),
             },
             "renewals": {
                 "name": BOARDS["renewals"]["name"],
@@ -593,6 +644,7 @@ def build_snapshot(token: str) -> dict[str, Any]:
                 "items": len(renewals_items),
                 "intent": count_labels(renewals_items, renewals_columns["intent"]),
                 "posted": count_labels(renewals_items, renewals_columns["posted"], "Not posted"),
+                "rows": compact_detail_items(renewals_items, "renewals"),
             },
             "schools": {
                 "name": BOARDS["schools"]["name"],
@@ -601,6 +653,7 @@ def build_snapshot(token: str) -> dict[str, Any]:
                 "items": len(schools_items),
                 "status": count_labels(schools_items, schools_columns["status"]),
                 "districts": count_labels(schools_items, schools_columns["district"], "Unassigned", split_multi=True),
+                "rows": compact_detail_items(schools_items, "schools"),
             },
             "popcorn": popcorn_snapshot(
                 compact_popcorn,
@@ -623,6 +676,7 @@ def main() -> int:
     if workbook_path:
         try:
             snapshot = build_snapshot_from_workbook(workbook_path)
+            validate_snapshot(snapshot)
         except Exception as error:
             print(f"Workbook refresh failed ({error}); falling back to monday.com API.", file=sys.stderr)
             token = read_token(args.token_file)
@@ -632,8 +686,11 @@ def main() -> int:
         token = read_token(args.token_file)
         snapshot = build_snapshot(token)
 
+    validate_snapshot(snapshot)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False), encoding="utf-8")
+    temporary = args.output.with_suffix(args.output.suffix + ".tmp")
+    temporary.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False), encoding="utf-8")
+    temporary.replace(args.output)
     print(json.dumps({
         "output": str(args.output),
         "generated_from": snapshot["generated_from"],

@@ -48,7 +48,7 @@ Minimum static files for a similar dashboard:
 - Dashboard JavaScript files
 - `assets/`
 - `data/latest.json`
-- Optional `data/monday-latest.json`
+- Required `data/monday-latest.json` with complete public detail rows and a usable school TAY denominator
 - Optional `renewal-board/` static subpage and `renewal-board/data.js`
 - Optional `docs/` artifacts
 
@@ -248,7 +248,7 @@ The operational order is:
 8. Run `refresh_monday_data.py`.
 9. Prefer the newest monday.com export workbook.
 10. Fall back to monday.com API if workbook acquisition fails.
-11. Generate or preserve `data/monday-latest.json`.
+11. Validate and atomically replace `data/monday-latest.json`. Workbook ingestion accepts `Popcorn Details` and both legacy Popcorn sheet spellings; API fallback must include the same public detail fields. A refresh failure blocks publication.
 12. Locate the newest validated `*_CAC - Unit Metric Scorecard.xlsx` captured by `CACDashboardAutomation`.
 13. Rebuild `data/unit-level-latest.json` and `data/unit-level-latest.js` with `tools/build_unit_level_dashboard.py`.
 14. Copy refreshed JSON and Unit Level data to the local preview site when present.
@@ -420,7 +420,7 @@ After any refresh or rebuild, check:
 
 - `data/latest.json` exists and has the expected `generated_date`.
 - A dated archive JSON exists for the same generated date.
-- `data/monday-latest.json` exists or the monday.com failure was expected and the previous file was intentionally preserved.
+- `data/monday-latest.json` passes `tools/validate_monday_snapshot.py`; all board detail counts reconcile and school TAY is present. Run `tools/validate_site_structure.py SITE_DIR --require-data` before publishing. Never publish a summary-only fallback or treat a missing TAY denominator as zero available youth.
 - `data/unit-level-latest.json` and `data/unit-level-latest.js` exist, match, and reference the newest validated Unit Level Metrics capture.
 - Unit Level renewal names remain first name plus last initial; the intake job must reject the workbook otherwise.
 - `renewal-board/data.js` exists and its metadata references the newest renewal and dashboard workbook inputs.

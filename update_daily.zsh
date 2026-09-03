@@ -211,8 +211,9 @@ if "$PYTHON" "$MONDAY_REFRESHER" --token-file "$MONDAY_TOKEN_FILE" --source-dir 
   MONDAY_STATUS="updated data/monday-latest.json"
   print -r -- "[monday] ${MONDAY_SUMMARY}"
 else
-  MONDAY_STATUS="failed; previous data/monday-latest.json retained if available"
-  print -u2 -r -- "monday.com refresh failed; keeping previous data/monday-latest.json if available."
+  MONDAY_STATUS="failed; publication blocked"
+  print -u2 -r -- "monday.com refresh failed; refusing to publish incomplete or stale TAY data."
+  exit 1
 fi
 
 LAST_STEP="build Cub Scout JSN Dashboard data"
@@ -288,7 +289,7 @@ fi
 
 LAST_STEP="revalidate discrete dashboard page structure before publication"
 log "Revalidating dashboard structure before publication"
-"$PYTHON" "${SITE_STAGE}/tools/validate_site_structure.py" "$SITE_STAGE"
+"$PYTHON" "${SITE_STAGE}/tools/validate_site_structure.py" "$SITE_STAGE" --require-data
 
 LAST_STEP="deploy verified GitHub Pages artifact"
 log "Deploying verified dashboard artifact for ${SNAPSHOT_DATE}"

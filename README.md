@@ -63,6 +63,8 @@ Service Area filtering and district volunteer leadership are refreshed from the 
 
 Popcorn Commitments is included as a home-page participation KPI and as a dedicated operational page with a collapsed-by-default Service Area → District → Unit hierarchy. Its rows refresh from the normal daily monday.com workbook, with the API retained as a fallback. The public Popcorn snapshot contains unit-level commitment, goal, sales, onboarding, and training fields but excludes contact names, email addresses, and phone numbers.
 
+The workbook importer accepts the current `Popcorn Details` sheet and the legacy `Popcorn Committments` / `Popcorn Commitments` names. Both workbook and API paths publish full public prospect, renewal, and school rows, including school TAY, Grades, and Scouting District. `tools/validate_monday_snapshot.py` rejects missing detail, count mismatches, duplicate identities, invalid TAY, and a missing/zero council TAY denominator before output replacement. The daily publisher stops on refresh failure and runs the structural validator with `--require-data` before deployment. Run `tools/test_monday_tay.py` for the regression checks.
+
 For a more shareable reader-facing guide, see:
 
 - `docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.docx`

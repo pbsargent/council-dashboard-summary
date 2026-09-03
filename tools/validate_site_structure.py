@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 import os
+import json
 import re
 import sys
 from html.parser import HTMLParser
 from pathlib import Path
+from validate_monday_snapshot import validate_snapshot
 
 
 class PageParser(HTMLParser):
@@ -180,6 +182,12 @@ def main() -> int:
     root = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
     errors: list[str] = []
 
+    if "--require-data" in sys.argv:
+        try:
+            validate_snapshot(json.loads((root / "data/monday-latest.json").read_text(encoding="utf-8")))
+        except (OSError, ValueError, TypeError, KeyError) as error:
+            errors.append(f"monday-latest.json: {error}")
+
     for relative in REQUIRED_ASSETS:
         path = root / relative
         if not path.is_file() or path.stat().st_size == 0:
@@ -194,6 +202,8 @@ def main() -> int:
     if not privacy_path.is_file() or privacy_path.stat().st_size == 0:
         errors.append(f"missing required person-name privacy asset: {PERSON_NAME_PRIVACY_ASSET}")
     updater_path = root / "update_daily.zsh"
+    if updater_path.is_file() and '--require-data' not in updater_path.read_text(encoding="utf-8"):
+        errors.append("update_daily.zsh: missing mandatory monday detail/TAY publication validation")
     if updater_path.is_file():
         updater_source = updater_path.read_text(encoding="utf-8")
         for required in (
