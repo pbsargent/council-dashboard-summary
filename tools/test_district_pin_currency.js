@@ -4,7 +4,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const source = fs.readFileSync(path.join(__dirname, "..", "council-dashboard-summary.20260626-tay-kpi.js"), "utf8");
-const districtRows = { innerHTML: "" };
+const districtRows = { innerHTML: "", closest() { return null; } };
 let selectedType = "Council";
 const context = vm.createContext({
   console,
@@ -29,6 +29,11 @@ const context = vm.createContext({
 });
 
 vm.runInContext(source, context);
+assert.equal(vm.runInContext("operationalUnitHeaderOffset(100, 150, 360, 34)", context), 0);
+assert.equal(vm.runInContext("operationalUnitHeaderOffset(100, 60, 360, 34)", context), 40, "unit headings follow the outer scrollport");
+assert.equal(vm.runInContext("operationalUnitHeaderOffset(140, 60, 360, 34)", context), 80, "wrapped district headings use their actual height");
+assert.equal(vm.runInContext("operationalUnitHeaderOffset(500, 60, 360, 34)", context), 326, "unit headings remain inside their own viewport");
+assert.equal(vm.runInContext("operationalUnitHeaderOffset(100, 60, 20, 34)", context), 0);
 vm.runInContext(`
   state.data = { dashboard: {
     districts: [

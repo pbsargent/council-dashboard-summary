@@ -135,7 +135,7 @@ HELP_ASSETS = (
 PERSON_NAME_PRIVACY_ASSET = "tools/sanitize_public_person_names.py"
 
 SCROLL_ASSET_VERSION = "20260821-scrollable-tables-v1"
-SHARED_TABLE_ASSET_VERSION = "20260903-operational-unit-detail-1"
+SHARED_TABLE_ASSET_VERSION = "20260904-operational-sticky-headers-1"
 SHARED_TABLE_STYLE_PAGES = (
     "index.html",
     "comparison.html",
@@ -254,7 +254,7 @@ def main() -> int:
 
     unit_health_path = root / "unit-health.html"
     priority_script_path = root / "council-dashboard-summary.20260626-tay-kpi.js"
-    shared_dashboard_script = "council-dashboard-summary.20260626-tay-kpi.js?v=20260903-operational-unit-detail-1"
+    shared_dashboard_script = "council-dashboard-summary.20260626-tay-kpi.js?v=20260904-operational-sticky-headers-1"
     for page_name in ("index.html", "comparison.html", "districts.html", "unit-health.html", "people.html", "sources.html"):
         page_source = (root / page_name).read_text(encoding="utf-8")
         if shared_dashboard_script not in page_source:
@@ -421,6 +421,9 @@ def main() -> int:
             "function operationalUnitsForDistrict",
             "function renderOperationalUnitRows",
             "function operationalUnitHealth",
+            "function syncOperationalUnitHeaders",
+            'operationalScrollport.addEventListener("scroll", syncOperationalUnitHeaders',
+            "new ResizeObserver(syncOperationalUnitHeaders).observe(operationalScrollport)",
             "unit-level.html?unit=",
             "state.openOperationalDistricts",
             'unit.commissioner ? "Yes" : "No"',
@@ -754,6 +757,8 @@ def main() -> int:
             ".panel.detail-table {\n  max-height: none;\n}",
             ".panel.detail-table > .table-wrap {\n  max-height: clamp(240px, calc(100vh - 310px), 560px);\n}",
             ".operational-unit-table-wrap {",
+            ".operational-table > thead > tr > th {",
+            "top: var(--operational-unit-header-offset, 0px);",
             ".operational-unit-detail-row[hidden] {",
             "overscroll-behavior: contain;",
             "scrollbar-gutter: stable;",

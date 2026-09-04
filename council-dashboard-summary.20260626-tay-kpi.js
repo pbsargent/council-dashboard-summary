@@ -868,6 +868,24 @@ function renderQualityChecks() {
   `).join("");
 }
 
+function operationalUnitHeaderOffset(districtHeaderBottom, unitViewportTop, viewportHeight, headerHeight) {
+  return Math.min(Math.max(0, districtHeaderBottom - unitViewportTop), Math.max(0, viewportHeight - headerHeight));
+}
+
+function syncOperationalUnitHeaders() {
+  const table = document.getElementById("districtRows")?.closest("table");
+  if (!table) return;
+  const headerBottom = table.querySelector(":scope > thead th").getBoundingClientRect().bottom;
+  table.querySelectorAll(".operational-unit-detail-row:not([hidden]) .operational-unit-table-wrap").forEach((viewport) => {
+    // Preserve unit headings when the outer district scrollport hides the
+    // inner scrollport's original top, including Safari's nested sticky tables.
+    const header = viewport.querySelector("thead");
+    const offset = operationalUnitHeaderOffset(headerBottom, viewport.getBoundingClientRect().top + viewport.clientTop,
+      viewport.clientHeight, header.getBoundingClientRect().height);
+    viewport.style.setProperty("--operational-unit-header-offset", `${offset}px`);
+  });
+}
+
 function renderDistrictRows() {
   const currentByDistrict = pinCurrencyByDistrict();
   const rows = currentDistricts().sort((a, b) => {
@@ -919,6 +937,7 @@ function renderDistrictRows() {
     }).join("") : "";
     return serviceRow + districtRows;
   }).join("");
+  syncOperationalUnitHeaders();
 }
 
 function renderPriorityRows() {
@@ -1124,6 +1143,12 @@ function bindEvents() {
     else state.openOperationalDistricts.add(district);
     renderDistrictRows();
   });
+  const operationalScrollport = document.getElementById("districtRows")?.closest(".table-wrap");
+  if (operationalScrollport) {
+    operationalScrollport.addEventListener("scroll", syncOperationalUnitHeaders, { passive: true });
+    window.addEventListener("resize", syncOperationalUnitHeaders);
+    new ResizeObserver(syncOperationalUnitHeaders).observe(operationalScrollport);
+  }
   window.addEventListener("programfilterchange", () => { renderControls(); renderAll(); });
 }
 

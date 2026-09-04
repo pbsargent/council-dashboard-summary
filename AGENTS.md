@@ -158,6 +158,9 @@ scorecard → Operational Detail**.
 - Preserve the District Operational Detail assertions in
   `tools/validate_site_structure.py`, render `districts.html`, and confirm zero
   `.mini-meter` elements in `#districtRows` before publishing.
+- Keep expanded Operational Detail unit headings visible below the district
+  headings during both scroll levels, including Safari. Preserve measured
+  offsets, resize handling, scoped header stacking, and regression coverage.
 
 ## PIN Status & Completeness page contract
 

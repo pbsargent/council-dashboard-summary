@@ -843,6 +843,15 @@ tbody tr:hover {
   min-width: 980px;
 }
 
+.operational-table > thead > tr > th {
+  z-index: 3;
+}
+
+.operational-unit-table > thead > tr > th {
+  top: var(--operational-unit-header-offset, 0px);
+  z-index: 2;
+}
+
 .operational-unit-table th,
 .operational-unit-table td {
   padding: 8px 10px;
