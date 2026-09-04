@@ -262,6 +262,25 @@
     }).join("") : '<tr><td colspan="8">No districts match the selected focus.</td></tr>';
   }
 
+  function unitHeaderOffset(districtHeaderBottom, unitViewportTop, viewportHeight, headerHeight) {
+    return Math.min(Math.max(0, districtHeaderBottom - unitViewportTop), Math.max(0, viewportHeight - headerHeight));
+  }
+
+  function syncUnitHeaders() {
+    const table = document.querySelector(".pin-table");
+    if (!table) return;
+    const districtHeader = table.querySelector(":scope > thead th");
+    const headerBottom = districtHeader.getBoundingClientRect().bottom;
+    table.querySelectorAll(".pin-unit-detail-row:not([hidden]) .pin-unit-table-wrap").forEach((viewport) => {
+      const header = viewport.querySelector("thead");
+      // The inner scrollport moves with the outer table. Keep its own sticky
+      // headings below the district header even after its top has scrolled away.
+      const offset = unitHeaderOffset(headerBottom, viewport.getBoundingClientRect().top + viewport.clientTop,
+        viewport.clientHeight, header.getBoundingClientRect().height);
+      viewport.style.setProperty("--pin-unit-header-offset", `${offset}px`);
+    });
+  }
+
   function render() {
     const allRows = summarizeDistricts(state.dashboard?.dashboard, state.unitData);
     renderControls(allRows);
@@ -272,6 +291,7 @@
     renderComposition(summary);
     renderDetails(summary);
     renderTable(rows);
+    syncUnitHeaders();
   }
 
   function bind() {
@@ -299,7 +319,12 @@
       detail.hidden = !expanded;
       if (expanded) state.expandedDistricts.add(district);
       else state.expandedDistricts.delete(district);
+      syncUnitHeaders();
     });
+    const scrollport = document.querySelector(".pin-table").parentElement;
+    scrollport.addEventListener("scroll", syncUnitHeaders, { passive: true });
+    window.addEventListener("resize", syncUnitHeaders);
+    new ResizeObserver(syncUnitHeaders).observe(scrollport);
     window.addEventListener("programfilterchange", render);
   }
 
@@ -319,7 +344,7 @@
     }
   }
 
-  window.PinStatusPage = { unitCountsByDistrict, unitDetailsByDistrict, summarizeDistricts, rollup };
+  window.PinStatusPage = { unitCountsByDistrict, unitDetailsByDistrict, summarizeDistricts, rollup, unitHeaderOffset };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
 })();

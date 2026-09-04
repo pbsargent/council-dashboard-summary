@@ -283,8 +283,8 @@ def main() -> int:
     if pin_status_path.is_file():
         pin_page_source = pin_status_path.read_text(encoding="utf-8")
         for required in (
-            'pin-status.css?v=20260903-district-unit-detail-1',
-            'pin-status.js?v=20260903-district-unit-detail-1',
+            'pin-status.css?v=20260904-pin-sticky-headers-1',
+            'pin-status.js?v=20260904-pin-sticky-headers-1',
             'data-focus="stale"',
             'data-focus="inactive"',
             'data-focus="details"',
@@ -301,6 +301,9 @@ def main() -> int:
             "function unitDetailsByDistrict",
             "function summarizeDistricts",
             "function rollup",
+            "function syncUnitHeaders",
+            'scrollport.addEventListener("scroll", syncUnitHeaders',
+            "new ResizeObserver(syncUnitHeaders).observe(scrollport)",
             'row.pin_details_complete === true',
             'row.pin_contact_complete !== true',
             "ratio(active + inactive, units)",
@@ -322,6 +325,11 @@ def main() -> int:
                 errors.append(f"pin-status.js: must not request private source field {forbidden!r}")
     if not pin_status_style_path.is_file() or pin_status_style_path.stat().st_size == 0:
         errors.append("missing required PIN status page stylesheet: pin-status.css")
+    else:
+        pin_style_source = pin_status_style_path.read_text(encoding="utf-8")
+        for required in (".pin-unit-table > thead > tr > th", "top: var(--pin-unit-header-offset, 0px);"):
+            if required not in pin_style_source:
+                errors.append(f"pin-status.css: missing nested unit header safeguard {required!r}")
 
     builder_candidates = [
         Path(os.environ["CAC_DASHBOARD_ROOT"]) / "work" / "commissioner_site" / "build_site.py"

@@ -25,6 +25,11 @@ const context = vm.createContext({
 vm.runInContext(source, context);
 const api = windowObject.PinStatusPage;
 assert.ok(api, "PIN page calculation API should be available for regression tests");
+assert.equal(api.unitHeaderOffset(100, 150, 360, 34), 0, "unscrolled unit headings stay at the inner viewport top");
+assert.equal(api.unitHeaderOffset(100, 60, 360, 34), 40, "outer scrolling keeps unit headings below district headings");
+assert.equal(api.unitHeaderOffset(140, 60, 360, 34), 80, "wrapped or zoomed district headings are measured, not hard-coded");
+assert.equal(api.unitHeaderOffset(500, 60, 360, 34), 326, "headings cannot escape the bottom of their own scrollport");
+assert.equal(api.unitHeaderOffset(100, 60, 20, 34), 0, "short viewports never produce a negative offset");
 
 const dashboard = {
   districts: [

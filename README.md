@@ -43,6 +43,8 @@ PIN Status & Completeness separates freshness from field completeness. A matched
 
 District PIN Detail includes an expandable individual-unit drill-down. Expanded rows respect the master program, Service Area, District, and follow-up focus filters; prioritize unmatched, Stale, Inactive, and incomplete units; show only privacy-safe status, completion, and missing-category indicators; and link to the selected Unit-Level Detail record.
 
+Expanded PIN unit tables preserve their own sticky headings beneath the district headings during both levels of scrolling, including Safari; status/completeness values must not appear labeled by district-only columns.
+
 Overview includes PIN state in Signals to Watch and links directly to PIN Status & Completeness from Explore. Unit-Level Detail keeps the existing PIN Status KPI and also presents separate PIN status and Required PIN Details badges in the Commissioner Context panel. These surfaces reuse the shared `unit_pin_statuses` classification and completion flags rather than recalculating PIN state.
 
 The scheduled Council Summary publisher uses the `CACDashboardAutomation/.venv` Python environment and does not require the Codex application or a Codex-managed runtime to be running.

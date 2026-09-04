@@ -190,6 +190,10 @@ District Performance.
 - Keep the builder, focused tests, validator, Dashboard Guide, README, data
   dictionary, runbook, generated calculation guide, cache-busting strings, and
   live page synchronized.
+- Keep the expanded unit column headings visible below the district headings
+  during both outer-table and inner-unit scrolling, including Safari. Preserve
+  the measured header offset, resize handling, and scoped stacking safeguards;
+  district-only headings must not appear to label unit status/completeness cells.
 
 ## Data & Help training-reference contract
 

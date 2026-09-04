@@ -219,6 +219,15 @@
   min-width: 760px;
 }
 
+.pin-table > thead > tr > th {
+  z-index: 3;
+}
+
+.pin-unit-table > thead > tr > th {
+  top: var(--pin-unit-header-offset, 0px);
+  z-index: 2;
+}
+
 .pin-unit-table th,
 .pin-unit-table td {
   padding: 8px 10px;
