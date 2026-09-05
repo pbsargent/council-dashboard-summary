@@ -63,6 +63,42 @@ Preserve the nested scrolling behavior added on 2026-08-21. Long tables must rem
 
 `tools/validate_site_structure.py` fails closed on these requirements. Before publishing, run that validator, exercise a genuinely long table at desktop and mobile widths, and verify the cache-busted assets on the live GitHub Pages site after the consolidated daily build.
 
+## Renewal Status expanded-unit column contract
+
+Preserve the clarified **Renewal Status → District Renewal Workflow** hierarchy
+and expanded-unit layout published on 2026-09-04.
+
+- Keep Service Area, district, and expanded unit rows on the same seven-column
+  workflow grid: hierarchy identity, Workflow Progress, Drop/Renew, Initiated,
+  Submitted, Pending Acceptance, and Posted. Do not restore the former
+  eight-cell unit layout, which shifted unit values beneath unrelated district
+  headings and left support and match fields unlabeled.
+- Every expanded district must render its own unit-level heading row with the
+  exact fields **Unit · Dashboard Match · Support**, **Workflow Progress**,
+  **Drop/Renew**, **Initiated**, **Submitted**, **Pending Acceptance**, and
+  **Posted**. The heading cells and unit-row cells must use the same grid and
+  remain exactly aligned.
+- Calculate each unit's Workflow Progress through the same five-stage logic
+  used by district and Service Area progress. Keep dashboard-match state and
+  support ownership beneath the unit name, with dashboard match first so the
+  state remains visible when a long support name is truncated.
+- Preserve explicit accessible unit-row labels that identify every workflow
+  value, progress, support owner, and dashboard-match state. Continue applying
+  the public First Name, Last Initial privacy rule to support names.
+- Keep the full hierarchy inside `.board-scroll` with bounded two-axis
+  scrolling at desktop and mobile widths. Do not hide the unit header at the
+  mobile breakpoint or remove horizontal access to later workflow stages.
+- When the renewal CSS or JavaScript changes, bump both cache-busting query
+  strings in `renewal-board/index.html`. Keep the Dashboard Guide and the
+  fail-closed Renewal Status checks in `tools/validate_site_structure.py`
+  synchronized.
+- Before publishing, expand a district with a genuinely long unit list at
+  desktop and narrow/mobile widths, verify exact unit-header/cell alignment,
+  confirm the live cache versions and abbreviated public names, and check the
+  browser console for warnings or errors.
+
+The public implementation baseline is commit `3885181`.
+
 ## Dashboard help guide maintenance
 
 Treat `help.html` as part of the public product contract. Whenever the website's navigation, page structure, page purpose, filters, controls, metric names or definitions, status language, source behavior, privacy guidance, or troubleshooting behavior changes, review and update the corresponding help content in the same source change.
