@@ -403,7 +403,9 @@ input {
 }
 
 .board-header,
-.group-row {
+.group-row,
+.unit-header,
+.unit-row {
   display: grid;
   grid-template-columns: minmax(190px, 1.5fr) 112px repeat(5, minmax(118px, 1fr));
   gap: 10px;
@@ -412,7 +414,9 @@ input {
 
 .board-header,
 .service-row,
-.group-row {
+.group-row,
+.unit-header,
+.unit-row {
   min-width: 980px;
 }
 
@@ -630,20 +634,44 @@ input {
   display: block;
 }
 
+.unit-header {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--panel-soft);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
 .unit-row {
-  display: grid;
-  grid-template-columns: minmax(180px, 1.2fr) 90px 90px 90px 90px 90px minmax(150px, 1fr) 88px;
-  gap: 8px;
-  align-items: center;
   width: 100%;
   min-height: 44px;
-  padding: 8px 12px;
+  padding: 8px 10px;
   border: 0;
   border-bottom: 1px solid var(--row-line);
   background: var(--panel);
   color: var(--ink);
   text-align: left;
   cursor: pointer;
+}
+
+.unit-identity {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.unit-identity strong,
+.unit-identity .row-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unit-row .progress-cell .track {
+  height: 12px;
 }
 
 .unit-row:hover,
@@ -841,7 +869,4 @@ input {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .unit-row {
-    min-width: 920px;
-  }
 }

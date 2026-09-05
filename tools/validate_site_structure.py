@@ -135,6 +135,7 @@ HELP_ASSETS = (
 PERSON_NAME_PRIVACY_ASSET = "tools/sanitize_public_person_names.py"
 
 SCROLL_ASSET_VERSION = "20260821-scrollable-tables-v1"
+RENEWAL_BOARD_ASSET_VERSION = "20260904-renewal-unit-columns-v1"
 SHARED_TABLE_ASSET_VERSION = "20260904-operational-sticky-headers-1"
 SHARED_TABLE_STYLE_PAGES = (
     "index.html",
@@ -807,21 +808,28 @@ def main() -> int:
         renewal_parsed = parse_page(renewal_page_path)
         if 'class="board-scroll"' not in renewal_page:
             errors.append("renewal-board/index.html: workflow rows must remain inside .board-scroll")
-        if f"styles.css?v={SCROLL_ASSET_VERSION}" not in renewal_parsed.stylesheets:
+        if f"styles.css?v={RENEWAL_BOARD_ASSET_VERSION}" not in renewal_parsed.stylesheets:
             errors.append("renewal-board/index.html: missing cache-busted scroll-table stylesheet")
-        if f"app.js?v={SCROLL_ASSET_VERSION}" not in renewal_parsed.scripts:
+        if f"app.js?v={RENEWAL_BOARD_ASSET_VERSION}" not in renewal_parsed.scripts:
             errors.append("renewal-board/index.html: missing cache-busted scroll-table script")
+        if "<span>Service Area / District / Unit</span>" not in renewal_page or "<span>Workflow Progress</span>" not in renewal_page:
+            errors.append("renewal-board/index.html: hierarchy and workflow-progress headings must label expanded unit rows")
     if renewal_style_path.is_file():
         renewal_style = renewal_style_path.read_text(encoding="utf-8")
         for rule in (".board-scroll,", ".event-table-wrap {", "overscroll-behavior: contain;"):
             if rule not in renewal_style:
                 errors.append(f"renewal-board/styles.css: missing required scroll-container rule {rule!r}")
+        if ".group-row,\n.unit-header,\n.unit-row {" not in renewal_style or ".group-row,\n.unit-header,\n.unit-row {\n  min-width: 980px;" not in renewal_style:
+            errors.append("renewal-board/styles.css: expanded unit rows must share the district workflow column grid")
     if renewal_script_path.is_file():
         renewal_script = renewal_script_path.read_text(encoding="utf-8")
         if 'class="event-table-wrap"' not in renewal_script:
             errors.append("renewal-board/app.js: renewal event tables must remain scrollable")
         if "rows.slice(0, 12)" in renewal_script:
             errors.append("renewal-board/app.js: renewal event rows must not be truncated to 12")
+        for required in ("const progress = progressFor([row]);", 'class="unit-header"', "Unit · Dashboard Match · Support", "Support:", "Dashboard:"):
+            if required not in renewal_script:
+                errors.append(f"renewal-board/app.js: missing aligned unit-row content {required!r}")
 
     forbidden_detail_caps = {
         "training-detail.js": ".slice(0, 500)",

@@ -244,16 +244,24 @@ function districtContext(group) {
 
 function renderUnitRow(row) {
   const selected = state.selectedId === row.id ? " selected" : "";
+  const progress = progressFor([row]);
+  const support = row.commissioner || row.owner || "Unassigned";
+  const dashboardMatch = row.matchedDashboardUnit ? "Matched" : "No match";
   return `
-    <button class="unit-row${selected}" type="button" data-unit-id="${esc(row.id)}">
-      <strong>${esc(row.name)}</strong>
+    <button class="unit-row${selected}" type="button" data-unit-id="${esc(row.id)}" aria-label="${esc(`${row.name}. Workflow progress ${progress} percent. Drop or renew: ${row.dropRenew || "Blank"}. Initiated: ${row.initiated || "Blank"}. Submitted: ${row.submitted || "Blank"}. Pending acceptance: ${row.pendingAcceptance || "Blank"}. Posted: ${row.posted || "Blank"}. Support: ${support}. Dashboard match: ${dashboardMatch}.`)}">
+      <span class="unit-identity">
+        <strong>${esc(row.name)}</strong>
+        <span class="row-meta" title="Dashboard: ${esc(dashboardMatch)} · Support: ${esc(support)}">Dashboard: ${esc(dashboardMatch)} · Support: ${esc(support)}</span>
+      </span>
+      <span class="progress-cell" title="${progress}% of renewal workflow stages complete">
+        <span class="progress-number">${progress}%</span>
+        <span class="track"><span class="fill" style="--w:${progress}%"></span></span>
+      </span>
       ${unitChip(row.dropRenew)}
       ${unitChip(row.initiated)}
       ${unitChip(row.submitted)}
       ${unitChip(row.pendingAcceptance)}
       ${unitChip(row.posted)}
-      <span class="row-meta">${esc(row.commissioner || row.owner || "Unassigned")}</span>
-      <span class="row-meta">${row.matchedDashboardUnit ? "Matched" : "No match"}</span>
     </button>
   `;
 }
@@ -320,6 +328,15 @@ function renderBoard() {
           ${stageCell(group.rows, "posted", "Posted")}
         </button>
         <div class="unit-list">
+          <div class="unit-header" aria-hidden="true">
+            <span>Unit · Dashboard Match · Support</span>
+            <span>Workflow Progress</span>
+            <span>Drop/Renew</span>
+            <span>Initiated</span>
+            <span>Submitted</span>
+            <span>Pending Acceptance</span>
+            <span>Posted</span>
+          </div>
           ${group.rows.sort((a, b) => a.name.localeCompare(b.name)).map(renderUnitRow).join("")}
         </div>
       </article>
