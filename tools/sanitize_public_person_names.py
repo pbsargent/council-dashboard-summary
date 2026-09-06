@@ -100,7 +100,7 @@ def format_person_list(value: str) -> str:
 
 def is_person_record_name(path: tuple[str | int, ...]) -> bool:
     string_path = {part for part in path if isinstance(part, str)}
-    if string_path.intersection({"training_people", "syt_people", "commissioners"}):
+    if string_path.intersection({"training_people", "syt_people", "commissioners", "unit_key3_statuses"}):
         return True
     return "renewal_records" in string_path and "members" in string_path
 

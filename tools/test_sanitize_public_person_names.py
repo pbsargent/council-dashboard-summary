@@ -50,6 +50,14 @@ class PersonNamePrivacyTests(unittest.TestCase):
                 ],
                 "syt_people": [{"name": "Mikesh, Billy J"}],
                 "commissioners": [{"name": "Aronson, David Floyd"}],
+                "unit_key3_statuses": [
+                    {
+                        "unit": "Pack 14 F",
+                        "unit_leaders": [{"name": "Alexandra Unit Leader", "position": "Cubmaster"}],
+                        "committee_chairs": [{"name": "Bailey Committee Chair", "position": "Committee Chair"}],
+                        "cor_cur_holders": [{"name": "Casey Council Representative", "position": "Council Unit Representative"}],
+                    }
+                ],
             },
             "units": [
                 {
@@ -76,6 +84,9 @@ class PersonNamePrivacyTests(unittest.TestCase):
         self.assertEqual(payload["dashboard"]["training_people"][0]["name"], "Darryl A.")
         self.assertEqual(payload["dashboard"]["syt_people"][0]["name"], "Billy M.")
         self.assertEqual(payload["dashboard"]["commissioners"][0]["name"], "David A.")
+        self.assertEqual(payload["dashboard"]["unit_key3_statuses"][0]["unit_leaders"][0]["name"], "Alexandra L.")
+        self.assertEqual(payload["dashboard"]["unit_key3_statuses"][0]["committee_chairs"][0]["name"], "Bailey C.")
+        self.assertEqual(payload["dashboard"]["unit_key3_statuses"][0]["cor_cur_holders"][0]["name"], "Casey R.")
         self.assertEqual(payload["units"][0]["name"], "Crew 3")
         self.assertEqual(payload["units"][0]["renewal_records"]["members"][0]["name"], "Audrey E.")
         self.assertEqual(payload["rows"][0]["name"], "Troop 0003")

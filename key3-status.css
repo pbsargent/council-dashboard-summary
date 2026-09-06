@@ -1,0 +1,74 @@
+.key3-kpi-grid {
+  grid-template-columns: repeat(5, minmax(128px, 1fr));
+}
+
+.key3-search-control {
+  flex: 1 1 240px;
+}
+
+.key3-search-control input {
+  width: 100%;
+  min-width: 220px;
+}
+
+.key3-summary-table {
+  min-width: 900px;
+}
+
+.key3-detail-wrap {
+  max-height: clamp(360px, calc(100vh - 270px), 680px);
+}
+
+.key3-detail-table {
+  min-width: 1080px;
+}
+
+.key3-person strong,
+.key3-person span {
+  display: block;
+}
+
+.key3-person span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.key3-person + .key3-person {
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+}
+
+.key3-missing {
+  color: var(--red);
+  font-weight: 800;
+}
+
+.key3-detail-table td:nth-child(4) {
+  min-width: 170px;
+}
+
+.key3-unit-link {
+  color: var(--cyan);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+@media (max-width: 1080px) {
+  .key3-kpi-grid {
+    grid-template-columns: repeat(3, minmax(128px, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .key3-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .key3-search-control,
+  .key3-search-control input {
+    min-width: 100%;
+  }
+}

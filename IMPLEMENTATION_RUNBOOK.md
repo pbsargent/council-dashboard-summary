@@ -105,6 +105,14 @@ Overview's Signals to Watch groups filtered matched rows into Active, Inactive, 
 
 The focused safeguards are `tools/test_pin_status.py`, `tools/test_pin_status_page.js`, `tools/test_unit_health_pin_funnel.js`, `tools/test_unit_level_pin_status.js`, and the PIN assertions in `tools/validate_site_structure.py`. Keep the Help page, Markdown data dictionary, reader-facing DOCX/PDF guide, and documentation ZIP synchronized with this contract.
 
+### Persistent Unit Key 3 Coverage Contract
+
+`key3-status.html` is a child of **Unit Health & Renewal**. `work/commissioner_site/build_site.py` must publish `dashboard.unit_key3_statuses` with exactly one row for every tracked unit in the complete Unit Metrics population. Each row evaluates three roles from the Training roster: the program-specific Unit Leader, Committee Chair, and the combined COR / CUR position. Either a current COR or CUR satisfies the third position. A registration is current only when its expiration date is on or after the dashboard report date; a blank, unusable, or earlier expiration does not count.
+
+The page must retain the master program filter, Service Area and District filters, missing-role focus, search, overall KPIs, summary by unit type, missing-first individual-unit detail, and direct Unit-Level Detail links. Each missing position must be explicit. Public holder names are first name plus last initial, and `unit_key3_statuses` must never contain email, phone, address, meeting, or other contact values.
+
+Preserve the page route, navigation hierarchy, parent link, cache-busted assets, bounded scrolling table, Help entry, Markdown documentation, generated reader guide, and structural validator together. Run `tools/test_unit_key3_statuses.py`, `tools/test_key3_status_page.js`, the public-name sanitizer tests, and `tools/validate_site_structure.py --require-data` against a sanitized staged snapshot before publication.
+
 ## 2. Data Acquisition Requirements
 
 The dashboard does not read Google Drive, OneDrive, or monday.com from the browser. Data is acquired by local scripts, converted to JSON in an isolated staging tree, checksum-verified, and served through a GitHub Pages artifact.
@@ -446,6 +454,8 @@ After any refresh or rebuild, check:
 - District Performance → PIN Status & Completeness shows PIN status, currency, and Required PIN Details by district. Required PIN Details equals matched rows with all essential completion flags divided by all tracked units; the public JSON contains only Boolean completion flags and no PIN contact or meeting values. Expand a district to verify the individual-unit status/completeness rows and their Unit-Level Detail links under every follow-up focus.
 - Overview → Signals to Watch includes the filtered PIN state counts and PIN Currency, and Overview → Explore links to PIN Status & Completeness.
 - Unit-Level Detail → Commissioner Context shows separate PIN status and Required PIN Details badges from the matched privacy-safe row.
+- Unit Health & Renewal → Unit Key 3 Coverage loads one `dashboard.unit_key3_statuses` row per tracked unit, treats either a current COR or CUR as satisfying the third position, clearly labels each missing role, and reconciles the overall totals with the summary by unit type.
+- Unit Key 3 holder names use first name plus last initial, and the public Key 3 rows contain no contact, phone, email, address, or meeting fields.
 - Unit Follow-up Metric bands `0-2`, `3`, and `4-5` display only rows within the selected band and retain the matching PIN state.
 - Neither page represents campout approval or claims that roster data proves two-deep, female-leader, registration, or actual-attendance compliance.
 - Renewal board page loads, honors light/dark mode, and links back to the Council Summary page.

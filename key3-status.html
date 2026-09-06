@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Unit Key 3 Coverage - Council Dashboard Summary</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=20260628-mark">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
+  <link rel="stylesheet" href="council-dashboard-summary.css?v=20260904-operational-sticky-headers-1">
+  <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
+  <link rel="stylesheet" href="key3-status.css?v=20260906-key3-status-page-1">
+</head>
+<body data-page="key3-status">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Council dashboard navigation">
+      <div class="brand"><img src="assets/cac-logo.png?v=20260625-brand" alt="Scouting America Capitol Area Council"></div>
+      <nav aria-label="Council dashboard"><a href="index.html">Overview</a></nav>
+      <a class="report-problem" data-report-problem href="mailto:scouting@imetpetersargent.com">Report a problem</a>
+      <div class="sidebar-note"><span id="generatedDate">Loading</span><strong>Unit Key 3 Coverage</strong></div>
+    </aside>
+
+    <main>
+      <header class="hero detail-hero">
+        <div>
+          <p class="eyebrow">Unit health &amp; renewal</p>
+          <h1>Unit Key 3 Coverage <span class="title-data-date" id="titleDataDate"></span></h1>
+          <p class="lede">Review each unit's current Unit Leader, Committee Chair, and third Key 3 position. Either a Chartered Organization Representative (COR) or Council Unit Representative (CUR) satisfies the third position.</p>
+        </div>
+        <div class="hero-actions"><a class="detail-link" href="unit-health.html">Back to Unit Health &amp; Renewal</a></div>
+      </header>
+
+      <section class="kpi-grid key3-kpi-grid" id="key3Kpis" aria-label="Unit Key 3 coverage metrics"></section>
+
+      <section class="detail-toolbar" aria-label="Unit Key 3 filters">
+        <label class="control">
+          <span>Service Area</span>
+          <select id="serviceAreaSelect"><option value="">All Service Areas</option></select>
+        </label>
+        <label class="control">
+          <span>District</span>
+          <select id="districtSelect"><option value="">All Districts</option></select>
+        </label>
+        <label class="control">
+          <span>Focus</span>
+          <select id="focusSelect">
+            <option value="all">All units</option>
+            <option value="missing">Missing any position</option>
+            <option value="complete">Complete Key 3</option>
+            <option value="unit-leader">Missing Unit Leader</option>
+            <option value="committee-chair">Missing Committee Chair</option>
+            <option value="cor-cur">Missing COR / CUR</option>
+          </select>
+        </label>
+        <label class="control key3-search-control">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="Unit, district, or leader" autocomplete="off">
+        </label>
+      </section>
+
+      <section class="panel table-panel" aria-labelledby="unitTypeTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Program comparison</p>
+            <div class="panel-title-row">
+              <h2 id="unitTypeTitle">Summary by Unit Type</h2>
+              <button class="panel-help" type="button" aria-label="Summary by Unit Type source help" title="Counts use every tracked unit matching the active master program, Service Area, District, Focus, and Search filters. A current COR or CUR satisfies the third Key 3 position.">?</button>
+            </div>
+          </div>
+        </div>
+        <div class="table-wrap short">
+          <table class="key3-summary-table">
+            <thead><tr><th>Unit Type</th><th class="num">Units</th><th class="num">Complete</th><th class="num">Missing Any</th><th class="num">Missing Unit Leader</th><th class="num">Missing Committee Chair</th><th class="num">Missing COR / CUR</th><th class="num">Completion Rate</th></tr></thead>
+            <tbody id="unitTypeRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel table-panel" aria-labelledby="unitDetailTitle">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Unit follow-up</p>
+            <div class="panel-title-row">
+              <h2 id="unitDetailTitle">Unit Key 3 Detail</h2>
+              <button class="panel-help" type="button" aria-label="Unit Key 3 Detail source help" title="Current means the registration expiration is on or after the dashboard report date. Missing units are listed first. Public names use First Name, Last Initial.">?</button>
+            </div>
+          </div>
+          <span class="count-pill" id="unitCount"></span>
+        </div>
+        <div class="table-wrap key3-detail-wrap">
+          <table class="key3-detail-table">
+            <thead><tr><th>District</th><th>Unit</th><th>Status</th><th>Missing</th><th>Unit Leader</th><th>Committee Chair</th><th>COR / CUR</th><th><span class="visually-hidden">Action</span></th></tr></thead>
+            <tbody id="unitRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="site-navigation.js?v=20260906-key3-status-page-1"></script>
+  <script src="program-filter.js?v=20260717-master-filter-3"></script>
+  <script src="panel-help.js?v=20260630-active-help"></script>
+  <script src="report-problem.js?v=20260712"></script>
+  <script src="key3-status.js?v=20260906-key3-status-page-1"></script>
+</body>
+</html>

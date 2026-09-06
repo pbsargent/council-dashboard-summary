@@ -75,6 +75,7 @@ DETAIL_PAGES = {
     "camping-readiness.html": "camping-readiness",
     "troop-camping-readiness.html": "troop-camping-readiness",
     "unit-level.html": "unit-level",
+    "key3-status.html": "key3-status",
     "renewal-board/index.html": "renewal",
     "training.html": "training",
     "syt.html": "syt",
@@ -82,6 +83,7 @@ DETAIL_PAGES = {
 
 REQUIRED_PARENT_LINKS = {
     "popcorn.html": ("districts.html", "Back to District Performance"),
+    "key3-status.html": ("unit-health.html", "Back to Unit Health &amp; Renewal"),
 }
 
 NAVIGATION_ROUTES = {
@@ -98,6 +100,7 @@ NAVIGATION_ROUTES = {
     "camping-readiness": "camping-readiness.html",
     "troop-camping-readiness": "troop-camping-readiness.html",
     "unit-level": "unit-level.html",
+    "key3-status": "key3-status.html",
     "renewal": "renewal-board/index.html",
     "people": "people.html",
     "training": "training.html",
@@ -110,7 +113,7 @@ NAVIGATION_HIERARCHY = {
     "overview": ("commissioner-portal", "comparison"),
     "districts": ("pin-status", "popcorn"),
     "membership": ("monday", "fall-recruitment"),
-    "unit-health": ("unit-metrics", "unit-level", "renewal"),
+    "unit-health": ("unit-metrics", "unit-level", "key3-status", "renewal"),
     # Persistent user-approved placement: both camping readiness pages belong
     # under People & Readiness and must survive every scheduled build/publish.
     "people": ("training", "syt", "camping-readiness", "troop-camping-readiness"),
@@ -130,6 +133,8 @@ REQUIRED_ASSETS = (
 HELP_ASSETS = (
     "help.css",
     "help.js",
+    "key3-status.css",
+    "key3-status.js",
 )
 
 PERSON_NAME_PRIVACY_ASSET = "tools/sanitize_public_person_names.py"
@@ -153,6 +158,7 @@ SHARED_TABLE_STYLE_PAGES = (
     "camping-readiness.html",
     "troop-camping-readiness.html",
     "unit-level.html",
+    "key3-status.html",
     "training.html",
     "syt.html",
 )
@@ -179,6 +185,78 @@ def bracket_contents(source: str, start: int) -> str | None:
     return None
 
 
+def validate_unit_key3_snapshot(payload: dict, expected_unit_count: int | None = None) -> list[str]:
+    errors: list[str] = []
+    dashboard = payload.get("dashboard")
+    if not isinstance(dashboard, dict):
+        return ["data/latest.json: dashboard must be an object"]
+    rows = dashboard.get("unit_key3_statuses")
+    if not isinstance(rows, list):
+        return ["data/latest.json: dashboard.unit_key3_statuses must be a list"]
+
+    if expected_unit_count is not None and expected_unit_count != len(rows):
+        errors.append(
+            "data/latest.json: unit_key3_statuses must contain one row per Unit-Level unit "
+            f"({len(rows)} rows for {expected_unit_count} units)"
+        )
+
+    roles = ("Unit Leader", "Committee Chair", "COR / CUR")
+    holder_fields = ("unit_leaders", "committee_chairs", "cor_cur_holders")
+    required_fields = {
+        "district", "unit", "unit_type", "unit_id", "status", "roles_present",
+        "missing_roles", *holder_fields,
+    }
+    forbidden_fragments = ("email", "phone", "contact", "meeting", "address")
+    identities: set[tuple[str, str]] = set()
+    for index, row in enumerate(rows):
+        label = f"data/latest.json: unit_key3_statuses[{index}]"
+        if not isinstance(row, dict):
+            errors.append(f"{label} must be an object")
+            continue
+        missing_fields = required_fields - set(row)
+        if missing_fields:
+            errors.append(f"{label} missing fields {sorted(missing_fields)!r}")
+            continue
+        identity = (str(row.get("district") or ""), str(row.get("unit") or ""))
+        if not all(identity):
+            errors.append(f"{label} must have nonblank district and unit")
+        elif identity in identities:
+            errors.append(f"{label} duplicates unit identity {identity!r}")
+        identities.add(identity)
+
+        missing_roles = row.get("missing_roles")
+        if not isinstance(missing_roles, list) or any(role not in roles for role in missing_roles):
+            errors.append(f"{label}.missing_roles must use only {roles!r}")
+            continue
+        if len(set(missing_roles)) != len(missing_roles):
+            errors.append(f"{label}.missing_roles contains duplicates")
+        expected_present = 3 - len(missing_roles)
+        if row.get("roles_present") != expected_present:
+            errors.append(f"{label}.roles_present must equal {expected_present}")
+        expected_status = "Complete" if not missing_roles else f"Missing {len(missing_roles)}"
+        if row.get("status") != expected_status:
+            errors.append(f"{label}.status must be {expected_status!r}")
+
+        for field, role in zip(holder_fields, roles):
+            holders = row.get(field)
+            if not isinstance(holders, list):
+                errors.append(f"{label}.{field} must be a list")
+                continue
+            if (not holders) != (role in missing_roles):
+                errors.append(f"{label}.{field} does not agree with missing_roles")
+            for holder_index, holder in enumerate(holders):
+                holder_label = f"{label}.{field}[{holder_index}]"
+                if not isinstance(holder, dict) or set(holder) != {"name", "position"}:
+                    errors.append(f"{holder_label} may contain only name and position")
+                    continue
+                if not all(isinstance(holder.get(key), str) and holder[key].strip() for key in ("name", "position")):
+                    errors.append(f"{holder_label} must have nonblank name and position")
+        for key in row:
+            if any(fragment in key.casefold() for fragment in forbidden_fragments):
+                errors.append(f"{label} exposes forbidden private field {key!r}")
+    return errors
+
+
 def main() -> int:
     root = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
     errors: list[str] = []
@@ -188,6 +266,19 @@ def main() -> int:
             validate_snapshot(json.loads((root / "data/monday-latest.json").read_text(encoding="utf-8")))
         except (OSError, ValueError, TypeError, KeyError) as error:
             errors.append(f"monday-latest.json: {error}")
+        try:
+            unit_level_payload = json.loads((root / "data/unit-level-latest.json").read_text(encoding="utf-8"))
+            unit_level_rows = unit_level_payload.get("units")
+            if not isinstance(unit_level_rows, list):
+                raise ValueError("units must be a list")
+            errors.extend(
+                validate_unit_key3_snapshot(
+                    json.loads((root / "data/latest.json").read_text(encoding="utf-8")),
+                    len(unit_level_rows),
+                )
+            )
+        except (OSError, ValueError, TypeError, KeyError) as error:
+            errors.append(f"Unit Key 3 data: {error}")
 
     for relative in REQUIRED_ASSETS:
         path = root / relative
@@ -202,6 +293,8 @@ def main() -> int:
     privacy_path = root / PERSON_NAME_PRIVACY_ASSET
     if not privacy_path.is_file() or privacy_path.stat().st_size == 0:
         errors.append(f"missing required person-name privacy asset: {PERSON_NAME_PRIVACY_ASSET}")
+    elif '"unit_key3_statuses"' not in privacy_path.read_text(encoding="utf-8"):
+        errors.append("sanitize_public_person_names.py: missing Unit Key 3 person-name coverage")
     updater_path = root / "update_daily.zsh"
     if updater_path.is_file() and '--require-data' not in updater_path.read_text(encoding="utf-8"):
         errors.append("update_daily.zsh: missing mandatory monday detail/TAY publication validation")
@@ -228,7 +321,7 @@ def main() -> int:
                 errors.append(f"{relative}: missing required heading {heading!r}")
         if not any("cac-theme.css?v=20260812-discrete-pages-1" in href for href in parsed.stylesheets):
             errors.append(f"{relative}: missing discrete-page CAC theme reference")
-        if not any("site-navigation.js?v=20260901-pin-status-page-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20260906-key3-status-page-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
 
     help_page_path = root / "help.html"
@@ -332,6 +425,49 @@ def main() -> int:
             if required not in pin_style_source:
                 errors.append(f"pin-status.css: missing nested unit header safeguard {required!r}")
 
+    key3_page_path = root / "key3-status.html"
+    key3_script_path = root / "key3-status.js"
+    key3_style_path = root / "key3-status.css"
+    if key3_page_path.is_file():
+        key3_page = parse_page(key3_page_path)
+        for element_id in (
+            "key3Kpis", "serviceAreaSelect", "districtSelect", "focusSelect",
+            "searchInput", "unitTypeRows", "unitRows",
+        ):
+            if element_id not in key3_page.elements_by_id:
+                errors.append(f"key3-status.html: missing required element #{element_id}")
+        key3_page_source = key3_page_path.read_text(encoding="utf-8")
+        for required in (
+            "Either a Chartered Organization Representative (COR) or Council Unit Representative (CUR)",
+            "Summary by Unit Type",
+            "Public names use First Name, Last Initial",
+            "key3-status.js?v=20260906-key3-status-page-1",
+            "key3-status.css?v=20260906-key3-status-page-1",
+        ):
+            if required not in key3_page_source:
+                errors.append(f"key3-status.html: missing Unit Key 3 contract {required!r}")
+    if key3_script_path.is_file():
+        key3_script_source = key3_script_path.read_text(encoding="utf-8")
+        for required in (
+            "dashboard?.unit_key3_statuses",
+            'missing(row, "COR / CUR")',
+            "ProgramFilter?.matchesUnitType",
+            "function summarizeByUnitType",
+            "unit-level.html?unit=",
+        ):
+            if required not in key3_script_source:
+                errors.append(f"key3-status.js: missing Unit Key 3 contract {required!r}")
+        for forbidden in ("email", "phone", "meeting", "address"):
+            if forbidden in key3_script_source.casefold():
+                errors.append(f"key3-status.js: must not request private field containing {forbidden!r}")
+    if not key3_style_path.is_file() or key3_style_path.stat().st_size == 0:
+        errors.append("missing required Unit Key 3 page stylesheet: key3-status.css")
+    else:
+        key3_style_source = key3_style_path.read_text(encoding="utf-8")
+        for required in (".key3-detail-wrap {", "max-height: clamp(", ".key3-detail-table {"):
+            if required not in key3_style_source:
+                errors.append(f"key3-status.css: missing bounded-table safeguard {required!r}")
+
     builder_candidates = [
         Path(os.environ["CAC_DASHBOARD_ROOT"]) / "work" / "commissioner_site" / "build_site.py"
         if os.environ.get("CAC_DASHBOARD_ROOT") else None,
@@ -352,9 +488,12 @@ def main() -> int:
             '"pin_details_complete"',
             "**pin_field_completeness(pin_row)",
             "pin_display_status(pin_row, report_as_of)",
+            "def build_unit_key3_statuses",
+            '"council unit representative"',
+            '"unit_key3_statuses"',
         ):
             if required not in builder_source:
-                errors.append(f"build_site.py: missing privacy-safe PIN completeness contract {required!r}")
+                errors.append(f"build_site.py: missing required public-dashboard data contract {required!r}")
     if unit_health_path.is_file():
         unit_health_source = unit_health_path.read_text(encoding="utf-8")
         if 'id="priorityMetricSelect"' not in unit_health_source:
@@ -495,6 +634,10 @@ def main() -> int:
             errors.append("help.html: missing Unit Health Funnel PIN-denominator explanation")
         if '<a href="pin-status.html"><strong>PIN Status &amp; Completeness</strong>' not in help_source:
             errors.append("help.html: missing PIN Status & Completeness page directory entry")
+        if '<a href="key3-status.html"><strong>Unit Key 3 Coverage</strong>' not in help_source:
+            errors.append("help.html: missing Unit Key 3 Coverage page directory entry")
+        if "Either a current COR or CUR satisfies the third position" not in help_source:
+            errors.append("help.html: missing COR-or-CUR Unit Key 3 definition")
         if "<dt>Required PIN Details</dt>" not in help_source or "Only completion flags" not in help_source:
             errors.append("help.html: missing privacy-safe Required PIN Details definition")
         if "expand a District PIN Detail row" not in help_source or "individual-unit status" not in help_source:
@@ -530,7 +673,7 @@ def main() -> int:
         parsed = parse_page(path)
         if parsed.body_page != page_key:
             errors.append(f"{relative}: expected data-page={page_key!r}, found {parsed.body_page!r}")
-        if not any("site-navigation.js?v=20260901-pin-status-page-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20260906-key3-status-page-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
         if relative in REQUIRED_PARENT_LINKS:
             expected_href, expected_label = REQUIRED_PARENT_LINKS[relative]
@@ -653,6 +796,18 @@ def main() -> int:
         for phrase in required_phrases:
             if phrase not in source:
                 errors.append(f"{relative}: missing PIN completeness documentation contract {phrase!r}")
+
+    key3_documentation_contracts = {
+        "README.md": ("Unit Key 3 Coverage", "Either a current COR or CUR", "dashboard.unit_key3_statuses"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("Unit Key 3 Coverage page", "COR / CUR", "registration expiration"),
+        "IMPLEMENTATION_RUNBOOK.md": ("Persistent Unit Key 3 Coverage Contract", "COR or CUR", "unit_key3_statuses"),
+        "tools/build_human_data_guide.py": ("Unit Key 3 Coverage", "Either a current COR or CUR", "Unit Key 3 completion"),
+    }
+    for relative, required_phrases in key3_documentation_contracts.items():
+        source = (root / relative).read_text(encoding="utf-8")
+        for phrase in required_phrases:
+            if phrase not in source:
+                errors.append(f"{relative}: missing Unit Key 3 documentation contract {phrase!r}")
 
     operational_detail_documentation_contracts = {
         "README.md": ("Operational Detail district rows expand", "Unit-Level Detail"),
@@ -853,7 +1008,7 @@ def main() -> int:
         f"{len(NAVIGATION_ROUTES)} routes, {len(NAVIGATION_HIERARCHY)} hierarchy groups, "
         f"{len(REQUIRED_ASSETS)} shared assets, {len(HELP_ASSETS)} help assets, Cub Scout JSN pie-chart parity, "
         "District Operational Detail retention, PIN Currency, and plain-percentage safeguards, Priority Units metric filtering, Unit-Level PIN status, Unit Health PIN follow-up, "
-        "public person-name privacy, and scroll-table safeguards."
+        "Unit Key 3 completeness and COR/CUR substitution, public person-name privacy, and scroll-table safeguards."
     )
     return 0
 

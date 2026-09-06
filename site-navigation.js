@@ -39,6 +39,7 @@
       items: [
         { key: "unit-metrics", label: "Unit Metrics", path: "unit-metrics.html" },
         { key: "unit-level", label: "Unit-Level Detail", path: "unit-level.html" },
+        { key: "key3-status", label: "Unit Key 3 Coverage", path: "key3-status.html" },
         { key: "renewal", label: "Renewal Status", path: "renewal-board/index.html" },
       ],
     },

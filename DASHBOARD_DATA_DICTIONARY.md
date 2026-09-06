@@ -162,6 +162,7 @@ Important `dashboard` fields:
 | `council` | Council-wide rollups computed from district and roster rows |
 | `priority_units` | Top 30 unit metric rows where unit metric is 0-2 |
 | `unit_pin_statuses` | Matched unit-level BeAScout PIN display states plus privacy-safe `pin_status_complete`, `pin_contact_complete`, `pin_meeting_complete`, and `pin_details_complete` Boolean flags. Unmatched units are absent and display as `n/a` after the page join. Contact names, email addresses, phone numbers, meeting locations, and meeting details are never published in this array. |
+| `unit_key3_statuses` | One row per tracked unit with current Unit Leader, Committee Chair, and COR / CUR coverage, missing-role indicators, and public first-name/last-initial holder labels. No contact fields are published. |
 | `unit_metric_compare` | Sectioned detail extracted from the Unit Metric Compare tab |
 | `unit_youth_trends` | Councilwide monthly Unit & Youth Trends extracted from the Units-Youth tab |
 | `training_people` | Person-level training rows from the Training tab |
@@ -310,6 +311,12 @@ On `districts.html`, Service Area rows continue to expand into district scorecar
 ### PIN Status & Completeness page
 
 `pin-status.html` is a District Performance child page. It combines the shared PIN display-state classification with the Required PIN Details metric, supports the master program filter plus Service Area and District filters, and offers follow-up focuses for Stale, Inactive, details gaps, and no matched PIN. Every displayed percentage uses all tracked units in the selected view as its denominator. District PIN Detail rows expand to privacy-safe individual-unit rows showing program type, PIN status, Required PIN Details state, missing categories, and a Unit-Level Detail link. Expanded units follow the active filters and are prioritized as unmatched, Stale, Inactive, incomplete, then complete Active. The page does not expose the private source values used to calculate the completion flags.
+
+### Unit Key 3 Coverage page
+
+`key3-status.html` is a Unit Health & Renewal child page. It reads `dashboard.unit_key3_statuses`, which contains one row for every tracked unit, and identifies current coverage for three roles: the program-specific Unit Leader, Committee Chair, and COR / CUR. Either a Chartered Organization Representative or Council Unit Representative satisfies the third Key 3 role. A holder counts only when the Training roster position matches the role and the registration expiration is on or after the dashboard report date.
+
+The page supports the master program filter plus Service Area, District, missing-role focus, and search. It shows overall KPIs, a summary by unit type, and missing-first unit detail with direct Unit-Level Detail links. Holder names are published only as first name plus last initial and the Key 3 dataset contains no email, phone, address, or meeting fields.
 
 ### Today's Read / Signals
 

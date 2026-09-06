@@ -515,7 +515,7 @@ def build_doc():
     add_callout(
         doc,
         "Public person-name privacy",
-        "Every person-name field published on the public Council Summary and Commissioner sites is reduced to first name plus last initial, such as Alex R. This applies to training and SYT rows, commissioner rosters and assignments, Service Area and district leadership, Unit-Level members and commissioners, and Renewal owners, leaders, contacts, and commissioners. Private source workbooks and intermediate working files are unchanged.",
+        "Every person-name field published on the public Council Summary and Commissioner sites is reduced to first name plus last initial, such as Alex R. This applies to training and SYT rows, Unit Key 3 holders, commissioner rosters and assignments, Service Area and district leadership, Unit-Level members and commissioners, and Renewal owners, leaders, contacts, and commissioners. Private source workbooks and intermediate working files are unchanged.",
     )
 
     add_heading(doc, "3. How The Daily Refresh Works", 1)
@@ -673,7 +673,7 @@ def build_doc():
             ["District Performance", "Which districts lead or lag across membership, unit health, PIN currency, training, SYT, and commissioner coverage, with expandable district rows showing individual unit health and direct Unit-Level Detail links."],
             ["PIN Status & Completeness", "Which districts need PIN freshness or essential contact-and-meeting detail follow-up, with expandable district rows that identify individual unit status and missing categories without publishing private field values."],
             ["Membership & Growth", "Where membership opportunity, TAY penetration, unit health risk, prospects, and renewals combine into priority signals."],
-            ["Unit Health & Renewal", "Where unit health, assignment, combined Inactive + Stale BeAScout PINs, and renewal follow-up require action."],
+            ["Unit Health & Renewal", "Where unit health, assignment, combined Inactive + Stale BeAScout PINs, Unit Key 3 coverage, and renewal follow-up require action."],
             ["People & Readiness", "Where leader training, safeguarding, and camping-readiness gaps are concentrated."],
             ["Training", "Which people are trained, which leaders are direct-contact, and where direct-contact training gaps exist."],
             ["SYT", "Safeguarding Youth Training follow-up plus applicable Hazardous Weather and IOLS position-training issues; BALOO is informational at person level."],
@@ -684,6 +684,7 @@ def build_doc():
             ["Popcorn", "How unit commitments, goals, prior sales, onboarding, and training roll up from Service Area to District to Unit."],
             ["Unit Metrics", "How districts and unit sections compare across unit health, training, outdoor, advancement, and the current workbook retention metric."],
             ["Unit-Level Detail", "Which individual units and members drive program-specific youth, growth, training, SYT, health, assignment, BeAScout PIN status, Required PIN Details in Commissioner Context, and Pack/Troop camping-readiness status."],
+            ["Unit Key 3 Coverage", "Which units have current Unit Leader, Committee Chair, and COR/CUR coverage, which positions are missing, and how completion compares by unit type. Either a current COR or CUR satisfies the third position."],
             ["Renewal Status", "Which units are initiated, submitted, pending acceptance, posted, or otherwise need renewal follow-up."],
             ["Data & Help", "Which source workbooks are current, how values are calculated, where to report a problem, and which external training references apply."],
         ],
@@ -943,6 +944,7 @@ def build_doc():
             ["PIN Currency", "Matched PIN rows in current Active or Inactive display states divided by all tracked units in the selected district/program view; Stale and unmatched n/a units remain in the denominator and do not count as current."],
             ["Required PIN Details", "Matched PIN rows with status, contact name plus email or phone, meeting location, and meeting details divided by all tracked units. Unmatched units remain in the denominator; freshness is measured separately."],
             ["Inactive + stale PINs", "Count of matched PIN rows in either Inactive or Stale state, divided by all tracked membership-dashboard units in the current master program view; unmatched units remain in the denominator."],
+            ["Unit Key 3 completion", "Tracked units with a current program-specific Unit Leader, Committee Chair, and either a current COR or CUR, divided by all tracked units in the selected view. Current means registration expiration is on or after the report date."],
             ["Service Area", "Run-specific monday.com Service Areas hierarchy applied after official district normalization."],
         ],
         [2700, 6660],
