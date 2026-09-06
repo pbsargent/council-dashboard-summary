@@ -205,7 +205,7 @@ def validate_unit_key3_snapshot(payload: dict, expected_unit_count: int | None =
     holder_fields = ("unit_leaders", "committee_chairs", "cor_cur_holders")
     required_fields = {
         "district", "unit", "unit_type", "unit_id", "status", "roles_present",
-        "missing_roles", *holder_fields,
+        "required_roles", "missing_roles", *holder_fields,
     }
     forbidden_fragments = ("email", "phone", "contact", "meeting", "address")
     identities: set[tuple[str, str]] = set()
@@ -225,13 +225,18 @@ def validate_unit_key3_snapshot(payload: dict, expected_unit_count: int | None =
             errors.append(f"{label} duplicates unit identity {identity!r}")
         identities.add(identity)
 
+        required_roles = row.get("required_roles")
+        expected_required_roles = list(roles[:2] if row.get("unit_type") == "Post" else roles)
+        if required_roles != expected_required_roles:
+            errors.append(f"{label}.required_roles must equal {expected_required_roles!r}")
+            continue
         missing_roles = row.get("missing_roles")
-        if not isinstance(missing_roles, list) or any(role not in roles for role in missing_roles):
-            errors.append(f"{label}.missing_roles must use only {roles!r}")
+        if not isinstance(missing_roles, list) or any(role not in required_roles for role in missing_roles):
+            errors.append(f"{label}.missing_roles must use only {tuple(required_roles)!r}")
             continue
         if len(set(missing_roles)) != len(missing_roles):
             errors.append(f"{label}.missing_roles contains duplicates")
-        expected_present = 3 - len(missing_roles)
+        expected_present = len(required_roles) - len(missing_roles)
         if row.get("roles_present") != expected_present:
             errors.append(f"{label}.roles_present must equal {expected_present}")
         expected_status = "Complete" if not missing_roles else f"Missing {len(missing_roles)}"
@@ -243,7 +248,7 @@ def validate_unit_key3_snapshot(payload: dict, expected_unit_count: int | None =
             if not isinstance(holders, list):
                 errors.append(f"{label}.{field} must be a list")
                 continue
-            if (not holders) != (role in missing_roles):
+            if role in required_roles and (not holders) != (role in missing_roles):
                 errors.append(f"{label}.{field} does not agree with missing_roles")
             for holder_index, holder in enumerate(holders):
                 holder_label = f"{label}.{field}[{holder_index}]"
@@ -448,13 +453,14 @@ def main() -> int:
                 errors.append(f"key3-status.html: missing required element #{element_id}")
         key3_page_source = key3_page_path.read_text(encoding="utf-8")
         for required in (
-            "Either a Chartered Organization Representative (COR) or Council Unit Representative (CUR)",
+            "Packs, Troops, Crews, and Ships require a Unit Leader, Committee Chair, and either a COR or CUR",
             "Summary by Unit Type",
             "Public names use First Name, Last Initial",
             "Expand a Service Area, then a district",
             "SYT expiration appears beneath their name",
-            "key3-status.js?v=20260906-key3-syt-expiry-1",
-            "key3-status.css?v=20260906-key3-syt-expiry-1",
+            "Explorer Posts require only a Post Advisor and Committee Chair",
+            "key3-status.js?v=20260906-key3-post-rule-1",
+            "key3-status.css?v=20260906-key3-post-rule-1",
         ):
             if required not in key3_page_source:
                 errors.append(f"key3-status.html: missing Unit Key 3 contract {required!r}")
@@ -471,6 +477,8 @@ def main() -> int:
             "expandedAreas",
             "expandedDistricts",
             "function sytExpirationState",
+            "const roleRequired",
+            "Not required for Posts",
             "daysRemaining <= 90",
             "key3-syt",
             "unit-level.html?unit=",
@@ -488,6 +496,7 @@ def main() -> int:
             ".key3-detail-wrap {", "max-height: clamp(", "overflow: auto",
             ".key3-area-toggle", ".key3-district-toggle", ".key3-unit-table-wrap",
             ".key3-detail-table {", ".key3-syt.urgent", "color: var(--red)",
+            ".key3-not-required",
         ):
             if required not in key3_style_source:
                 errors.append(f"key3-status.css: missing hierarchy or bounded-table safeguard {required!r}")
@@ -515,6 +524,8 @@ def main() -> int:
             "def build_unit_key3_statuses",
             '"council unit representative"',
             '"syt_expires": syt_expiration.isoformat() if syt_expiration else None',
+            'if unit_type != "Post"',
+            '"required_roles": required_roles',
             '"unit_key3_statuses"',
         ):
             if required not in builder_source:
@@ -663,6 +674,8 @@ def main() -> int:
             errors.append("help.html: missing Unit Key 3 Coverage page directory entry")
         if "Either a current COR or CUR satisfies the third position" not in help_source:
             errors.append("help.html: missing COR-or-CUR Unit Key 3 definition")
+        if "Explorer Posts require only a current Post Advisor and Committee Chair" not in help_source:
+            errors.append("help.html: missing Explorer Post Unit Key 3 exception")
         if "<dt>Required PIN Details</dt>" not in help_source or "Only completion flags" not in help_source:
             errors.append("help.html: missing privacy-safe Required PIN Details definition")
         if "expand a District PIN Detail row" not in help_source or "individual-unit status" not in help_source:
@@ -823,10 +836,10 @@ def main() -> int:
                 errors.append(f"{relative}: missing PIN completeness documentation contract {phrase!r}")
 
     key3_documentation_contracts = {
-        "README.md": ("Unit Key 3 Coverage", "Either a current COR or CUR", "SYT expiration date beneath each holder"),
-        "DASHBOARD_DATA_DICTIONARY.md": ("Unit Key 3 Coverage page", "COR / CUR", "expired or due within 90 days"),
-        "IMPLEMENTATION_RUNBOOK.md": ("Persistent Unit Key 3 Coverage Contract", "COR or CUR", "SYT expiration date instead of the holder's position title"),
-        "tools/build_human_data_guide.py": ("Unit Key 3 Coverage", "Either a current COR or CUR", "SYT expiration beneath each holder"),
+        "README.md": ("Unit Key 3 Coverage", "either a current COR or CUR", "Explorer Posts require only", "SYT expiration date beneath each holder"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("Unit Key 3 Coverage page", "COR / CUR", "Explorer Posts require only", "expired or due within 90 days"),
+        "IMPLEMENTATION_RUNBOOK.md": ("Persistent Unit Key 3 Coverage Contract", "COR or CUR", "Explorer Posts require only", "SYT expiration date instead of the holder's position title"),
+        "tools/build_human_data_guide.py": ("Unit Key 3 Coverage", "either a current COR or CUR", "Explorer Posts require only", "SYT expiration beneath each holder"),
     }
     for relative, required_phrases in key3_documentation_contracts.items():
         source = (root / relative).read_text(encoding="utf-8")
@@ -1033,7 +1046,7 @@ def main() -> int:
         f"{len(NAVIGATION_ROUTES)} routes, {len(NAVIGATION_HIERARCHY)} hierarchy groups, "
         f"{len(REQUIRED_ASSETS)} shared assets, {len(HELP_ASSETS)} help assets, Cub Scout JSN pie-chart parity, "
         "District Operational Detail retention, PIN Currency, and plain-percentage safeguards, Priority Units metric filtering, Unit-Level PIN status, Unit Health PIN follow-up, "
-        "Unit Key 3 completeness, COR/CUR substitution, two-level hierarchy, public person-name privacy, and scroll-table safeguards."
+        "Unit Key 3 completeness, Explorer Post two-role rule, COR/CUR substitution, two-level hierarchy, public person-name privacy, and scroll-table safeguards."
     )
     return 0
 

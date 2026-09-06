@@ -250,7 +250,11 @@ rows summarize their own filtered units and expand to the missing-first unit
 table. Keep accessible disclosure state, Expand all and Collapse all controls,
 automatic expansion for searches and exact district selections, bounded outer
 and unit-table scrolling, public person-name abbreviation, and direct Unit-Level
-Detail links. Filters, Unit Key 3 definitions, COR/CUR substitution, privacy,
+Detail links. Packs, Troops, Crews, and Ships require their program-specific
+Unit Leader, Committee Chair, and either a current COR or CUR. Explorer Posts
+require only a current Post Advisor and Committee Chair; COR/CUR is optional
+and must not reduce Post completion. Filters, these Unit Key 3 definitions,
+COR/CUR substitution, privacy,
 and denominators must not change as a side effect of the hierarchy.
 
 In every expanded Unit Key 3 row, the line beneath a holder's public name must

@@ -9,6 +9,9 @@
   const n = (value) => integer.format(Number(value) || 0);
   const p = (numerator, denominator) => denominator ? percent.format(numerator / denominator) : "n/a";
   const missing = (row, role) => (row?.missing_roles || []).includes(role);
+  const roleRequired = (row, role) => Array.isArray(row?.required_roles)
+    ? row.required_roles.includes(role)
+    : !(row?.unit_type === "Post" && role === "COR / CUR");
 
   function parseDateOnly(value) {
     if (!value) return null;
@@ -146,7 +149,7 @@
       ["Missing Any", n(summary.missingAny), `${p(summary.missingAny, summary.units)} of selected units`, "danger"],
       ["Missing Unit Leader", n(summary.missingUnitLeader), "Program-specific unit leader", "warning"],
       ["Missing Committee Chair", n(summary.missingCommitteeChair), "Current registration required", "warning"],
-      ["Missing COR / CUR", n(summary.missingCorCur), "Either current position satisfies coverage", "warning"],
+      ["Missing COR / CUR", n(summary.missingCorCur), "Not required for Explorer Posts", "warning"],
     ];
     document.getElementById("key3Kpis").innerHTML = tiles.map(([label, value, note, tone]) => `
       <article class="kpi ${tone}"><div><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div></div><div class="kpi-sub">${note}</div></article>
@@ -168,6 +171,13 @@
     }).join("");
   }
 
+  function renderRoleHolders(row, role, holders) {
+    if (roleRequired(row, role)) return renderHolders(holders, "MISSING");
+    const holderRows = holders?.length ? renderHolders(holders, "") : "";
+    const note = holders?.length ? "Not required for Posts" : "Not required";
+    return `${holderRows}<span class="key3-not-required">${note}</span>`;
+  }
+
   function renderUnitTable(rows) {
     return `<div class="key3-unit-table-wrap"><table class="key3-detail-table">
       <thead><tr><th>Unit</th><th>Program</th><th>Status</th><th>Missing</th><th>Unit Leader</th><th>Committee Chair</th><th>COR / CUR</th><th><span class="visually-hidden">Action</span></th></tr></thead>
@@ -176,7 +186,7 @@
       const detailLink = row.unit_id
         ? `<a class="key3-unit-link" href="unit-level.html?unit=${encodeURIComponent(row.unit_id)}">View unit</a>`
         : "";
-      return `<tr><td><strong>${esc(row.unit)}</strong></td><td>${esc(row.unit_type)}</td><td><span class="status ${complete ? "good" : "bad"}">${esc(row.status)}</span></td><td>${row.missing_roles?.length ? `<span class="key3-missing">${esc(row.missing_roles.join(" · "))}</span>` : "None"}</td><td>${renderHolders(row.unit_leaders, "MISSING")}</td><td>${renderHolders(row.committee_chairs, "MISSING")}</td><td>${renderHolders(row.cor_cur_holders, "MISSING")}</td><td>${detailLink}</td></tr>`;
+      return `<tr><td><strong>${esc(row.unit)}</strong></td><td>${esc(row.unit_type)}</td><td><span class="status ${complete ? "good" : "bad"}">${esc(row.status)}</span></td><td>${row.missing_roles?.length ? `<span class="key3-missing">${esc(row.missing_roles.join(" · "))}</span>` : "None"}</td><td>${renderRoleHolders(row, "Unit Leader", row.unit_leaders)}</td><td>${renderRoleHolders(row, "Committee Chair", row.committee_chairs)}</td><td>${renderRoleHolders(row, "COR / CUR", row.cor_cur_holders)}</td><td>${detailLink}</td></tr>`;
       }).join("")}</tbody>
     </table></div>`;
   }
@@ -283,7 +293,7 @@
     }
   }
 
-  const api = { summarize, summarizeByUnitType, matchesFocus, sortUnits, districtKey, buildHierarchy, parseDateOnly, sytExpirationState };
+  const api = { summarize, summarizeByUnitType, matchesFocus, sortUnits, districtKey, buildHierarchy, parseDateOnly, sytExpirationState, roleRequired };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (typeof window !== "undefined") window.Key3StatusPage = api;
   if (typeof document !== "undefined") {
