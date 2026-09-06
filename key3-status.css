@@ -16,11 +16,149 @@
 }
 
 .key3-detail-wrap {
+  display: grid;
+  gap: 10px;
   max-height: clamp(360px, calc(100vh - 270px), 680px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 2px;
 }
 
 .key3-detail-table {
   min-width: 1080px;
+}
+
+.key3-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.key3-hierarchy-action {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 11px;
+  color: var(--ink);
+  background: var(--panel-2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.key3-hierarchy-action:hover,
+.key3-hierarchy-action:focus-visible {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.key3-hierarchy-intro {
+  margin: -4px 0 12px;
+}
+
+.key3-area-group,
+.key3-district-group {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.key3-area-group {
+  overflow: clip;
+}
+
+.key3-area-toggle,
+.key3-district-toggle {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 0;
+  padding: 12px 14px;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.key3-area-toggle {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--panel-2);
+}
+
+.key3-district-toggle {
+  padding: 10px 12px;
+}
+
+.key3-area-toggle .disclosure,
+.key3-district-toggle .disclosure {
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--cyan);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.key3-area-toggle:focus-visible,
+.key3-district-toggle:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: -3px;
+}
+
+.key3-group-label strong,
+.key3-group-label span {
+  display: block;
+}
+
+.key3-group-label span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.key3-group-rate {
+  color: var(--cyan);
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.key3-area-content,
+.key3-district-content {
+  padding: 10px;
+}
+
+.key3-area-content {
+  display: grid;
+  gap: 8px;
+  background: var(--panel-2);
+}
+
+.key3-area-content[hidden],
+.key3-district-content[hidden] {
+  display: none;
+}
+
+.key3-unit-table-wrap {
+  max-height: 360px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  border-top: 1px solid var(--line);
+}
+
+.key3-empty {
+  padding: 18px;
 }
 
 .key3-person strong,
@@ -70,5 +208,15 @@
   .key3-search-control,
   .key3-search-control input {
     min-width: 100%;
+  }
+
+  .key3-detail-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .key3-area-toggle,
+  .key3-district-toggle {
+    padding: 10px;
   }
 }

@@ -432,7 +432,7 @@ def main() -> int:
         key3_page = parse_page(key3_page_path)
         for element_id in (
             "key3Kpis", "serviceAreaSelect", "districtSelect", "focusSelect",
-            "searchInput", "unitTypeRows", "unitRows",
+            "searchInput", "unitTypeRows", "unitHierarchy", "expandAll", "collapseAll",
         ):
             if element_id not in key3_page.elements_by_id:
                 errors.append(f"key3-status.html: missing required element #{element_id}")
@@ -441,8 +441,9 @@ def main() -> int:
             "Either a Chartered Organization Representative (COR) or Council Unit Representative (CUR)",
             "Summary by Unit Type",
             "Public names use First Name, Last Initial",
-            "key3-status.js?v=20260906-key3-status-page-1",
-            "key3-status.css?v=20260906-key3-status-page-1",
+            "Expand a Service Area, then a district",
+            "key3-status.js?v=20260906-key3-hierarchy-1",
+            "key3-status.css?v=20260906-key3-hierarchy-1",
         ):
             if required not in key3_page_source:
                 errors.append(f"key3-status.html: missing Unit Key 3 contract {required!r}")
@@ -453,6 +454,11 @@ def main() -> int:
             'missing(row, "COR / CUR")',
             "ProgramFilter?.matchesUnitType",
             "function summarizeByUnitType",
+            "function buildHierarchy",
+            "key3-area-toggle",
+            "key3-district-toggle",
+            "expandedAreas",
+            "expandedDistricts",
             "unit-level.html?unit=",
         ):
             if required not in key3_script_source:
@@ -464,9 +470,13 @@ def main() -> int:
         errors.append("missing required Unit Key 3 page stylesheet: key3-status.css")
     else:
         key3_style_source = key3_style_path.read_text(encoding="utf-8")
-        for required in (".key3-detail-wrap {", "max-height: clamp(", ".key3-detail-table {"):
+        for required in (
+            ".key3-detail-wrap {", "max-height: clamp(", "overflow: auto",
+            ".key3-area-toggle", ".key3-district-toggle", ".key3-unit-table-wrap",
+            ".key3-detail-table {",
+        ):
             if required not in key3_style_source:
-                errors.append(f"key3-status.css: missing bounded-table safeguard {required!r}")
+                errors.append(f"key3-status.css: missing hierarchy or bounded-table safeguard {required!r}")
 
     builder_candidates = [
         Path(os.environ["CAC_DASHBOARD_ROOT"]) / "work" / "commissioner_site" / "build_site.py"
@@ -798,10 +808,10 @@ def main() -> int:
                 errors.append(f"{relative}: missing PIN completeness documentation contract {phrase!r}")
 
     key3_documentation_contracts = {
-        "README.md": ("Unit Key 3 Coverage", "Either a current COR or CUR", "dashboard.unit_key3_statuses"),
-        "DASHBOARD_DATA_DICTIONARY.md": ("Unit Key 3 Coverage page", "COR / CUR", "registration expiration"),
-        "IMPLEMENTATION_RUNBOOK.md": ("Persistent Unit Key 3 Coverage Contract", "COR or CUR", "unit_key3_statuses"),
-        "tools/build_human_data_guide.py": ("Unit Key 3 Coverage", "Either a current COR or CUR", "Unit Key 3 completion"),
+        "README.md": ("Unit Key 3 Coverage", "Either a current COR or CUR", "collapsible Service Area and District groups"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("Unit Key 3 Coverage page", "COR / CUR", "collapsible Service Area and District levels"),
+        "IMPLEMENTATION_RUNBOOK.md": ("Persistent Unit Key 3 Coverage Contract", "COR or CUR", "collapsible Service Area → District hierarchy"),
+        "tools/build_human_data_guide.py": ("Unit Key 3 Coverage", "Either a current COR or CUR", "collapsible Service Area and District"),
     }
     for relative, required_phrases in key3_documentation_contracts.items():
         source = (root / relative).read_text(encoding="utf-8")
@@ -1008,7 +1018,7 @@ def main() -> int:
         f"{len(NAVIGATION_ROUTES)} routes, {len(NAVIGATION_HIERARCHY)} hierarchy groups, "
         f"{len(REQUIRED_ASSETS)} shared assets, {len(HELP_ASSETS)} help assets, Cub Scout JSN pie-chart parity, "
         "District Operational Detail retention, PIN Currency, and plain-percentage safeguards, Priority Units metric filtering, Unit-Level PIN status, Unit Health PIN follow-up, "
-        "Unit Key 3 completeness and COR/CUR substitution, public person-name privacy, and scroll-table safeguards."
+        "Unit Key 3 completeness, COR/CUR substitution, two-level hierarchy, public person-name privacy, and scroll-table safeguards."
     )
     return 0
 

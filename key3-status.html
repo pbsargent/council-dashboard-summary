@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
   <link rel="stylesheet" href="council-dashboard-summary.css?v=20260904-operational-sticky-headers-1">
   <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
-  <link rel="stylesheet" href="key3-status.css?v=20260906-key3-status-page-1">
+  <link rel="stylesheet" href="key3-status.css?v=20260906-key3-hierarchy-1">
 </head>
 <body data-page="key3-status">
   <div class="app-shell">
@@ -82,17 +82,17 @@
             <p class="section-kicker">Unit follow-up</p>
             <div class="panel-title-row">
               <h2 id="unitDetailTitle">Unit Key 3 Detail</h2>
-              <button class="panel-help" type="button" aria-label="Unit Key 3 Detail source help" title="Current means the registration expiration is on or after the dashboard report date. Missing units are listed first. Public names use First Name, Last Initial.">?</button>
+              <button class="panel-help" type="button" aria-label="Unit Key 3 Detail source help" title="Expand a Service Area, then a district, to review its units. Current means the registration expiration is on or after the dashboard report date. Missing units are listed first. Public names use First Name, Last Initial.">?</button>
             </div>
           </div>
-          <span class="count-pill" id="unitCount"></span>
+          <div class="key3-detail-actions">
+            <button class="key3-hierarchy-action" id="expandAll" type="button">Expand all</button>
+            <button class="key3-hierarchy-action" id="collapseAll" type="button">Collapse all</button>
+            <span class="count-pill" id="unitCount"></span>
+          </div>
         </div>
-        <div class="table-wrap key3-detail-wrap">
-          <table class="key3-detail-table">
-            <thead><tr><th>District</th><th>Unit</th><th>Status</th><th>Missing</th><th>Unit Leader</th><th>Committee Chair</th><th>COR / CUR</th><th><span class="visually-hidden">Action</span></th></tr></thead>
-            <tbody id="unitRows"></tbody>
-          </table>
-        </div>
+        <p class="subtle key3-hierarchy-intro">Expand a Service Area, then a district, to see individual units. Search results expand automatically.</p>
+        <div class="key3-detail-wrap" id="unitHierarchy" aria-label="Unit Key 3 hierarchy"></div>
       </section>
     </main>
   </div>
@@ -101,6 +101,6 @@
   <script src="program-filter.js?v=20260717-master-filter-3"></script>
   <script src="panel-help.js?v=20260630-active-help"></script>
   <script src="report-problem.js?v=20260712"></script>
-  <script src="key3-status.js?v=20260906-key3-status-page-1"></script>
+  <script src="key3-status.js?v=20260906-key3-hierarchy-1"></script>
 </body>
 </html>

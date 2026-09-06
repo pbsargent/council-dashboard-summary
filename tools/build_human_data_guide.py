@@ -684,7 +684,7 @@ def build_doc():
             ["Popcorn", "How unit commitments, goals, prior sales, onboarding, and training roll up from Service Area to District to Unit."],
             ["Unit Metrics", "How districts and unit sections compare across unit health, training, outdoor, advancement, and the current workbook retention metric."],
             ["Unit-Level Detail", "Which individual units and members drive program-specific youth, growth, training, SYT, health, assignment, BeAScout PIN status, Required PIN Details in Commissioner Context, and Pack/Troop camping-readiness status."],
-            ["Unit Key 3 Coverage", "Which units have current Unit Leader, Committee Chair, and COR/CUR coverage, which positions are missing, and how completion compares by unit type. Either a current COR or CUR satisfies the third position."],
+            ["Unit Key 3 Coverage", "Which units have current Unit Leader, Committee Chair, and COR/CUR coverage, which positions are missing, and how completion compares by unit type. Detail is organized in collapsible Service Area and District groups. Either a current COR or CUR satisfies the third position."],
             ["Renewal Status", "Which units are initiated, submitted, pending acceptance, posted, or otherwise need renewal follow-up."],
             ["Data & Help", "Which source workbooks are current, how values are calculated, where to report a problem, and which external training references apply."],
         ],

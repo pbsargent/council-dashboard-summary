@@ -1,7 +1,7 @@
 (() => {
   const integer = new Intl.NumberFormat("en-US");
   const percent = new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 1 });
-  const state = { data: null };
+  const state = { data: null, expandedAreas: new Set(), expandedDistricts: new Set() };
 
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -40,6 +40,37 @@
 
   function serviceArea(row) {
     return row.service_area || "Other / Unassigned";
+  }
+
+  function sortUnits(rows) {
+    return [...rows].sort((a, b) =>
+      (b.missing_roles?.length || 0) - (a.missing_roles?.length || 0)
+      || String(a.unit).localeCompare(String(b.unit), undefined, { numeric: true })
+    );
+  }
+
+  function districtKey(area, district) {
+    return `${area}|${district}`;
+  }
+
+  function buildHierarchy(rows) {
+    const areas = new Map();
+    for (const row of rows) {
+      const area = serviceArea(row);
+      if (!areas.has(area)) areas.set(area, new Map());
+      const districts = areas.get(area);
+      if (!districts.has(row.district)) districts.set(row.district, []);
+      districts.get(row.district).push(row);
+    }
+    return [...areas.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([area, districts]) => ({
+        area,
+        rows: [...districts.values()].flat(),
+        districts: [...districts.entries()]
+          .sort(([left], [right]) => left.localeCompare(right))
+          .map(([district, districtRows]) => ({ district, rows: sortUnits(districtRows) })),
+      }));
   }
 
   function holderSearchText(row) {
@@ -108,20 +139,58 @@
     return holders.map((holder) => `<div class="key3-person"><strong>${esc(holder.name)}</strong><span>${esc(holder.position)}</span></div>`).join("");
   }
 
-  function renderUnits(rows) {
-    const shown = [...rows].sort((a, b) =>
-      (b.missing_roles?.length || 0) - (a.missing_roles?.length || 0)
-      || String(a.district).localeCompare(String(b.district))
-      || String(a.unit).localeCompare(String(b.unit), undefined, { numeric: true })
-    );
-    document.getElementById("unitCount").textContent = `${n(shown.length)} units`;
-    document.getElementById("unitRows").innerHTML = shown.length ? shown.map((row) => {
+  function renderUnitTable(rows) {
+    return `<div class="key3-unit-table-wrap"><table class="key3-detail-table">
+      <thead><tr><th>Unit</th><th>Program</th><th>Status</th><th>Missing</th><th>Unit Leader</th><th>Committee Chair</th><th>COR / CUR</th><th><span class="visually-hidden">Action</span></th></tr></thead>
+      <tbody>${rows.map((row) => {
       const complete = row.status === "Complete";
       const detailLink = row.unit_id
         ? `<a class="key3-unit-link" href="unit-level.html?unit=${encodeURIComponent(row.unit_id)}">View unit</a>`
         : "";
-      return `<tr><td>${esc(row.district)}</td><td><strong>${esc(row.unit)}</strong></td><td><span class="status ${complete ? "good" : "bad"}">${esc(row.status)}</span></td><td>${row.missing_roles?.length ? `<span class="key3-missing">${esc(row.missing_roles.join(" · "))}</span>` : "None"}</td><td>${renderHolders(row.unit_leaders, "MISSING")}</td><td>${renderHolders(row.committee_chairs, "MISSING")}</td><td>${renderHolders(row.cor_cur_holders, "MISSING")}</td><td>${detailLink}</td></tr>`;
-    }).join("") : '<tr><td colspan="8">No units match the selected filters.</td></tr>';
+      return `<tr><td><strong>${esc(row.unit)}</strong></td><td>${esc(row.unit_type)}</td><td><span class="status ${complete ? "good" : "bad"}">${esc(row.status)}</span></td><td>${row.missing_roles?.length ? `<span class="key3-missing">${esc(row.missing_roles.join(" · "))}</span>` : "None"}</td><td>${renderHolders(row.unit_leaders, "MISSING")}</td><td>${renderHolders(row.committee_chairs, "MISSING")}</td><td>${renderHolders(row.cor_cur_holders, "MISSING")}</td><td>${detailLink}</td></tr>`;
+      }).join("")}</tbody>
+    </table></div>`;
+  }
+
+  function coverageSummary(rows) {
+    const summary = summarize(rows);
+    return `${n(summary.units)} units · ${n(summary.complete)} complete · ${n(summary.missingAny)} missing`;
+  }
+
+  function renderUnits(rows) {
+    const hierarchy = buildHierarchy(rows);
+    const districtCount = hierarchy.reduce((total, area) => total + area.districts.length, 0);
+    const searchActive = Boolean(document.getElementById("searchInput").value.trim());
+    const selectedArea = document.getElementById("serviceAreaSelect").value;
+    const selectedDistrict = document.getElementById("districtSelect").value;
+    document.getElementById("unitCount").textContent = `${n(rows.length)} units · ${n(districtCount)} districts`;
+    document.getElementById("unitHierarchy").innerHTML = hierarchy.length ? hierarchy.map((area, areaIndex) => {
+      const areaId = `key3-area-${areaIndex}`;
+      const areaExpanded = state.expandedAreas.has(area.area) || searchActive || selectedArea === area.area || Boolean(selectedDistrict);
+      return `<section class="key3-area-group">
+        <button class="key3-area-toggle" type="button" data-area="${esc(area.area)}" aria-expanded="${areaExpanded}" aria-controls="${areaId}">
+          <span class="disclosure" aria-hidden="true">${areaExpanded ? "−" : "+"}</span>
+          <span class="key3-group-label"><strong>${esc(area.area)}</strong><span>${coverageSummary(area.rows)} · ${n(area.districts.length)} districts</span></span>
+          <span class="key3-group-rate">${p(summarize(area.rows).complete, area.rows.length)}</span>
+        </button>
+        <div class="key3-area-content" id="${areaId}"${areaExpanded ? "" : " hidden"}>
+          ${area.districts.map((district, districtIndex) => {
+            const detailId = `key3-district-${areaIndex}-${districtIndex}`;
+            const key = districtKey(area.area, district.district);
+            const districtExpanded = state.expandedDistricts.has(key) || searchActive || selectedDistrict === district.district;
+            const districtSummary = summarize(district.rows);
+            return `<section class="key3-district-group">
+              <button class="key3-district-toggle" type="button" data-area="${esc(area.area)}" data-district="${esc(district.district)}" aria-expanded="${districtExpanded}" aria-controls="${detailId}">
+                <span class="disclosure" aria-hidden="true">${districtExpanded ? "−" : "+"}</span>
+                <span class="key3-group-label"><strong>${esc(district.district)}</strong><span>${coverageSummary(district.rows)}</span></span>
+                <span class="status ${districtSummary.missingAny ? "warn" : "good"}">${districtSummary.missingAny ? `${n(districtSummary.missingAny)} need follow-up` : "Complete"}</span>
+              </button>
+              <div class="key3-district-content" id="${detailId}"${districtExpanded ? "" : " hidden"}>${renderUnitTable(district.rows)}</div>
+            </section>`;
+          }).join("")}
+        </div>
+      </section>`;
+    }).join("") : '<p class="subtle key3-empty">No units match the selected filters.</p>';
   }
 
   function render() {
@@ -136,6 +205,32 @@
     document.getElementById("districtSelect").addEventListener("change", render);
     document.getElementById("focusSelect").addEventListener("change", render);
     document.getElementById("searchInput").addEventListener("input", render);
+    document.getElementById("unitHierarchy").addEventListener("click", (event) => {
+      const areaButton = event.target.closest(".key3-area-toggle");
+      const districtButton = event.target.closest(".key3-district-toggle");
+      const button = districtButton || areaButton;
+      if (!button) return;
+      const expanded = button.getAttribute("aria-expanded") !== "true";
+      button.setAttribute("aria-expanded", String(expanded));
+      button.querySelector(".disclosure").textContent = expanded ? "−" : "+";
+      document.getElementById(button.getAttribute("aria-controls")).hidden = !expanded;
+      const collection = districtButton ? state.expandedDistricts : state.expandedAreas;
+      const key = districtButton ? districtKey(button.dataset.area, button.dataset.district) : button.dataset.area;
+      if (expanded) collection.add(key);
+      else collection.delete(key);
+    });
+    document.getElementById("expandAll").addEventListener("click", () => {
+      for (const area of buildHierarchy(filteredRows())) {
+        state.expandedAreas.add(area.area);
+        for (const district of area.districts) state.expandedDistricts.add(districtKey(area.area, district.district));
+      }
+      render();
+    });
+    document.getElementById("collapseAll").addEventListener("click", () => {
+      state.expandedAreas.clear();
+      state.expandedDistricts.clear();
+      render();
+    });
     window.addEventListener("programfilterchange", () => { renderControls(); render(); });
   }
 
@@ -155,11 +250,11 @@
     } catch (error) {
       document.getElementById("key3Kpis").innerHTML = `<article class="kpi danger"><div><div class="kpi-label">Unit Key 3 data unavailable</div><div class="kpi-value">Unable to load</div></div><div class="kpi-sub">${esc(error.message)}</div></article>`;
       document.getElementById("unitTypeRows").innerHTML = '<tr><td colspan="8">Unit Key 3 data is unavailable.</td></tr>';
-      document.getElementById("unitRows").innerHTML = '<tr><td colspan="8">Unit Key 3 data is unavailable.</td></tr>';
+      document.getElementById("unitHierarchy").innerHTML = '<p class="subtle key3-empty">Unit Key 3 data is unavailable.</p>';
     }
   }
 
-  const api = { summarize, summarizeByUnitType, matchesFocus };
+  const api = { summarize, summarizeByUnitType, matchesFocus, sortUnits, districtKey, buildHierarchy };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (typeof window !== "undefined") window.Key3StatusPage = api;
   if (typeof document !== "undefined") {

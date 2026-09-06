@@ -241,3 +241,19 @@ Requirements PDF linked from `sources.html`. Preserve the corresponding
 fail-closed checks in `tools/validate_site_structure.py` and keep the public
 Dashboard Guide and generated calculation guide synchronized with metric and
 control changes.
+
+## Unit Key 3 hierarchy contract
+
+Preserve Unit Key 3 Detail as a two-level collapsible Service Area → District
+hierarchy. Service Area rows summarize all filtered units beneath them; district
+rows summarize their own filtered units and expand to the missing-first unit
+table. Keep accessible disclosure state, Expand all and Collapse all controls,
+automatic expansion for searches and exact district selections, bounded outer
+and unit-table scrolling, public person-name abbreviation, and direct Unit-Level
+Detail links. Filters, Unit Key 3 definitions, COR/CUR substitution, privacy,
+and denominators must not change as a side effect of the hierarchy.
+
+Keep `key3-status.html`, `key3-status.js`, `key3-status.css`, the focused page
+test, structural validator, Dashboard Guide, Markdown documentation, generated
+calculation guide, and cache-busted asset versions synchronized. Verify the live
+two-level disclosure behavior after publication.
