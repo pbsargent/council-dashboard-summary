@@ -37,14 +37,15 @@ assert.equal(page.districtKey("North", "Armadillo"), "North|Armadillo");
 
 assert.deepEqual(page.sytExpirationState("2026-12-05T00:00:00", new Date(2026, 8, 6)), {
   label: "SYT expires Dec 5, 2026",
-  urgent: true,
+  state: "expiring-soon",
   daysRemaining: 90,
 });
-assert.equal(page.sytExpirationState("2026-12-06T00:00:00", new Date(2026, 8, 6)).urgent, false);
-assert.equal(page.sytExpirationState("2026-09-05T00:00:00", new Date(2026, 8, 6)).urgent, true);
+assert.equal(page.sytExpirationState("2026-12-06T00:00:00", new Date(2026, 8, 6)).state, "current");
+assert.equal(page.sytExpirationState("2026-09-06T00:00:00", new Date(2026, 8, 6)).state, "expiring-soon");
+assert.equal(page.sytExpirationState("2026-09-05T00:00:00", new Date(2026, 8, 6)).state, "expired");
 assert.deepEqual(page.sytExpirationState(null, new Date(2026, 8, 6)), {
   label: "SYT expiration unavailable",
-  urgent: false,
+  state: "unavailable",
   daysRemaining: null,
 });
 

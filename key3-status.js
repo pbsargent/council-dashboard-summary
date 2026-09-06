@@ -24,14 +24,14 @@
 
   function sytExpirationState(value, todayValue = new Date()) {
     const expiration = parseDateOnly(value);
-    if (!expiration) return { label: "SYT expiration unavailable", urgent: false, daysRemaining: null };
+    if (!expiration) return { label: "SYT expiration unavailable", state: "unavailable", daysRemaining: null };
     const today = new Date(todayValue);
     today.setHours(0, 0, 0, 0);
     const daysRemaining = Math.round((expiration - today) / 86400000);
     const dateLabel = expiration.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     return {
       label: daysRemaining < 0 ? `SYT expired ${dateLabel}` : `SYT expires ${dateLabel}`,
-      urgent: daysRemaining <= 90,
+      state: daysRemaining < 0 ? "expired" : daysRemaining <= 90 ? "expiring-soon" : "current",
       daysRemaining,
     };
   }
@@ -164,7 +164,7 @@
     if (!holders?.length) return `<span class="key3-missing">${esc(missingLabel)}</span>`;
     return holders.map((holder) => {
       const syt = sytExpirationState(holder.syt_expires);
-      return `<div class="key3-person"><strong>${esc(holder.name)}</strong><span class="key3-syt${syt.urgent ? " urgent" : ""}">${esc(syt.label)}</span></div>`;
+      return `<div class="key3-person"><strong>${esc(holder.name)}</strong><span class="key3-syt ${syt.state}">${esc(syt.label)}</span></div>`;
     }).join("");
   }
 

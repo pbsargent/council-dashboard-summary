@@ -453,8 +453,9 @@ def main() -> int:
             "Public names use First Name, Last Initial",
             "Expand a Service Area, then a district",
             "SYT expiration appears beneath their name",
-            "key3-status.js?v=20260906-key3-syt-expiry-1",
-            "key3-status.css?v=20260906-key3-syt-expiry-1",
+            "Dates due within 90 days are yellow; expired dates are red",
+            "key3-status.js?v=20260906-key3-syt-colors-1",
+            "key3-status.css?v=20260906-key3-syt-colors-1",
         ):
             if required not in key3_page_source:
                 errors.append(f"key3-status.html: missing Unit Key 3 contract {required!r}")
@@ -471,7 +472,9 @@ def main() -> int:
             "expandedAreas",
             "expandedDistricts",
             "function sytExpirationState",
+            'daysRemaining < 0 ? "expired"',
             "daysRemaining <= 90",
+            '"expiring-soon"',
             "key3-syt",
             "unit-level.html?unit=",
         ):
@@ -487,7 +490,8 @@ def main() -> int:
         for required in (
             ".key3-detail-wrap {", "max-height: clamp(", "overflow: auto",
             ".key3-area-toggle", ".key3-district-toggle", ".key3-unit-table-wrap",
-            ".key3-detail-table {", ".key3-syt.urgent", "color: var(--red)",
+            ".key3-detail-table {", ".key3-syt.expiring-soon", "color: var(--amber)",
+            ".key3-syt.expired", "color: var(--red)",
         ):
             if required not in key3_style_source:
                 errors.append(f"key3-status.css: missing hierarchy or bounded-table safeguard {required!r}")
@@ -663,6 +667,8 @@ def main() -> int:
             errors.append("help.html: missing Unit Key 3 Coverage page directory entry")
         if "Either a current COR or CUR satisfies the third position" not in help_source:
             errors.append("help.html: missing COR-or-CUR Unit Key 3 definition")
+        if "turns yellow when due within 90 days and red after expiration" not in help_source:
+            errors.append("help.html: missing Unit Key 3 SYT color-state definition")
         if "<dt>Required PIN Details</dt>" not in help_source or "Only completion flags" not in help_source:
             errors.append("help.html: missing privacy-safe Required PIN Details definition")
         if "expand a District PIN Detail row" not in help_source or "individual-unit status" not in help_source:
@@ -823,10 +829,10 @@ def main() -> int:
                 errors.append(f"{relative}: missing PIN completeness documentation contract {phrase!r}")
 
     key3_documentation_contracts = {
-        "README.md": ("Unit Key 3 Coverage", "Either a current COR or CUR", "SYT expiration date beneath each holder"),
-        "DASHBOARD_DATA_DICTIONARY.md": ("Unit Key 3 Coverage page", "COR / CUR", "expired or due within 90 days"),
-        "IMPLEMENTATION_RUNBOOK.md": ("Persistent Unit Key 3 Coverage Contract", "COR or CUR", "SYT expiration date instead of the holder's position title"),
-        "tools/build_human_data_guide.py": ("Unit Key 3 Coverage", "Either a current COR or CUR", "SYT expiration beneath each holder"),
+        "README.md": ("Unit Key 3 Coverage", "Either a current COR or CUR", "A date due within 90 days is yellow", "an expired date is red"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("Unit Key 3 Coverage page", "COR / CUR", "dates due within 90 days are yellow and expired dates are red"),
+        "IMPLEMENTATION_RUNBOOK.md": ("Persistent Unit Key 3 Coverage Contract", "COR or CUR", "dates due within 90 days of the viewer's current date in yellow", "expired dates in red"),
+        "tools/build_human_data_guide.py": ("Unit Key 3 Coverage", "Either a current COR or CUR", "Dates due within 90 days are yellow and expired dates are red"),
     }
     for relative, required_phrases in key3_documentation_contracts.items():
         source = (root / relative).read_text(encoding="utf-8")

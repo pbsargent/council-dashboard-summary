@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
   <link rel="stylesheet" href="council-dashboard-summary.css?v=20260904-operational-sticky-headers-1">
   <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
-  <link rel="stylesheet" href="key3-status.css?v=20260906-key3-syt-expiry-1">
+  <link rel="stylesheet" href="key3-status.css?v=20260906-key3-syt-colors-1">
 </head>
 <body data-page="key3-status">
   <div class="app-shell">
@@ -82,7 +82,7 @@
             <p class="section-kicker">Unit follow-up</p>
             <div class="panel-title-row">
               <h2 id="unitDetailTitle">Unit Key 3 Detail</h2>
-              <button class="panel-help" type="button" aria-label="Unit Key 3 Detail source help" title="Expand a Service Area, then a district, to review its units. The line beneath each holder shows their SYT expiration date and turns red when expired or due within 90 days. Current Key 3 coverage means the registration expiration is on or after the dashboard report date. Missing units are listed first. Public names use First Name, Last Initial.">?</button>
+              <button class="panel-help" type="button" aria-label="Unit Key 3 Detail source help" title="Expand a Service Area, then a district, to review its units. The line beneath each holder shows their SYT expiration date. Dates due within 90 days are yellow; expired dates are red. Current Key 3 coverage means the registration expiration is on or after the dashboard report date. Missing units are listed first. Public names use First Name, Last Initial.">?</button>
             </div>
           </div>
           <div class="key3-detail-actions">
@@ -91,7 +91,7 @@
             <span class="count-pill" id="unitCount"></span>
           </div>
         </div>
-        <p class="subtle key3-hierarchy-intro">Expand a Service Area, then a district, to see individual units. Each holder's SYT expiration appears beneath their name; red dates are expired or due within 90 days. Search results expand automatically.</p>
+        <p class="subtle key3-hierarchy-intro">Expand a Service Area, then a district, to see individual units. Each holder's SYT expiration appears beneath their name; dates due within 90 days are yellow and expired dates are red. Search results expand automatically.</p>
         <div class="key3-detail-wrap" id="unitHierarchy" aria-label="Unit Key 3 hierarchy"></div>
       </section>
     </main>
@@ -101,6 +101,6 @@
   <script src="program-filter.js?v=20260717-master-filter-3"></script>
   <script src="panel-help.js?v=20260630-active-help"></script>
   <script src="report-problem.js?v=20260712"></script>
-  <script src="key3-status.js?v=20260906-key3-syt-expiry-1"></script>
+  <script src="key3-status.js?v=20260906-key3-syt-colors-1"></script>
 </body>
 </html>

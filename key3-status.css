@@ -172,9 +172,20 @@
   font-size: 12px;
 }
 
-.key3-syt.urgent {
+.key3-syt.expiring-soon {
+  color: var(--amber);
+  font-weight: 800;
+}
+
+.key3-syt.expired {
   color: var(--red);
   font-weight: 800;
+}
+
+@media (prefers-color-scheme: light) {
+  .key3-syt.expiring-soon {
+    color: #805500;
+  }
 }
 
 .key3-person + .key3-person {
