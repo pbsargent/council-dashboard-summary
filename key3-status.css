@@ -166,10 +166,15 @@
   display: block;
 }
 
-.key3-person span {
+.key3-syt {
   margin-top: 2px;
   color: var(--muted);
   font-size: 12px;
+}
+
+.key3-syt.urgent {
+  color: var(--red);
+  font-weight: 800;
 }
 
 .key3-person + .key3-person {

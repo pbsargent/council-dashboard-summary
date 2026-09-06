@@ -253,6 +253,13 @@ and unit-table scrolling, public person-name abbreviation, and direct Unit-Level
 Detail links. Filters, Unit Key 3 definitions, COR/CUR substitution, privacy,
 and denominators must not change as a side effect of the hierarchy.
 
+In every expanded Unit Key 3 row, the line beneath a holder's public name must
+show that person's SYT expiration date instead of their position title. Render
+the date red when it is expired or due within 90 days of the viewer's current
+date. A missing or unusable SYT date displays as unavailable and does not change
+whether the qualifying Key 3 position is present. Keep `syt_expires` privacy-safe
+and do not add contact or meeting values to the public holder objects.
+
 Keep `key3-status.html`, `key3-status.js`, `key3-status.css`, the focused page
 test, structural validator, Dashboard Guide, Markdown documentation, generated
 calculation guide, and cache-busted asset versions synchronized. Verify the live

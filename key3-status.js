@@ -10,6 +10,32 @@
   const p = (numerator, denominator) => denominator ? percent.format(numerator / denominator) : "n/a";
   const missing = (row, role) => (row?.missing_roles || []).includes(role);
 
+  function parseDateOnly(value) {
+    if (!value) return null;
+    const text = String(value);
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const date = match
+      ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+      : new Date(text);
+    if (Number.isNaN(date.getTime())) return null;
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  function sytExpirationState(value, todayValue = new Date()) {
+    const expiration = parseDateOnly(value);
+    if (!expiration) return { label: "SYT expiration unavailable", urgent: false, daysRemaining: null };
+    const today = new Date(todayValue);
+    today.setHours(0, 0, 0, 0);
+    const daysRemaining = Math.round((expiration - today) / 86400000);
+    const dateLabel = expiration.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return {
+      label: daysRemaining < 0 ? `SYT expired ${dateLabel}` : `SYT expires ${dateLabel}`,
+      urgent: daysRemaining <= 90,
+      daysRemaining,
+    };
+  }
+
   function summarize(rows) {
     return {
       units: rows.length,
@@ -136,7 +162,10 @@
 
   function renderHolders(holders, missingLabel) {
     if (!holders?.length) return `<span class="key3-missing">${esc(missingLabel)}</span>`;
-    return holders.map((holder) => `<div class="key3-person"><strong>${esc(holder.name)}</strong><span>${esc(holder.position)}</span></div>`).join("");
+    return holders.map((holder) => {
+      const syt = sytExpirationState(holder.syt_expires);
+      return `<div class="key3-person"><strong>${esc(holder.name)}</strong><span class="key3-syt${syt.urgent ? " urgent" : ""}">${esc(syt.label)}</span></div>`;
+    }).join("");
   }
 
   function renderUnitTable(rows) {
@@ -254,7 +283,7 @@
     }
   }
 
-  const api = { summarize, summarizeByUnitType, matchesFocus, sortUnits, districtKey, buildHierarchy };
+  const api = { summarize, summarizeByUnitType, matchesFocus, sortUnits, districtKey, buildHierarchy, parseDateOnly, sytExpirationState };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (typeof window !== "undefined") window.Key3StatusPage = api;
   if (typeof document !== "undefined") {

@@ -7,6 +7,7 @@ import os
 import json
 import re
 import sys
+from datetime import datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from validate_monday_snapshot import validate_snapshot
@@ -246,11 +247,20 @@ def validate_unit_key3_snapshot(payload: dict, expected_unit_count: int | None =
                 errors.append(f"{label}.{field} does not agree with missing_roles")
             for holder_index, holder in enumerate(holders):
                 holder_label = f"{label}.{field}[{holder_index}]"
-                if not isinstance(holder, dict) or set(holder) != {"name", "position"}:
-                    errors.append(f"{holder_label} may contain only name and position")
+                if not isinstance(holder, dict) or set(holder) != {"name", "position", "syt_expires"}:
+                    errors.append(f"{holder_label} may contain only name, position, and syt_expires")
                     continue
                 if not all(isinstance(holder.get(key), str) and holder[key].strip() for key in ("name", "position")):
                     errors.append(f"{holder_label} must have nonblank name and position")
+                syt_expires = holder.get("syt_expires")
+                if syt_expires is not None:
+                    if not isinstance(syt_expires, str) or not syt_expires.strip():
+                        errors.append(f"{holder_label}.syt_expires must be an ISO date string or null")
+                    else:
+                        try:
+                            datetime.fromisoformat(syt_expires.replace("Z", "+00:00"))
+                        except ValueError:
+                            errors.append(f"{holder_label}.syt_expires must be an ISO date string or null")
         for key in row:
             if any(fragment in key.casefold() for fragment in forbidden_fragments):
                 errors.append(f"{label} exposes forbidden private field {key!r}")
@@ -442,8 +452,9 @@ def main() -> int:
             "Summary by Unit Type",
             "Public names use First Name, Last Initial",
             "Expand a Service Area, then a district",
-            "key3-status.js?v=20260906-key3-hierarchy-1",
-            "key3-status.css?v=20260906-key3-hierarchy-1",
+            "SYT expiration appears beneath their name",
+            "key3-status.js?v=20260906-key3-syt-expiry-1",
+            "key3-status.css?v=20260906-key3-syt-expiry-1",
         ):
             if required not in key3_page_source:
                 errors.append(f"key3-status.html: missing Unit Key 3 contract {required!r}")
@@ -459,6 +470,9 @@ def main() -> int:
             "key3-district-toggle",
             "expandedAreas",
             "expandedDistricts",
+            "function sytExpirationState",
+            "daysRemaining <= 90",
+            "key3-syt",
             "unit-level.html?unit=",
         ):
             if required not in key3_script_source:
@@ -473,7 +487,7 @@ def main() -> int:
         for required in (
             ".key3-detail-wrap {", "max-height: clamp(", "overflow: auto",
             ".key3-area-toggle", ".key3-district-toggle", ".key3-unit-table-wrap",
-            ".key3-detail-table {",
+            ".key3-detail-table {", ".key3-syt.urgent", "color: var(--red)",
         ):
             if required not in key3_style_source:
                 errors.append(f"key3-status.css: missing hierarchy or bounded-table safeguard {required!r}")
@@ -500,6 +514,7 @@ def main() -> int:
             "pin_display_status(pin_row, report_as_of)",
             "def build_unit_key3_statuses",
             '"council unit representative"',
+            '"syt_expires": syt_expiration.isoformat() if syt_expiration else None',
             '"unit_key3_statuses"',
         ):
             if required not in builder_source:
@@ -808,10 +823,10 @@ def main() -> int:
                 errors.append(f"{relative}: missing PIN completeness documentation contract {phrase!r}")
 
     key3_documentation_contracts = {
-        "README.md": ("Unit Key 3 Coverage", "Either a current COR or CUR", "collapsible Service Area and District groups"),
-        "DASHBOARD_DATA_DICTIONARY.md": ("Unit Key 3 Coverage page", "COR / CUR", "collapsible Service Area and District levels"),
-        "IMPLEMENTATION_RUNBOOK.md": ("Persistent Unit Key 3 Coverage Contract", "COR or CUR", "collapsible Service Area → District hierarchy"),
-        "tools/build_human_data_guide.py": ("Unit Key 3 Coverage", "Either a current COR or CUR", "collapsible Service Area and District"),
+        "README.md": ("Unit Key 3 Coverage", "Either a current COR or CUR", "SYT expiration date beneath each holder"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("Unit Key 3 Coverage page", "COR / CUR", "expired or due within 90 days"),
+        "IMPLEMENTATION_RUNBOOK.md": ("Persistent Unit Key 3 Coverage Contract", "COR or CUR", "SYT expiration date instead of the holder's position title"),
+        "tools/build_human_data_guide.py": ("Unit Key 3 Coverage", "Either a current COR or CUR", "SYT expiration beneath each holder"),
     }
     for relative, required_phrases in key3_documentation_contracts.items():
         source = (root / relative).read_text(encoding="utf-8")

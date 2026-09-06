@@ -35,4 +35,17 @@ assert.deepEqual(hierarchy.map((area) => [area.area, area.districts.map((distric
 assert.deepEqual(hierarchy[0].districts[0].rows.map((row) => row.unit), ["Pack 2", "Pack 10"]);
 assert.equal(page.districtKey("North", "Armadillo"), "North|Armadillo");
 
+assert.deepEqual(page.sytExpirationState("2026-12-05T00:00:00", new Date(2026, 8, 6)), {
+  label: "SYT expires Dec 5, 2026",
+  urgent: true,
+  daysRemaining: 90,
+});
+assert.equal(page.sytExpirationState("2026-12-06T00:00:00", new Date(2026, 8, 6)).urgent, false);
+assert.equal(page.sytExpirationState("2026-09-05T00:00:00", new Date(2026, 8, 6)).urgent, true);
+assert.deepEqual(page.sytExpirationState(null, new Date(2026, 8, 6)), {
+  label: "SYT expiration unavailable",
+  urgent: false,
+  daysRemaining: null,
+});
+
 console.log("Unit Key 3 page tests passed.");
