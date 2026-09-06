@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260628-mark">
   <link rel="stylesheet" href="council-dashboard-summary.css?v=20260904-operational-sticky-headers-1">
   <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
-  <link rel="stylesheet" href="key3-status.css?v=20260906-key3-post-rule-1">
+  <link rel="stylesheet" href="key3-status.css?v=20260906-key3-syt-expiry-1">
 </head>
 <body data-page="key3-status">
   <div class="app-shell">
@@ -25,7 +25,7 @@
         <div>
           <p class="eyebrow">Unit health &amp; renewal</p>
           <h1>Unit Key 3 Coverage <span class="title-data-date" id="titleDataDate"></span></h1>
-          <p class="lede">Review each unit's current Key 3 coverage. Packs, Troops, Crews, and Ships require a Unit Leader, Committee Chair, and either a COR or CUR. Explorer Posts require only a Post Advisor and Committee Chair.</p>
+          <p class="lede">Review each unit's current Unit Leader, Committee Chair, and third Key 3 position. Either a Chartered Organization Representative (COR) or Council Unit Representative (CUR) satisfies the third position.</p>
         </div>
         <div class="hero-actions"><a class="detail-link" href="unit-health.html">Back to Unit Health &amp; Renewal</a></div>
       </header>
@@ -49,7 +49,7 @@
             <option value="complete">Complete Key 3</option>
             <option value="unit-leader">Missing Unit Leader</option>
             <option value="committee-chair">Missing Committee Chair</option>
-            <option value="cor-cur">Missing COR / CUR (not Posts)</option>
+            <option value="cor-cur">Missing COR / CUR</option>
           </select>
         </label>
         <label class="control key3-search-control">
@@ -64,7 +64,7 @@
             <p class="section-kicker">Program comparison</p>
             <div class="panel-title-row">
               <h2 id="unitTypeTitle">Summary by Unit Type</h2>
-              <button class="panel-help" type="button" aria-label="Summary by Unit Type source help" title="Counts use every tracked unit matching the active master program, Service Area, District, Focus, and Search filters. A current COR or CUR satisfies the third Key 3 position for Packs, Troops, Crews, and Ships. Explorer Posts do not require a COR or CUR.">?</button>
+              <button class="panel-help" type="button" aria-label="Summary by Unit Type source help" title="Counts use every tracked unit matching the active master program, Service Area, District, Focus, and Search filters. A current COR or CUR satisfies the third Key 3 position.">?</button>
             </div>
           </div>
         </div>
@@ -82,7 +82,7 @@
             <p class="section-kicker">Unit follow-up</p>
             <div class="panel-title-row">
               <h2 id="unitDetailTitle">Unit Key 3 Detail</h2>
-              <button class="panel-help" type="button" aria-label="Unit Key 3 Detail source help" title="Expand a Service Area, then a district, to review its units. Explorer Posts require a Post Advisor and Committee Chair but not a COR or CUR. The line beneath each holder shows their SYT expiration date and turns red when expired or due within 90 days. Current Key 3 coverage means the registration expiration is on or after the dashboard report date. Missing units are listed first. Public names use First Name, Last Initial.">?</button>
+              <button class="panel-help" type="button" aria-label="Unit Key 3 Detail source help" title="Expand a Service Area, then a district, to review its units. The line beneath each holder shows their SYT expiration date and turns red when expired or due within 90 days. Current Key 3 coverage means the registration expiration is on or after the dashboard report date. Missing units are listed first. Public names use First Name, Last Initial.">?</button>
             </div>
           </div>
           <div class="key3-detail-actions">
@@ -101,6 +101,6 @@
   <script src="program-filter.js?v=20260717-master-filter-3"></script>
   <script src="panel-help.js?v=20260630-active-help"></script>
   <script src="report-problem.js?v=20260712"></script>
-  <script src="key3-status.js?v=20260906-key3-post-rule-1"></script>
+  <script src="key3-status.js?v=20260906-key3-syt-expiry-1"></script>
 </body>
 </html>

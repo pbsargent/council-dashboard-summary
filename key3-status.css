@@ -177,14 +177,6 @@
   font-weight: 800;
 }
 
-.key3-not-required {
-  display: block;
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 12px;
-  font-style: italic;
-}
-
 .key3-person + .key3-person {
   margin-top: 7px;
   padding-top: 7px;
