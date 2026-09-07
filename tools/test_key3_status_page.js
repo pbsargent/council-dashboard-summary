@@ -26,6 +26,22 @@ assert.equal(page.matchesFocus(rows[1], "cor-cur"), true);
 assert.equal(page.matchesFocus(rows[2], "cor-cur"), false);
 assert.equal(page.matchesFocus(rows[0], "complete"), true);
 assert.equal(page.matchesFocus(rows[0], "missing"), false);
+assert.equal(page.matchesStatus(rows[0], ""), true);
+assert.equal(page.matchesStatus(rows[0], "Complete"), true);
+assert.equal(page.matchesStatus(rows[0], "Missing 1"), false);
+assert.equal(page.matchesStatus(rows[1], "Missing 1"), true);
+assert.equal(page.matchesStatus(rows[2], "Missing 2"), true);
+const sytStatusRow = {
+  status: "Complete",
+  unit_leaders: [{ syt_expires: "2026-09-05" }],
+  committee_chairs: [{ syt_expires: "2026-10-01" }],
+  cor_cur_holders: [{ syt_expires: "2027-01-01" }],
+};
+assert.deepEqual(page.holderSytStates(sytStatusRow, new Date(2026, 8, 6)), ["expired", "expiring-soon", "current"]);
+assert.equal(page.matchesStatus(sytStatusRow, "expired-syt", new Date(2026, 8, 6)), true);
+assert.equal(page.matchesStatus(sytStatusRow, "expiring-syt", new Date(2026, 8, 6)), true);
+assert.equal(page.matchesStatus(rows[0], "expired-syt", new Date(2026, 8, 6)), false);
+assert.equal(page.matchesStatus(rows[0], "expiring-syt", new Date(2026, 8, 6)), false);
 
 const hierarchy = page.buildHierarchy(rows);
 assert.deepEqual(hierarchy.map((area) => [area.area, area.districts.map((district) => district.district)]), [

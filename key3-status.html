@@ -42,6 +42,18 @@
           <select id="districtSelect"><option value="">All Districts</option></select>
         </label>
         <label class="control">
+          <span>Status</span>
+          <select id="statusSelect">
+            <option value="">All statuses</option>
+            <option value="Complete">Complete</option>
+            <option value="Missing 1">Missing 1</option>
+            <option value="Missing 2">Missing 2</option>
+            <option value="Missing 3">Missing 3</option>
+            <option value="expired-syt">1 or more expired SYTs</option>
+            <option value="expiring-syt">1 or more SYTs expiring within 90 days</option>
+          </select>
+        </label>
+        <label class="control">
           <span>Focus</span>
           <select id="focusSelect">
             <option value="all">All units</option>
@@ -64,7 +76,7 @@
             <p class="section-kicker">Program comparison</p>
             <div class="panel-title-row">
               <h2 id="unitTypeTitle">Summary by Unit Type</h2>
-              <button class="panel-help" type="button" aria-label="Summary by Unit Type source help" title="Counts use every tracked unit matching the active master program, Service Area, District, Focus, and Search filters. A current COR or CUR satisfies the third Key 3 position.">?</button>
+              <button class="panel-help" type="button" aria-label="Summary by Unit Type source help" title="Counts use every tracked unit matching the active master program, Service Area, District, Status, Focus, and Search filters. A current COR or CUR satisfies the third Key 3 position.">?</button>
             </div>
           </div>
         </div>
@@ -82,7 +94,7 @@
             <p class="section-kicker">Unit follow-up</p>
             <div class="panel-title-row">
               <h2 id="unitDetailTitle">Unit Key 3 Detail</h2>
-              <button class="panel-help" type="button" aria-label="Unit Key 3 Detail source help" title="Expand a Service Area, then a district, to review its units. The line beneath each holder shows their SYT expiration date. Dates due within 90 days are yellow; expired dates are red. Current Key 3 coverage means the registration expiration is on or after the dashboard report date. Missing units are listed first. Public names use First Name, Last Initial.">?</button>
+              <button class="panel-help" type="button" aria-label="Unit Key 3 Detail source help" title="Filter Status by exact Key 3 coverage or by units with one or more expired or soon-to-expire SYTs. Expand a Service Area, then a district, to review its units. The line beneath each holder shows their SYT expiration date. Dates due within 90 days are yellow; expired dates are red. Current Key 3 coverage means the registration expiration is on or after the dashboard report date. Missing units are listed first. Public names use First Name, Last Initial.">?</button>
             </div>
           </div>
           <div class="key3-detail-actions">
@@ -101,6 +113,6 @@
   <script src="program-filter.js?v=20260717-master-filter-3"></script>
   <script src="panel-help.js?v=20260630-active-help"></script>
   <script src="report-problem.js?v=20260712"></script>
-  <script src="key3-status.js?v=20260906-key3-syt-colors-1"></script>
+  <script src="key3-status.js?v=20260906-key3-status-filter-1"></script>
 </body>
 </html>

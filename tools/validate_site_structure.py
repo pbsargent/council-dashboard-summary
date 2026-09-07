@@ -441,7 +441,7 @@ def main() -> int:
     if key3_page_path.is_file():
         key3_page = parse_page(key3_page_path)
         for element_id in (
-            "key3Kpis", "serviceAreaSelect", "districtSelect", "focusSelect",
+            "key3Kpis", "serviceAreaSelect", "districtSelect", "statusSelect", "focusSelect",
             "searchInput", "unitTypeRows", "unitHierarchy", "expandAll", "collapseAll",
         ):
             if element_id not in key3_page.elements_by_id:
@@ -454,7 +454,14 @@ def main() -> int:
             "Expand a Service Area, then a district",
             "SYT expiration appears beneath their name",
             "Dates due within 90 days are yellow; expired dates are red",
-            "key3-status.js?v=20260906-key3-syt-colors-1",
+            "All statuses",
+            '<option value="Complete">Complete</option>',
+            '<option value="Missing 1">Missing 1</option>',
+            '<option value="Missing 2">Missing 2</option>',
+            '<option value="Missing 3">Missing 3</option>',
+            '<option value="expired-syt">1 or more expired SYTs</option>',
+            '<option value="expiring-syt">1 or more SYTs expiring within 90 days</option>',
+            "key3-status.js?v=20260906-key3-status-filter-1",
             "key3-status.css?v=20260906-key3-syt-colors-1",
         ):
             if required not in key3_page_source:
@@ -466,6 +473,13 @@ def main() -> int:
             'missing(row, "COR / CUR")',
             "ProgramFilter?.matchesUnitType",
             "function summarizeByUnitType",
+            "function matchesStatus",
+            "function holderSytStates",
+            'status === "expired-syt"',
+            'status === "expiring-syt"',
+            'document.getElementById("statusSelect").value',
+            "if (!matchesStatus(row, status)) return false",
+            'document.getElementById("statusSelect").addEventListener("change", render)',
             "function buildHierarchy",
             "key3-area-toggle",
             "key3-district-toggle",
@@ -669,6 +683,8 @@ def main() -> int:
             errors.append("help.html: missing COR-or-CUR Unit Key 3 definition")
         if "turns yellow when due within 90 days and red after expiration" not in help_source:
             errors.append("help.html: missing Unit Key 3 SYT color-state definition")
+        if "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days" not in help_source:
+            errors.append("help.html: missing Unit Key 3 Status-filter definition")
         if "<dt>Required PIN Details</dt>" not in help_source or "Only completion flags" not in help_source:
             errors.append("help.html: missing privacy-safe Required PIN Details definition")
         if "expand a District PIN Detail row" not in help_source or "individual-unit status" not in help_source:
@@ -829,10 +845,10 @@ def main() -> int:
                 errors.append(f"{relative}: missing PIN completeness documentation contract {phrase!r}")
 
     key3_documentation_contracts = {
-        "README.md": ("Unit Key 3 Coverage", "Either a current COR or CUR", "A date due within 90 days is yellow", "an expired date is red"),
-        "DASHBOARD_DATA_DICTIONARY.md": ("Unit Key 3 Coverage page", "COR / CUR", "dates due within 90 days are yellow and expired dates are red"),
-        "IMPLEMENTATION_RUNBOOK.md": ("Persistent Unit Key 3 Coverage Contract", "COR or CUR", "dates due within 90 days of the viewer's current date in yellow", "expired dates in red"),
-        "tools/build_human_data_guide.py": ("Unit Key 3 Coverage", "Either a current COR or CUR", "Dates due within 90 days are yellow and expired dates are red"),
+        "README.md": ("Unit Key 3 Coverage", "Either a current COR or CUR", "A date due within 90 days is yellow", "an expired date is red", "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("Unit Key 3 Coverage page", "COR / CUR", "dates due within 90 days are yellow and expired dates are red", "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days"),
+        "IMPLEMENTATION_RUNBOOK.md": ("Persistent Unit Key 3 Coverage Contract", "COR or CUR", "dates due within 90 days of the viewer's current date in yellow", "expired dates in red", "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days"),
+        "tools/build_human_data_guide.py": ("Unit Key 3 Coverage", "Either a current COR or CUR", "Dates due within 90 days are yellow and expired dates are red", "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days"),
     }
     for relative, required_phrases in key3_documentation_contracts.items():
         source = (root / relative).read_text(encoding="utf-8")

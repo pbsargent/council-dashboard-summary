@@ -265,3 +265,11 @@ Keep `key3-status.html`, `key3-status.js`, `key3-status.css`, the focused page
 test, structural validator, Dashboard Guide, Markdown documentation, generated
 calculation guide, and cache-busted asset versions synchronized. Verify the live
 two-level disclosure behavior after publication.
+
+The Unit Key 3 Status filter must offer exactly All statuses, Complete, Missing
+1, Missing 2, Missing 3, 1 or more expired SYTs, and 1 or more SYTs expiring
+within 90 days. Coverage statuses filter the exact published `status` value.
+The two SYT statuses evaluate every displayed holder against the viewer's
+current date; a unit with both states matches either filter. All choices combine
+with the master program, Service Area, District, Focus, and Search filters
+without changing Key 3 definitions or denominators.

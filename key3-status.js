@@ -64,6 +64,18 @@
     return true;
   }
 
+  function holderSytStates(row, todayValue = new Date()) {
+    return [row.unit_leaders, row.committee_chairs, row.cor_cur_holders]
+      .flatMap((holders) => holders || [])
+      .map((holder) => sytExpirationState(holder.syt_expires, todayValue).state);
+  }
+
+  function matchesStatus(row, status, todayValue = new Date()) {
+    if (status === "expired-syt") return holderSytStates(row, todayValue).includes("expired");
+    if (status === "expiring-syt") return holderSytStates(row, todayValue).includes("expiring-soon");
+    return !status || row.status === status;
+  }
+
   function serviceArea(row) {
     return row.service_area || "Other / Unassigned";
   }
@@ -114,11 +126,13 @@
   function filteredRows() {
     const area = document.getElementById("serviceAreaSelect").value;
     const district = document.getElementById("districtSelect").value;
+    const status = document.getElementById("statusSelect").value;
     const focus = document.getElementById("focusSelect").value;
     const search = document.getElementById("searchInput").value.trim().toLocaleLowerCase();
     return programRows().filter((row) => {
       if (area && serviceArea(row) !== area) return false;
       if (district && row.district !== district) return false;
+      if (!matchesStatus(row, status)) return false;
       if (!matchesFocus(row, focus)) return false;
       if (!search) return true;
       return [row.district, row.unit, row.unit_type, holderSearchText(row)]
@@ -232,6 +246,7 @@
   function bind() {
     document.getElementById("serviceAreaSelect").addEventListener("change", () => { renderControls(); render(); });
     document.getElementById("districtSelect").addEventListener("change", render);
+    document.getElementById("statusSelect").addEventListener("change", render);
     document.getElementById("focusSelect").addEventListener("change", render);
     document.getElementById("searchInput").addEventListener("input", render);
     document.getElementById("unitHierarchy").addEventListener("click", (event) => {
@@ -283,7 +298,7 @@
     }
   }
 
-  const api = { summarize, summarizeByUnitType, matchesFocus, sortUnits, districtKey, buildHierarchy, parseDateOnly, sytExpirationState };
+  const api = { summarize, summarizeByUnitType, matchesFocus, holderSytStates, matchesStatus, sortUnits, districtKey, buildHierarchy, parseDateOnly, sytExpirationState };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (typeof window !== "undefined") window.Key3StatusPage = api;
   if (typeof document !== "undefined") {
