@@ -77,7 +77,10 @@
 .profile-list { display: grid; grid-template-columns: max-content minmax(0,1fr); gap: 12px 20px; margin: 0; }
 .profile-list dt { color: var(--muted); }
 .profile-list dd { margin: 0; font-weight: 700; }
-.profile-list .pin-context-indicator { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.profile-list .pin-context-indicator,
+.profile-list .pin-field-indicator { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.profile-list .pin-context-indicator small,
+.profile-list .pin-field-indicator small { color: var(--muted); font-size: 13px; font-weight: 500; line-height: 1.35; }
 .renewal-summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
 .renewal-summary div { padding: 14px; background: var(--panel-2); border-radius: 7px; }
 .renewal-summary span { display: block; color: var(--muted); font-size: 12px; }

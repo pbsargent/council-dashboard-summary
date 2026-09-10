@@ -140,7 +140,7 @@ HELP_ASSETS = (
 
 PERSON_NAME_PRIVACY_ASSET = "tools/sanitize_public_person_names.py"
 
-SCROLL_ASSET_VERSION = "20260821-scrollable-tables-v1"
+SCROLL_ASSET_VERSION = "20260910-pin-profile-details-1"
 RENEWAL_BOARD_ASSET_VERSION = "20260904-renewal-unit-columns-v1"
 SHARED_TABLE_ASSET_VERSION = "20260904-operational-sticky-headers-1"
 SHARED_TABLE_STYLE_PAGES = (
@@ -797,8 +797,10 @@ def main() -> int:
     if unit_level_path.is_file() and unit_level_script_path.is_file():
         unit_level_page = unit_level_path.read_text(encoding="utf-8")
         unit_level_script = unit_level_script_path.read_text(encoding="utf-8")
-        if "unit-level-dashboard.js?v=20260903-pin-detail-link-1" not in unit_level_page:
+        if "unit-level-dashboard.js?v=20260910-pin-profile-details-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-context script")
+        if "unit-level-dashboard.css?v=20260910-pin-profile-details-1" not in unit_level_page:
+            errors.append("unit-level.html: missing cache-busted Unit-Level PIN-detail styles")
         if "panel-help.js?v=20260630-active-help" not in unit_level_page:
             errors.append("unit-level.html: Commissioner Context PIN help must load panel help")
         for required in ('"Camping Readiness"', 'preferred: "Preferred Depth"', "CACOutdoorReadiness.depthStatus(null)"):
@@ -810,7 +812,13 @@ def main() -> int:
         for required in (
             "record.pin_details_complete === true",
             "record.pin_details_complete === false",
-            "PIN status / completeness",
+            'pinFieldSummary(record, "pin_status_complete"',
+            'pinFieldSummary(record, "pin_contact_complete"',
+            'pinFieldSummary(record, "pin_meeting_complete"',
+            "PIN status / freshness",
+            "Required PIN Details",
+            "PIN contact requirements",
+            "PIN meeting requirements",
             "Details complete",
             "Details need follow-up",
             "[unitKey(row.district, row.unit), row]",
@@ -834,7 +842,7 @@ def main() -> int:
 
     pin_documentation_contracts = {
         "README.md": ("PIN Status & Completeness", "Public `unit_pin_statuses` rows contain only Boolean completion flags", "Overview includes PIN state in Signals to Watch", "expandable individual-unit drill-down"),
-        "DASHBOARD_DATA_DICTIONARY.md": ("Required PIN Details", "pin_contact_complete", "privacy-safe individual-unit rows", "Commissioner Context repeats the status as a badge"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("Required PIN Details", "pin_contact_complete", "privacy-safe individual-unit rows", "Unit Profile repeats the status and freshness explanation"),
         "IMPLEMENTATION_RUNBOOK.md": ("PIN Status & Completeness", "Do not publish the underlying contact or meeting values", "Overview's Signals to Watch groups filtered matched rows", "expanded district unit rows"),
         "tools/build_human_data_guide.py": ("Required PIN Details is separate from freshness", "The public data contains only completion flags", "PIN state in Signals to Watch", "expandable district rows"),
     }

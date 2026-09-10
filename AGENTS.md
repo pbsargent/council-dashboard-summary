@@ -223,9 +223,13 @@ District Performance.
   status/completeness and missing-category indicators, and deep-link to the
   selected Unit-Level Detail record.
 - Preserve PIN state in Overview Signals to Watch, the direct PIN Status &
-  Completeness link in Overview Explore, and the separate status/completeness
-  badges in Unit-Level Commissioner Context. All three reuse the shared
-  privacy-safe row and established denominators.
+  Completeness link in Overview Explore, and the PIN indicators in Unit-Level
+  Detail's Unit Profile. All three reuse the shared privacy-safe row and
+  established denominators.
+- Unit-Level Detail's Unit Profile must show PIN status and freshness, overall
+  Required PIN Details, and separate privacy-safe indicators for the status,
+  contact, and meeting completion categories. These indicators must use the
+  published Boolean flags and must not expose the underlying private values.
 - Keep the builder, focused tests, validator, Dashboard Guide, README, data
   dictionary, runbook, generated calculation guide, cache-busting strings, and
   live page synchronized.

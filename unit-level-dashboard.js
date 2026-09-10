@@ -33,6 +33,13 @@ function unitDisplayName(unit) {
     .join(" ") || unit.name;
 }
 
+function pinFieldSummary(record, field, completeDetail, followUpDetail) {
+  if (!record) return { label: "n/a", detail: "No matched PIN record", tone: "warning" };
+  if (record[field] === true) return { label: "Complete", detail: completeDetail, tone: "good" };
+  if (record[field] === false) return { label: "Needs follow-up", detail: followUpDetail, tone: "danger" };
+  return { label: "Unavailable", detail: "Completion flag not available", tone: "warning" };
+}
+
 function pinSummary(unit) {
   const record = state.pinByUnit.get(unitKey(unit.district, unitDisplayName(unit)));
   const recordedStatus = typeof record === "string" ? record : record?.pin_status;
@@ -51,7 +58,12 @@ function pinSummary(unit) {
       : record.pin_details_complete === false
         ? { label: "Details need follow-up", tone: "warning" }
         : { label: "Details unavailable", tone: "warning" };
-  return { status, detail, tone, completeness };
+  const fields = {
+    status: pinFieldSummary(record, "pin_status_complete", "PIN status is recorded", "PIN status is missing"),
+    contact: pinFieldSummary(record, "pin_contact_complete", "Contact name and email or phone are recorded", "Contact name or contact method is missing"),
+    meeting: pinFieldSummary(record, "pin_meeting_complete", "Meeting location and details are recorded", "Meeting location or details are missing"),
+  };
+  return { status, detail, tone, completeness, fields };
 }
 
 function outdoorSummary(unit) {
@@ -200,11 +212,19 @@ function renderProfile() {
     ["Assigned commissioner", unit.commissioner || "Not recorded"], ["Last connection", dateLabel(unit.last_connection)], ["Last outdoor activity", dateLabel(unit.last_outdoor_date)],
   ];
   document.getElementById("unitProfile").innerHTML = `
-    <dt>PIN status / completeness</dt>
+    <dt>PIN status / freshness</dt>
     <dd class="pin-context-indicator">
       <span class="status ${chipTone(pin.tone)}">${esc(pin.status)}</span>
-      <span class="status ${chipTone(pin.completeness.tone)}">${esc(pin.completeness.label)}</span>
+      <small>${esc(pin.detail)}</small>
     </dd>
+    <dt>Required PIN Details</dt>
+    <dd class="pin-context-indicator"><span class="status ${chipTone(pin.completeness.tone)}">${esc(pin.completeness.label)}</span></dd>
+    <dt>PIN status field</dt>
+    <dd class="pin-field-indicator"><span class="status ${chipTone(pin.fields.status.tone)}">${esc(pin.fields.status.label)}</span><small>${esc(pin.fields.status.detail)}</small></dd>
+    <dt>PIN contact requirements</dt>
+    <dd class="pin-field-indicator"><span class="status ${chipTone(pin.fields.contact.tone)}">${esc(pin.fields.contact.label)}</span><small>${esc(pin.fields.contact.detail)}</small></dd>
+    <dt>PIN meeting requirements</dt>
+    <dd class="pin-field-indicator"><span class="status ${chipTone(pin.fields.meeting.tone)}">${esc(pin.fields.meeting.label)}</span><small>${esc(pin.fields.meeting.detail)}</small></dd>
     ${fields.map(([label, value]) => `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`).join("")}`;
 }
 
