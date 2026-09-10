@@ -1159,6 +1159,20 @@ def main() -> int:
         for required in ("schools_with_unit: 0", "row.unit_affiliated === true", "item.schools_with_unit += 1", "schoolsWithUnit)} / ${n(schools)}", "row.schools_with_unit)} / ${n(row.schools)}"):
             if required not in monday_script:
                 errors.append(f"monday-detail.js: missing school-affiliation rollup content {required!r}")
+        for forbidden in ("schools.filter((row) => row.unit_associated).length", "schools.filter((row) => !row.unit_associated).length"):
+            if forbidden in monday_script:
+                errors.append("monday-detail.js: school affiliation must use the verified Boolean, not exported relation text")
+
+    monday_refresher_path = root / "refresh_monday_data.py"
+    if monday_refresher_path.is_file():
+        monday_refresher = monday_refresher_path.read_text(encoding="utf-8")
+        for required in ("linked_item_ids", "unit_affiliation_affiliated_schools", "SCHOOL_AFFILIATION_METHOD", "SCHOOL_AFFILIATION_COLUMN_ID"):
+            if required not in monday_refresher:
+                errors.append(f"refresh_monday_data.py: missing hardened school-affiliation contract {required!r}")
+
+    daily_updater_path = root / "update_daily.zsh"
+    if daily_updater_path.is_file() and "schools_affiliated={}/{} schools_verified={}" not in daily_updater_path.read_text(encoding="utf-8"):
+        errors.append("update_daily.zsh: daily status must report affiliated, total, and verified school counts")
 
     if errors:
         print("Dashboard structure validation FAILED:", file=sys.stderr)

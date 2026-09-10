@@ -527,7 +527,7 @@ The page flattens all board rows into one list and adds a `board` field:
 | Youth / TAY | Council youth divided by total school TAY; program youth divided by estimated grade/age-eligible school TAY in a program view |
 | Hot Prospects | Count of filtered prospect rows; stuck and unscheduled counts are shown in the subtitle |
 | Renewals | Count of filtered renewal rows; not posted count is rows where `posted !== "Completed"` |
-| Schools | Count of filtered school rows; with-unit rate is rows with `unit_associated` divided by school rows |
+| Schools | Count of filtered school rows; with-unit rate is rows whose live relationship check produced `unit_affiliated === true`, divided by school rows |
 | Districts | Count of official districts represented in filtered rows |
 | Updated | `monday-latest.json generated_at` |
 
@@ -544,7 +544,7 @@ For the monday.com district charts and school market context:
 
 For schools assigned to multiple Scouting Districts, the page attributes the full TAY value—or the full estimated program-eligible portion—to each listed official district. This matches the visible note on the page and supports district-level context, not a council-total TAY reconciliation.
 
-The **Schools with Unit Affiliation / Total** column displays two counts from the same filtered school population. The first is the number of rows whose current monday.com Unit Associated board relationship has one or more linked item IDs; the second is the total number of school rows in the Service Area or district rollup. The daily refresh verifies a privacy-safe Boolean `unit_affiliated` value for every exported school and fails closed if live relationship coverage is incomplete. It does not interpret blank relation text in the workbook export as proof that no affiliation exists. Because multi-district schools are attributed to every listed official district, Service Area totals sum the displayed district attributions rather than deduplicating school identities across districts.
+The **Schools with Unit Affiliation / Total** column displays two counts from the same filtered school population. The first is the number of rows whose current monday.com Unit Associated board relationship has one or more linked item IDs; the second is the total number of school rows in the Service Area or district rollup. The daily refresh verifies a privacy-safe Boolean `unit_affiliated` value for every exported school and fails closed if live relationship coverage is incomplete. It also publishes and validates the exact relationship method, source column, verification timestamp, verified row count, and affiliated row count; the daily status log records affiliated, total, and verified counts. It does not interpret blank relation text in the workbook export as proof that no affiliation exists. Because multi-district schools are attributed to every listed official district, Service Area totals sum the displayed district attributions rather than deduplicating school identities across districts.
 
 District membership/TAY is computed as:
 

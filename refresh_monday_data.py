@@ -14,7 +14,11 @@ from urllib.request import Request, urlopen
 
 from openpyxl import load_workbook
 from openpyxl.utils.datetime import from_excel
-from tools.validate_monday_snapshot import validate_snapshot
+from tools.validate_monday_snapshot import (
+    SCHOOL_AFFILIATION_COLUMN_ID,
+    SCHOOL_AFFILIATION_METHOD,
+    validate_snapshot,
+)
 
 
 API_URL = "https://api.monday.com/v2"
@@ -103,6 +107,9 @@ BOARDS = {
         },
     },
 }
+
+if BOARDS["schools"]["columns"]["unit_associated"] != SCHOOL_AFFILIATION_COLUMN_ID:
+    raise RuntimeError("The configured school relationship column does not match the validated public-data contract")
 
 POPCORN_ELIGIBLE_DISTRICTS = frozenset({
     "Armadillo",
@@ -276,6 +283,9 @@ def apply_school_relation_flags(
         row["unit_affiliated"] = flags[row["item_id"]]
     board["unit_affiliation_verified_at"] = captured_at
     board["unit_affiliation_verified_schools"] = len(rows)
+    board["unit_affiliation_affiliated_schools"] = sum(flags.values())
+    board["unit_affiliation_method"] = SCHOOL_AFFILIATION_METHOD
+    board["unit_affiliation_column_id"] = SCHOOL_AFFILIATION_COLUMN_ID
 
 
 def count_labels(
@@ -718,6 +728,9 @@ def build_snapshot(token: str) -> dict[str, Any]:
                 "districts": count_labels(schools_items, schools_columns["district"], "Unassigned", split_multi=True),
                 "unit_affiliation_verified_at": generated_at,
                 "unit_affiliation_verified_schools": len(compact_schools),
+                "unit_affiliation_affiliated_schools": sum(row["unit_affiliated"] for row in compact_schools),
+                "unit_affiliation_method": SCHOOL_AFFILIATION_METHOD,
+                "unit_affiliation_column_id": SCHOOL_AFFILIATION_COLUMN_ID,
                 "rows": compact_schools,
             },
             "popcorn": popcorn_snapshot(

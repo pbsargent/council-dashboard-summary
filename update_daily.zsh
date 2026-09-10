@@ -207,7 +207,7 @@ LAST_STEP="refresh monday.com data snapshot"
 log "Refreshing monday.com data snapshot"
 if "$PYTHON" "$MONDAY_REFRESHER" --token-file "$MONDAY_TOKEN_FILE" --source-dir "$MONDAY_SOURCE_DIR" --output "${SITE_STAGE}/data/monday-latest.json"; then
   log "Updated data/monday-latest.json"
-  MONDAY_SUMMARY="$("$PYTHON" -c 'import json,sys; data=json.load(open(sys.argv[1])); boards=data["boards"]; popcorn=boards["popcorn"]; print("source={} prospects={} renewals={} schools={} popcorn={}/{}".format(data.get("source_workbook", data.get("generated_from")), boards["prospects"]["items"], boards["renewals"]["items"], boards["schools"]["items"], popcorn["committed"], popcorn["items"]))' "${SITE_STAGE}/data/monday-latest.json")"
+  MONDAY_SUMMARY="$("$PYTHON" -c 'import json,sys; data=json.load(open(sys.argv[1])); boards=data["boards"]; schools=boards["schools"]; popcorn=boards["popcorn"]; print("source={} prospects={} renewals={} schools_affiliated={}/{} schools_verified={} popcorn={}/{}".format(data.get("source_workbook", data.get("generated_from")), boards["prospects"]["items"], boards["renewals"]["items"], schools["unit_affiliation_affiliated_schools"], schools["items"], schools["unit_affiliation_verified_schools"], popcorn["committed"], popcorn["items"]))' "${SITE_STAGE}/data/monday-latest.json")"
   MONDAY_STATUS="updated data/monday-latest.json"
   print -r -- "[monday] ${MONDAY_SUMMARY}"
 else

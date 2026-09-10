@@ -55,7 +55,9 @@ Preserve **Recruitment Pipeline → School Market Context → Schools with Unit 
 
 - Determine affiliation from the live monday.com Unit Associated board relation's linked item IDs, not from workbook relation text, which may be blank even when a link exists.
 - Verify a privacy-safe Boolean affiliation flag for every exported school on every daily refresh. Missing, duplicate, partial, or non-Boolean relationship coverage must fail closed.
+- Pin the published verification metadata to `monday.com BoardRelationValue.linked_item_ids` and the approved Unit Associated relation-column ID. Require a parseable, timezone-aware verification timestamp that does not predate the snapshot, and reconcile the published affiliated and verified counts to the Boolean rows.
 - Keep the affiliated and total counts on the same active school, district, status, search, program-eligibility, and usable-TAY scope. Preserve the existing multi-district attribution behavior.
+- Keep the affiliated, total, and verified school counts in the daily refresh summary so a scheduled run leaves auditable evidence of relationship coverage.
 - Keep the panel help, Dashboard Guide, data dictionary, generated calculation guide, cache-busted JavaScript, focused monday/TAY tests, and structural validator synchronized.
 
 ## Scrollable dashboard tables

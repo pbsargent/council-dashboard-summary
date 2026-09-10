@@ -49,6 +49,10 @@ class MondayTayTests(unittest.TestCase):
         self.assertEqual(school["tay"], "1,200")
         self.assertEqual(school["grades"], "'KG-05")
         self.assertIs(school["unit_affiliated"], True)
+        school_board = snapshot["boards"]["schools"]
+        self.assertEqual(school_board["unit_affiliation_affiliated_schools"], 1)
+        self.assertEqual(school_board["unit_affiliation_method"], refresh.SCHOOL_AFFILIATION_METHOD)
+        self.assertEqual(school_board["unit_affiliation_column_id"], refresh.SCHOOL_AFFILIATION_COLUMN_ID)
         self.assertNotIn("PRIVATE VALUE", json.dumps(snapshot))
 
     def test_missing_api_tay_column_rejected(self):
@@ -62,6 +66,34 @@ class MondayTayTests(unittest.TestCase):
         relation = next(v for v in item["column_values"] if v["id"] == refresh.BOARDS["schools"]["columns"]["unit_associated"])
         relation["display_value"] = "Pack 123"
         self.assertEqual(refresh.compact_detail_items([item], "schools")[0]["unit_associated"], "Pack 123")
+
+    def test_school_relation_uses_linked_ids_not_display_text(self):
+        item = api_item("schools")
+        relation = next(v for v in item["column_values"] if v["id"] == refresh.SCHOOL_AFFILIATION_COLUMN_ID)
+        relation["display_value"] = "Pack 123"
+        relation["linked_item_ids"] = []
+        self.assertIs(refresh.school_relation_value(item), False)
+        relation.pop("linked_item_ids")
+        with self.assertRaisesRegex(RuntimeError, "missing a verified"):
+            refresh.school_relation_value(item)
+
+    def test_school_relation_query_batches_and_requires_complete_coverage(self):
+        item_ids = [str(index) for index in range(51)]
+
+        def complete_response(token, query, variables):
+            self.assertIn("linked_item_ids", query)
+            return {
+                "items": [api_item("schools", identity) for identity in variables["itemIds"]],
+            }
+
+        with patch.object(refresh, "monday_query", side_effect=complete_response) as query:
+            flags = refresh.fetch_school_relation_flags("test-token", item_ids)
+        self.assertEqual(len(flags), 51)
+        self.assertEqual([len(call.args[2]["itemIds"]) for call in query.call_args_list], [50, 1])
+
+        with patch.object(refresh, "monday_query", return_value={"items": []}):
+            with self.assertRaisesRegex(RuntimeError, "coverage is incomplete"):
+                refresh.fetch_school_relation_flags("test-token", ["1"])
 
     def test_pagination_keeps_all_schools(self):
         pages = [
@@ -118,7 +150,7 @@ class MondayTayTests(unittest.TestCase):
                 path = Path(directory) / "source.xlsx"
                 workbook.save(path)
                 snapshot = refresh.build_snapshot_from_workbook(path)
-                refresh.apply_school_relation_flags(snapshot, {"3": True}, "2026-09-10T12:00:00Z")
+                refresh.apply_school_relation_flags(snapshot, {"3": True}, snapshot["generated_at"])
                 validate_snapshot(snapshot)
                 self.assertEqual(snapshot["boards"]["schools"]["rows"][0]["tay"], "1,200")
                 self.assertIs(snapshot["boards"]["schools"]["rows"][0]["unit_affiliated"], True)
@@ -132,6 +164,22 @@ class MondayTayTests(unittest.TestCase):
         snapshot = api_snapshot()
         snapshot["boards"]["schools"]["unit_affiliation_verified_schools"] = 0
         with self.assertRaisesRegex(ValueError, "does not cover"):
+            validate_snapshot(snapshot)
+        snapshot = api_snapshot()
+        snapshot["boards"]["schools"]["unit_affiliation_affiliated_schools"] = 0
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            validate_snapshot(snapshot)
+        snapshot = api_snapshot()
+        snapshot["boards"]["schools"]["unit_affiliation_method"] = "display_value"
+        with self.assertRaisesRegex(ValueError, "method"):
+            validate_snapshot(snapshot)
+        snapshot = api_snapshot()
+        snapshot["boards"]["schools"]["unit_affiliation_column_id"] = "wrong-column"
+        with self.assertRaisesRegex(ValueError, "approved source"):
+            validate_snapshot(snapshot)
+        snapshot = api_snapshot()
+        snapshot["boards"]["schools"]["unit_affiliation_verified_at"] = "not-a-date"
+        with self.assertRaisesRegex(ValueError, "unusable"):
             validate_snapshot(snapshot)
 
 
