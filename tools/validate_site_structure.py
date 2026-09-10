@@ -1146,6 +1146,20 @@ def main() -> int:
         if path.is_file() and forbidden in path.read_text(encoding="utf-8"):
             errors.append(f"{relative}: scrollable detail rows must not be artificially truncated")
 
+    monday_page_path = root / "monday.html"
+    monday_script_path = root / "monday-detail.js"
+    if monday_page_path.is_file():
+        monday_page = monday_page_path.read_text(encoding="utf-8")
+        if "Schools with Unit Affiliation / Total" not in monday_page:
+            errors.append("monday.html: School Market Context must label affiliated and total school counts")
+        if "monday-detail.js?v=20260910-school-affiliation-count-1" not in monday_page:
+            errors.append("monday.html: missing cache-busted School Market Context script")
+    if monday_script_path.is_file():
+        monday_script = monday_script_path.read_text(encoding="utf-8")
+        for required in ("schools_with_unit: 0", "row.unit_affiliated === true", "item.schools_with_unit += 1", "schoolsWithUnit)} / ${n(schools)}", "row.schools_with_unit)} / ${n(row.schools)}"):
+            if required not in monday_script:
+                errors.append(f"monday-detail.js: missing school-affiliation rollup content {required!r}")
+
     if errors:
         print("Dashboard structure validation FAILED:", file=sys.stderr)
         for error in errors:

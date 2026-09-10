@@ -544,6 +544,8 @@ For the monday.com district charts and school market context:
 
 For schools assigned to multiple Scouting Districts, the page attributes the full TAY value—or the full estimated program-eligible portion—to each listed official district. This matches the visible note on the page and supports district-level context, not a council-total TAY reconciliation.
 
+The **Schools with Unit Affiliation / Total** column displays two counts from the same filtered school population. The first is the number of rows whose current monday.com Unit Associated board relationship has one or more linked item IDs; the second is the total number of school rows in the Service Area or district rollup. The daily refresh verifies a privacy-safe Boolean `unit_affiliated` value for every exported school and fails closed if live relationship coverage is incomplete. It does not interpret blank relation text in the workbook export as proof that no affiliation exists. Because multi-district schools are attributed to every listed official district, Service Area totals sum the displayed district attributions rather than deduplicating school identities across districts.
+
 District membership/TAY is computed as:
 
 `district youth membership / attributed district TAY`

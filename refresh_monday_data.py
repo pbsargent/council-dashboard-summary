@@ -190,7 +190,7 @@ def fetch_board_items(token: str, board_id: int, column_ids: list[str]) -> list[
               id
               text
               value
-              ... on BoardRelationValue { display_value }
+              ... on BoardRelationValue { display_value linked_item_ids }
             }
           }
         }
@@ -218,6 +218,64 @@ def column_map(item: dict[str, Any]) -> dict[str, str]:
         value.get("id"): (value.get("display_value") or value.get("text") or "").strip()
         for value in item.get("column_values", [])
     }
+
+
+def school_relation_value(item: dict[str, Any]) -> bool:
+    column_id = BOARDS["schools"]["columns"]["unit_associated"]
+    values = [value for value in item.get("column_values", []) if value.get("id") == column_id]
+    if len(values) != 1 or not isinstance(values[0].get("linked_item_ids"), list):
+        raise RuntimeError(f"School {item.get('id') or 'unknown'} is missing a verified Unit Associated relationship value")
+    return bool(values[0]["linked_item_ids"])
+
+
+def fetch_school_relation_flags(token: str, item_ids: list[str]) -> dict[str, bool]:
+    query = """
+    query FetchSchoolRelations($itemIds: [ID!], $columnIds: [String!]) {
+      items(ids: $itemIds, limit: 100) {
+        id
+        column_values(ids: $columnIds) {
+          id
+          ... on BoardRelationValue { linked_item_ids }
+        }
+      }
+    }
+    """
+    expected = [as_text(identity) for identity in item_ids]
+    if any(not identity for identity in expected) or len(set(expected)) != len(expected):
+        raise RuntimeError("School relationship verification requires unique, nonblank exported item IDs")
+    flags: dict[str, bool] = {}
+    column_id = BOARDS["schools"]["columns"]["unit_associated"]
+    for start in range(0, len(expected), 50):
+        data = monday_query(token, query, {
+            "itemIds": expected[start:start + 50],
+            "columnIds": [column_id],
+        })
+        for item in data.get("items") or []:
+            identity = as_text(item.get("id"))
+            if identity in flags:
+                raise RuntimeError(f"Duplicate school relationship result for item {identity}")
+            flags[identity] = school_relation_value(item)
+    if set(flags) != set(expected):
+        raise RuntimeError(f"School relationship coverage is incomplete: {len(flags)} of {len(expected)} exported schools verified")
+    return flags
+
+
+def apply_school_relation_flags(
+    snapshot: dict[str, Any],
+    flags: dict[str, bool],
+    captured_at: str,
+) -> None:
+    board = snapshot["boards"]["schools"]
+    rows = board["rows"]
+    identities = [as_text(row.get("item_id")) for row in rows]
+    if set(flags) != set(identities) or len(identities) != len(set(identities)):
+        raise RuntimeError(f"School relationship coverage is incomplete: {len(flags)} of {len(identities)} exported schools verified")
+    if any(type(value) is not bool for value in flags.values()):
+        raise RuntimeError("School relationship verification returned a non-Boolean affiliation flag")
+    for row in rows:
+        row["unit_affiliated"] = flags[row["item_id"]]
+    board["unit_affiliation_verified_at"] = captured_at
+    board["unit_affiliation_verified_schools"] = len(rows)
 
 
 def count_labels(
@@ -395,6 +453,7 @@ def compact_school_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         "school_district": as_text(row.get("School District")) or "Unassigned",
         "scouting_district": as_text(row.get("Scouting District")) or "Unassigned",
         "unit_associated": as_text(row.get("Unit Associated")),
+        "unit_affiliated": None,
         "tay": as_text(row.get("TAY")),
         "grades": as_text(row.get("Grades")),
         "principal_meeting": as_text(row.get("Principal Meeting")),
@@ -429,6 +488,8 @@ def compact_detail_items(items: list[dict[str, Any]], board: str) -> list[dict[s
         for field, column_id in columns.items():
             output_field = "scouting_district" if board == "schools" and field == "district" else field
             row[output_field] = values.get(column_id) or defaults.get(output_field, "")
+        if board == "schools":
+            row["unit_affiliated"] = school_relation_value(item)
         rows.append(row)
     return rows
 
@@ -618,6 +679,8 @@ def build_snapshot(token: str) -> dict[str, Any]:
     schools_items = fetch_board_items(token, BOARDS["schools"]["id"], list(BOARDS["schools"]["columns"].values()))
     popcorn_items = fetch_board_items(token, BOARDS["popcorn"]["id"], list(BOARDS["popcorn"]["columns"].values()))
     compact_popcorn = compact_popcorn_items(popcorn_items)
+    compact_schools = compact_detail_items(schools_items, "schools")
+    generated_at = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
     prospects_columns = BOARDS["prospects"]["columns"]
     renewals_columns = BOARDS["renewals"]["columns"]
@@ -625,7 +688,7 @@ def build_snapshot(token: str) -> dict[str, Any]:
 
     return {
         "generated_from": "monday.com API",
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "generated_at": generated_at,
         "boards": {
             "prospects": {
                 "name": BOARDS["prospects"]["name"],
@@ -653,7 +716,9 @@ def build_snapshot(token: str) -> dict[str, Any]:
                 "items": len(schools_items),
                 "status": count_labels(schools_items, schools_columns["status"]),
                 "districts": count_labels(schools_items, schools_columns["district"], "Unassigned", split_multi=True),
-                "rows": compact_detail_items(schools_items, "schools"),
+                "unit_affiliation_verified_at": generated_at,
+                "unit_affiliation_verified_schools": len(compact_schools),
+                "rows": compact_schools,
             },
             "popcorn": popcorn_snapshot(
                 compact_popcorn,
@@ -676,6 +741,14 @@ def main() -> int:
     if workbook_path:
         try:
             snapshot = build_snapshot_from_workbook(workbook_path)
+            token = read_token(args.token_file)
+            school_rows = snapshot["boards"]["schools"]["rows"]
+            flags = fetch_school_relation_flags(token, [row["item_id"] for row in school_rows])
+            apply_school_relation_flags(
+                snapshot,
+                flags,
+                datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+            )
             validate_snapshot(snapshot)
         except Exception as error:
             print(f"Workbook refresh failed ({error}); falling back to monday.com API.", file=sys.stderr)

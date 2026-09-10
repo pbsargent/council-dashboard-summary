@@ -17,6 +17,14 @@ def validate_snapshot(snapshot: dict) -> None:
         if any(not identity for identity in ids) or len(set(ids)) != len(ids):
             raise ValueError(f"{name}: missing or duplicate item IDs")
     schools = boards["schools"]["rows"]
+    affiliation_flags = [row.get("unit_affiliated") for row in schools]
+    if any(type(value) is not bool for value in affiliation_flags):
+        raise ValueError("schools: every exported school must have a verified Boolean unit-affiliation flag")
+    school_board = boards["schools"]
+    if school_board.get("unit_affiliation_verified_schools") != len(schools):
+        raise ValueError("schools: unit-affiliation verification count does not cover every exported school")
+    if not str(school_board.get("unit_affiliation_verified_at") or "").strip():
+        raise ValueError("schools: unit-affiliation verification timestamp is missing")
     total = 0.0
     for row in schools:
         if not all(key in row for key in ("tay", "grades", "scouting_district")):

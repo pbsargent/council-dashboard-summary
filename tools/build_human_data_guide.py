@@ -787,6 +787,7 @@ def build_doc():
     add_bullet(doc, "Council Youth / TAY uses raw school-row TAY once per school row.")
     add_bullet(doc, "District Youth / TAY attributes a school's full TAY to each official Scouting District listed for that school.")
     add_bullet(doc, "Program Youth / TAY uses actual youth from units of the selected type and estimates eligible TAY by allocating each school's total evenly across its published grade or age span.")
+    add_bullet(doc, "Recruitment Pipeline shows Schools with Unit Affiliation / Total as verified current monday.com board relationships divided by all schools in the same TAY rollup. The daily refresh checks every exported school and does not interpret blank exported relation text as no affiliation.")
     add_bullet(doc, "This means district TAY context is useful for district comparison, but district TAY values should not be summed and treated as the council total.")
     add_bullet(doc, "Official district views exclude non-official labels such as Unassigned when comparing districts.")
     add_table(

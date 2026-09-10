@@ -304,7 +304,7 @@ function renderKpis() {
   const stuckProspects = prospects.filter((row) => row.status === "Stuck").length;
   const unscheduled = prospects.filter((row) => row.projected_start === "Unscheduled").length;
   const notPosted = renewals.filter((row) => row.posted !== "Completed").length;
-  const schoolsWithUnits = schools.filter((row) => row.unit_associated).length;
+  const schoolsWithUnits = schools.filter((row) => row.unit_affiliated === true).length;
 
   const tiles = [
     [ProgramFilter.isCouncil() ? "Youth / TAY" : "Youth / Est. TAY", p(tay.pct), `${n(tay.members)} youth of ${n(Math.round(tay.tay))} ${ProgramFilter.isCouncil() ? "TAY" : "estimated TAY"}`, "teal"],
@@ -377,7 +377,7 @@ function renderSignals() {
   const schools = rows.filter((row) => row.board === "schools");
   const stuck = prospects.filter((row) => row.status === "Stuck").length;
   const unposted = renewals.filter((row) => row.posted !== "Completed").length;
-  const noUnit = schools.filter((row) => !row.unit_associated).length;
+  const noUnit = schools.filter((row) => row.unit_affiliated === false).length;
   const overdueProspectExamples = prospects
     .filter((row) => row.status === "Stuck" || row.projected_start === "Unscheduled")
     .slice(0, 3)
@@ -439,10 +439,11 @@ function tayRollups() {
       if (!official.has(label)) continue;
       if (district && label !== district) continue;
       if (!rollups.has(label)) {
-        rollups.set(label, { district: label, schools: 0, tay: 0, members: memberByDistrict.get(label) || null });
+        rollups.set(label, { district: label, schools: 0, schools_with_unit: 0, tay: 0, members: memberByDistrict.get(label) || null });
       }
       const item = rollups.get(label);
       item.schools += 1;
+      if (row.unit_affiliated === true) item.schools_with_unit += 1;
       item.tay += estimate.value;
     }
   }
@@ -466,13 +467,14 @@ function renderTayRows() {
   const forceOpen = Boolean(document.getElementById("districtSelect").value || document.getElementById("searchInput").value.trim());
   document.getElementById("tayRows").innerHTML = serviceAreaGroups(rows, "district").map((service) => {
     const schools = service.rows.reduce((sum, row) => sum + (row.schools || 0), 0);
+    const schoolsWithUnit = service.rows.reduce((sum, row) => sum + (row.schools_with_unit || 0), 0);
     const tay = service.rows.reduce((sum, row) => sum + (row.tay || 0), 0);
     const members = service.rows.reduce((sum, row) => sum + (row.members || 0), 0);
     const open = forceOpen || state.openServiceAreas.has(service.name);
     const serviceRow = `
     <tr class="service-area-row">
       <td><button class="service-toggle" type="button" data-service-area="${esc(service.name)}"><span class="disclosure">${open ? "-" : "+"}</span><strong>${esc(service.name)}</strong></button><div class="subtle">${n(service.rows.length)} districts · ${esc(service.fieldDirector || "No field director")}</div></td>
-      <td class="num">${n(schools)}</td>
+      <td class="num" aria-label="${n(schoolsWithUnit)} schools with a unit affiliation out of ${n(schools)} total schools">${n(schoolsWithUnit)} / ${n(schools)}</td>
       <td class="num">${n(Math.round(tay))}</td>
       <td class="num">${n(members)}</td>
       <td class="num"><span class="status ${tay ? members / tay >= .03 ? "good" : members / tay >= .015 ? "warn" : "bad" : "warn"}">${tay ? p(members / tay) : "n/a"}</span></td>
@@ -480,7 +482,7 @@ function renderTayRows() {
     const detailRows = open ? service.rows.map((row) => `
     <tr>
       <td><strong>${esc(row.district)}</strong></td>
-      <td class="num">${n(row.schools)}</td>
+      <td class="num" aria-label="${n(row.schools_with_unit)} schools with a unit affiliation out of ${n(row.schools)} total schools">${n(row.schools_with_unit)} / ${n(row.schools)}</td>
       <td class="num">${n(Math.round(row.tay))}</td>
       <td class="num">${row.members == null ? "n/a" : n(row.members)}</td>
       <td class="num"><span class="status ${row.membership_pct == null ? "warn" : row.membership_pct >= .03 ? "good" : row.membership_pct >= .015 ? "warn" : "bad"}">${row.membership_pct == null ? "n/a" : p(row.membership_pct)}</span></td>

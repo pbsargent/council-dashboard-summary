@@ -20,7 +20,12 @@ def api_item(board, identity="1"):
         "id": identity, "name": "Pack 123" if board == "popcorn" else "Example",
         "updated_at": "2026-09-03T12:00:00Z", "group": {"title": "Current"},
         "column_values": [
-            {"id": column, "text": texts.get(field, ""), "value": None}
+            {
+                "id": column,
+                "text": texts.get(field, ""),
+                "value": None,
+                **({"linked_item_ids": ["987"]} if field == "unit_associated" else {}),
+            }
             for field, column in refresh.BOARDS[board]["columns"].items()
         ] + [{"id": "private_contact", "text": "PRIVATE VALUE"}],
     }
@@ -43,6 +48,7 @@ class MondayTayTests(unittest.TestCase):
         school = snapshot["boards"]["schools"]["rows"][0]
         self.assertEqual(school["tay"], "1,200")
         self.assertEqual(school["grades"], "'KG-05")
+        self.assertIs(school["unit_affiliated"], True)
         self.assertNotIn("PRIVATE VALUE", json.dumps(snapshot))
 
     def test_missing_api_tay_column_rejected(self):
@@ -112,9 +118,21 @@ class MondayTayTests(unittest.TestCase):
                 path = Path(directory) / "source.xlsx"
                 workbook.save(path)
                 snapshot = refresh.build_snapshot_from_workbook(path)
+                refresh.apply_school_relation_flags(snapshot, {"3": True}, "2026-09-10T12:00:00Z")
                 validate_snapshot(snapshot)
                 self.assertEqual(snapshot["boards"]["schools"]["rows"][0]["tay"], "1,200")
+                self.assertIs(snapshot["boards"]["schools"]["rows"][0]["unit_affiliated"], True)
                 self.assertEqual(snapshot["boards"]["prospects"]["rows"][0]["posted"], "Complete")
+
+    def test_school_relation_verification_fails_closed(self):
+        snapshot = api_snapshot()
+        snapshot["boards"]["schools"]["rows"][0]["unit_affiliated"] = None
+        with self.assertRaisesRegex(ValueError, "verified Boolean"):
+            validate_snapshot(snapshot)
+        snapshot = api_snapshot()
+        snapshot["boards"]["schools"]["unit_affiliation_verified_schools"] = 0
+        with self.assertRaisesRegex(ValueError, "does not cover"):
+            validate_snapshot(snapshot)
 
 
 if __name__ == "__main__":

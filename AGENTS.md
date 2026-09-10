@@ -49,6 +49,15 @@ The older standalone Codex task `daily-fall-recruitment-dashboard-refresh` is re
 
 The end-to-end test completed on 2026-08-14 with published commit `7d5c552fff90a15a6e2e848efbe39d53a07d7572`. The test observed 732 board items, 350 eligible items, 128 scheduled recruitments, and 34,191 total materials. These counts are evidence that the workflow worked on that date, not fixed expectations for future runs.
 
+## School Market Context unit-affiliation contract
+
+Preserve **Recruitment Pipeline → School Market Context → Schools with Unit Affiliation / Total** as the verified affiliated-school count alongside the total school count for every Service Area and district rollup.
+
+- Determine affiliation from the live monday.com Unit Associated board relation's linked item IDs, not from workbook relation text, which may be blank even when a link exists.
+- Verify a privacy-safe Boolean affiliation flag for every exported school on every daily refresh. Missing, duplicate, partial, or non-Boolean relationship coverage must fail closed.
+- Keep the affiliated and total counts on the same active school, district, status, search, program-eligibility, and usable-TAY scope. Preserve the existing multi-district attribution behavior.
+- Keep the panel help, Dashboard Guide, data dictionary, generated calculation guide, cache-busted JavaScript, focused monday/TAY tests, and structural validator synchronized.
+
 ## Scrollable dashboard tables
 
 Preserve the nested scrolling behavior added on 2026-08-21. Long tables must remain fully available inside bounded dashboard blocks instead of making the panel grow indefinitely or clipping rows.
