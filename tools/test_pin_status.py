@@ -17,6 +17,8 @@ if SPEC is None or SPEC.loader is None:
 BUILD_SITE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BUILD_SITE)
 
+from validate_site_structure import validate_unit_pin_snapshot
+
 
 class PinDisplayStatusTests(unittest.TestCase):
     AS_OF = date(2026, 8, 31)
@@ -99,6 +101,80 @@ class PinFieldCompletenessTests(unittest.TestCase):
 
     def test_unmatched_pin_has_no_complete_fields(self) -> None:
         self.assertFalse(any(BUILD_SITE.pin_field_completeness(None).values()))
+
+
+class PinSourceWorksheetTests(unittest.TestCase):
+    def test_pin_lookup_rejects_empty_duplicate_or_incomplete_sources(self) -> None:
+        with self.assertRaisesRegex(ValueError, "no data rows"):
+            BUILD_SITE.build_pin_lookup([])
+        with self.assertRaisesRegex(ValueError, "missing required fields"):
+            BUILD_SITE.build_pin_lookup([{"unitid": 1}])
+
+        complete = {field: "value" for field in BUILD_SITE.PIN_SOURCE_FIELDS}
+        complete["unitid"] = 1
+        with self.assertRaisesRegex(ValueError, "duplicate unitid"):
+            BUILD_SITE.build_pin_lookup([complete, dict(complete)])
+
+    def test_pin_lookup_keeps_one_valid_row_per_unit_id(self) -> None:
+        row = {field: "value" for field in BUILD_SITE.PIN_SOURCE_FIELDS}
+        row["unitid"] = 371266
+        self.assertEqual(BUILD_SITE.build_pin_lookup([row]), {"371266": row})
+
+
+class PublishedPinBundleTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.latest = {
+            "generated_date": "2026-09-10",
+            "dashboard": {
+                "unit_pin_statuses": [{
+                    "district": "Armadillo",
+                    "unit": "Pack 14 F",
+                    "unit_type": "Pack",
+                    "pin_status": "Active",
+                    "pin_status_complete": True,
+                    "pin_contact_complete": True,
+                    "pin_meeting_complete": False,
+                    "pin_details_complete": False,
+                }],
+            },
+        }
+        self.unit_level = {
+            "data_date": "2026-09-10",
+            "units": [{
+                "district": "Armadillo 02",
+                "unit_type": "Pack",
+                "number": 14,
+                "gender": "F",
+                "name": "Pack 14 F",
+            }, {
+                "district": "Armadillo 02",
+                "unit_type": "Troop",
+                "number": 3,
+                "gender": "B",
+                "name": "Troop 3 B",
+            }],
+        }
+
+    def test_valid_bundle_allows_explicitly_unmatched_units(self) -> None:
+        self.assertEqual(validate_unit_pin_snapshot(self.latest, self.unit_level), [])
+
+    def test_mixed_date_or_empty_pin_bundle_fails(self) -> None:
+        self.unit_level["data_date"] = "2026-09-09"
+        self.latest["dashboard"]["unit_pin_statuses"] = []
+        errors = validate_unit_pin_snapshot(self.latest, self.unit_level)
+        self.assertTrue(any("same report date" in error for error in errors))
+        self.assertTrue(any("cannot be empty" in error for error in errors))
+
+    def test_duplicate_unknown_or_private_pin_rows_fail(self) -> None:
+        row = dict(self.latest["dashboard"]["unit_pin_statuses"][0])
+        self.latest["dashboard"]["unit_pin_statuses"] = [row, dict(row)]
+        errors = validate_unit_pin_snapshot(self.latest, self.unit_level)
+        self.assertTrue(any("duplicates unit identity" in error for error in errors))
+
+        private_row = dict(row, contact_name="Private Person")
+        self.latest["dashboard"]["unit_pin_statuses"] = [private_row]
+        errors = validate_unit_pin_snapshot(self.latest, self.unit_level)
+        self.assertTrue(any("privacy-safe" in error for error in errors))
 
 
 if __name__ == "__main__":

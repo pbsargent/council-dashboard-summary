@@ -267,6 +267,99 @@ def validate_unit_key3_snapshot(payload: dict, expected_unit_count: int | None =
     return errors
 
 
+def clean_district_identity(value: object) -> str:
+    return re.sub(r"\s+\d+$", "", str(value or "").strip())
+
+
+def unit_level_identity(row: dict) -> tuple[str, str]:
+    display_name = " ".join(
+        str(value).strip()
+        for value in (row.get("unit_type"), row.get("number"), row.get("gender"))
+        if value not in (None, "")
+    ) or str(row.get("name") or "").strip()
+    return clean_district_identity(row.get("district")), display_name
+
+
+def validate_unit_pin_snapshot(latest_payload: dict, unit_level_payload: dict) -> list[str]:
+    """Reject mixed, empty, duplicate, or privacy-unsafe daily PIN bundles."""
+    errors: list[str] = []
+    latest_date = latest_payload.get("generated_date")
+    unit_level_date = unit_level_payload.get("data_date")
+    if not isinstance(latest_date, str) or not isinstance(unit_level_date, str):
+        errors.append("daily PIN bundles must include generated_date and data_date")
+    elif latest_date != unit_level_date:
+        errors.append(
+            "daily PIN and Unit-Level bundles must have the same report date "
+            f"({latest_date!r} != {unit_level_date!r})"
+        )
+
+    dashboard = latest_payload.get("dashboard")
+    pin_rows = dashboard.get("unit_pin_statuses") if isinstance(dashboard, dict) else None
+    unit_rows = unit_level_payload.get("units")
+    if not isinstance(unit_rows, list):
+        return errors + ["data/unit-level-latest.json: units must be a list"]
+    if not isinstance(pin_rows, list):
+        return errors + ["data/latest.json: dashboard.unit_pin_statuses must be a list"]
+    if unit_rows and not pin_rows:
+        errors.append("data/latest.json: unit_pin_statuses cannot be empty when Unit-Level units exist")
+
+    unit_keys: dict[tuple[str, str], dict] = {}
+    for index, row in enumerate(unit_rows):
+        if not isinstance(row, dict):
+            errors.append(f"data/unit-level-latest.json: units[{index}] must be an object")
+            continue
+        identity = unit_level_identity(row)
+        if not all(identity):
+            errors.append(f"data/unit-level-latest.json: units[{index}] has an incomplete unit identity")
+        elif identity in unit_keys:
+            errors.append(f"data/unit-level-latest.json: units[{index}] duplicates unit identity {identity!r}")
+        unit_keys[identity] = row
+
+    allowed_fields = {
+        "district", "unit", "unit_type", "pin_status",
+        "pin_status_complete", "pin_contact_complete",
+        "pin_meeting_complete", "pin_details_complete",
+    }
+    pin_keys: set[tuple[str, str]] = set()
+    for index, row in enumerate(pin_rows):
+        label = f"data/latest.json: unit_pin_statuses[{index}]"
+        if not isinstance(row, dict):
+            errors.append(f"{label} must be an object")
+            continue
+        if set(row) != allowed_fields:
+            errors.append(f"{label} may contain only privacy-safe PIN status and completion fields")
+            continue
+
+        identity = (clean_district_identity(row.get("district")), str(row.get("unit") or "").strip())
+        if not all(identity):
+            errors.append(f"{label} has an incomplete unit identity")
+        elif identity in pin_keys:
+            errors.append(f"{label} duplicates unit identity {identity!r}")
+        elif identity not in unit_keys:
+            errors.append(f"{label} does not match a Unit-Level unit {identity!r}")
+        elif row.get("unit_type") != unit_keys[identity].get("unit_type"):
+            errors.append(f"{label}.unit_type does not match the Unit-Level unit")
+        pin_keys.add(identity)
+
+        flags = (
+            row.get("pin_status_complete"),
+            row.get("pin_contact_complete"),
+            row.get("pin_meeting_complete"),
+            row.get("pin_details_complete"),
+        )
+        if any(type(value) is not bool for value in flags):
+            errors.append(f"{label} completion flags must be Boolean")
+            continue
+        if row.get("pin_details_complete") != all(flags[:3]):
+            errors.append(f"{label}.pin_details_complete must equal all three category flags")
+        status = row.get("pin_status")
+        if status not in {"Active", "Inactive", "Stale", None}:
+            errors.append(f"{label}.pin_status must be Active, Inactive, Stale, or null")
+        if status is None and row.get("pin_status_complete"):
+            errors.append(f"{label}.pin_status_complete cannot be true when pin_status is null")
+    return errors
+
+
 def main() -> int:
     root = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
     errors: list[str] = []
@@ -277,18 +370,20 @@ def main() -> int:
         except (OSError, ValueError, TypeError, KeyError) as error:
             errors.append(f"monday-latest.json: {error}")
         try:
+            latest_payload = json.loads((root / "data/latest.json").read_text(encoding="utf-8"))
             unit_level_payload = json.loads((root / "data/unit-level-latest.json").read_text(encoding="utf-8"))
             unit_level_rows = unit_level_payload.get("units")
             if not isinstance(unit_level_rows, list):
                 raise ValueError("units must be a list")
             errors.extend(
                 validate_unit_key3_snapshot(
-                    json.loads((root / "data/latest.json").read_text(encoding="utf-8")),
+                    latest_payload,
                     len(unit_level_rows),
                 )
             )
+            errors.extend(validate_unit_pin_snapshot(latest_payload, unit_level_payload))
         except (OSError, ValueError, TypeError, KeyError) as error:
-            errors.append(f"Unit Key 3 data: {error}")
+            errors.append(f"Unit-Level data: {error}")
 
     for relative in REQUIRED_ASSETS:
         path = root / relative

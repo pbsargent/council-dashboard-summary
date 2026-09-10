@@ -103,6 +103,8 @@ Preserve `syncOperationalUnitHeaders`, the measured sticky-header offset, resize
 
 Overview's Signals to Watch groups filtered matched rows into Active, Inactive, and Stale, derives unmatched as tracked units minus matched rows, and shows PIN Currency using the same denominator. The Overview Explore panel links directly to `pin-status.html`. Unit-Level Detail stores the complete matched `unit_pin_statuses` row. Unit Profile renders PIN status and freshness, overall Required PIN Details, and separate status, contact, and meeting completion indicators from the published Boolean flags. Do not infer completeness from freshness, combine the category flags, or expose the underlying private values.
 
+The daily PIN source is the `Pin` tab in the dated OneDrive `Dashboard - CAC.xlsx` workbook downloaded by the normal intake step. It is not a separate report in the Council Summary pipeline and must not be read from the Unit Level Metrics workbook. The `--require-data` publication gate calls `validate_unit_pin_snapshot` to require same-date Council/PIN and Unit-Level bundles, a nonempty PIN population when units exist, exact privacy-safe fields, Boolean completion flags, unique PIN identities, and no PIN identity outside the Unit-Level population. Unmatched Unit-Level units remain valid and display `n/a`.
+
 The focused safeguards are `tools/test_pin_status.py`, `tools/test_pin_status_page.js`, `tools/test_unit_health_pin_funnel.js`, `tools/test_unit_level_pin_status.js`, and the PIN assertions in `tools/validate_site_structure.py`. Keep the Help page, Markdown data dictionary, reader-facing DOCX/PDF guide, and documentation ZIP synchronized with this contract.
 
 ### Persistent Unit Key 3 Coverage Contract

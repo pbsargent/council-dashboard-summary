@@ -203,6 +203,16 @@ scorecard → Operational Detail**.
 Preserve `pin-status.html` as the **PIN Status & Completeness** child page under
 District Performance.
 
+- The normal daily source is the `Pin` tab inside that day's downloaded
+  `YYYY-MM-DD_Dashboard - CAC.xlsx` OneDrive workbook. Do not introduce a
+  separate PIN file into the Council Summary publication path or substitute
+  the Unit Level Metrics workbook for this source.
+- A daily Pages payload must stage `data/latest.json` and
+  `data/unit-level-latest.json` from the same report date. The PIN rows must be
+  nonempty when Unit-Level units exist, contain one privacy-safe row per
+  matched identity, have no duplicate or extraneous unit identities, and use
+  Boolean completion flags. Preserve the fail-closed checks in
+  `validate_unit_pin_snapshot` and their focused tests.
 - Keep freshness and field completeness separate. PIN Currency uses matched
   current `Active` or `Inactive` rows divided by all tracked units. Required
   PIN Details uses matched rows where `pin_details_complete` is true divided
