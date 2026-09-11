@@ -467,6 +467,8 @@ def main() -> int:
         errors.append("update_daily.zsh: missing mandatory monday detail/TAY publication validation")
     if updater_path.is_file():
         updater_source = updater_path.read_text(encoding="utf-8")
+        if 'test_unit_level_pin_status.js' not in updater_source:
+            errors.append("update_daily.zsh: publication gate must execute the focused Unit Profile PIN test")
         for required in (
             'PERSON_NAME_SANITIZER="${SUMMARY_REPO}/tools/sanitize_public_person_names.py"',
             '"$PYTHON" "$PERSON_NAME_SANITIZER" "$SITE_STAGE"',
@@ -990,8 +992,13 @@ def main() -> int:
         ):
             if required not in unit_level_script:
                 errors.append(f"unit-level-dashboard.js: missing Commissioner Context PIN completeness contract {required!r}")
-        if unit_level_script.index("PIN status / freshness") > unit_level_script.index("Last Updated") or unit_level_script.index("Last Updated") > unit_level_script.index("Required PIN Details"):
+        profile_order = ("PIN status / freshness", "Last Updated", "Required PIN Details")
+        profile_positions = [unit_level_script.find(label) for label in profile_order]
+        if all(position >= 0 for position in profile_positions) and profile_positions != sorted(profile_positions):
             errors.append("unit-level-dashboard.js: Unit Profile must show Last Updated between PIN status / freshness and Required PIN Details")
+        for required in ('match(/^(\\d{4})-(\\d{2})-(\\d{2})$/)', 'new Intl.DateTimeFormat("en-US"', '<dd>${esc(pin.lastUpdated)}</dd>'):
+            if required not in unit_level_script:
+                errors.append(f"unit-level-dashboard.js: missing strict Unit Profile Last Updated display contract {required!r}")
         for required in ("Last Updated shows the privacy-safe calendar date directly below status and freshness", "no raw timestamp, contact, or meeting values are published"):
             if required not in unit_level_page:
                 errors.append(f"unit-level.html: missing Unit Profile Last Updated help contract {required!r}")
@@ -1009,10 +1016,10 @@ def main() -> int:
                 errors.append(f"{relative}: missing camping-readiness documentation contract {phrase!r}")
 
     pin_documentation_contracts = {
-        "README.md": ("PIN Status & Completeness", "privacy-safe `pin_last_updated` calendar date", "Overview includes PIN state in Signals to Watch", "expandable individual-unit drill-down"),
-        "DASHBOARD_DATA_DICTIONARY.md": ("Required PIN Details", "pin_last_updated", "privacy-safe individual-unit rows", "Unit Profile repeats the status and freshness explanation"),
-        "IMPLEMENTATION_RUNBOOK.md": ("PIN Status & Completeness", "Do not publish the raw source timestamp or the underlying contact or meeting values", "Overview's Signals to Watch groups filtered matched rows", "PIN Status, Last Updated, and Required PIN Details"),
-        "tools/build_human_data_guide.py": ("Required PIN Details is separate from freshness", "The public data contains only the last-updated date and completion flags", "PIN state in Signals to Watch", "Last Updated"),
+        "README.md": ("PIN Status & Completeness", "privacy-safe `pin_last_updated` calendar date", "Overview includes PIN state in Signals to Watch", "expandable individual-unit drill-down", "Last Updated directly beneath that line"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("Required PIN Details", "pin_last_updated", "privacy-safe individual-unit rows", "places Last Updated directly below it"),
+        "IMPLEMENTATION_RUNBOOK.md": ("PIN Status & Completeness", "Do not publish the raw source timestamp or the underlying contact or meeting values", "Overview's Signals to Watch groups filtered matched rows", "PIN Status, Last Updated, and Required PIN Details", "Last Updated immediately below it"),
+        "tools/build_human_data_guide.py": ("Required PIN Details is separate from freshness", "The public data contains only the last-updated date and completion flags", "PIN state in Signals to Watch", "Unit Profile shows Last Updated directly below PIN status and freshness"),
     }
     for relative, required_phrases in pin_documentation_contracts.items():
         source = (root / relative).read_text(encoding="utf-8")

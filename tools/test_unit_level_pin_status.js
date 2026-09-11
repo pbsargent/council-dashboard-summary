@@ -23,7 +23,7 @@ assert.equal(vm.runInContext('preferredUnit([{ unit_id: 1 }, { unit_id: 2 }], 2,
 assert.equal(vm.runInContext('preferredUnit([{ unit_id: 1 }, { unit_id: 2 }], 9, 1).unit_id', context), 1, "unknown deep links fall back to the configured default");
 vm.runInContext(`
   state.pinByUnit = new Map([
-    ["Armadillo|Crew 4", { pin_status: "Active", pin_last_updated: "2026-09-09", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: true }],
+    ["Armadillo|Crew 4", { pin_status: "Active", pin_last_updated: "2026-09-09", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: true, private_contact_name: "Do Not Publish", private_meeting_location: "Private Location" }],
     ["Armadillo|Crew 3", { pin_status: "Inactive", pin_last_updated: "2026-06-30", pin_status_complete: true, pin_contact_complete: false, pin_meeting_complete: true, pin_details_complete: false }],
     ["Armadillo|Crew 8787", { pin_status: "Stale", pin_last_updated: null, pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: false, pin_details_complete: false }],
     ["Armadillo|Crew 99", { pin_status: "Stale", pin_last_updated: "2026-02-30", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: false, pin_details_complete: false }],
@@ -77,6 +77,8 @@ context.document = { getElementById(id) { return id === "unitProfile" ? unitProf
 vm.runInContext("renderProfile()", context);
 assert.match(unitProfile.innerHTML, /PIN status \/ freshness/);
 assert.match(unitProfile.innerHTML, /<dt>Last Updated<\/dt>\s*<dd>Sep 9, 2026<\/dd>/);
+assert.doesNotMatch(unitProfile.innerHTML, /2026-09-09/);
+assert.doesNotMatch(unitProfile.innerHTML, /Do Not Publish|Private Location/);
 assert.match(unitProfile.innerHTML, /Required PIN Details/);
 assert.ok(unitProfile.innerHTML.indexOf("PIN status / freshness") < unitProfile.innerHTML.indexOf("Last Updated"));
 assert.ok(unitProfile.innerHTML.indexOf("Last Updated") < unitProfile.innerHTML.indexOf("Required PIN Details"));

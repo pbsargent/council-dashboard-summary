@@ -263,7 +263,10 @@ District Performance.
   PIN row and must not expose the raw timestamp or underlying private values.
 - Keep the builder, focused tests, validator, Dashboard Guide, README, data
   dictionary, runbook, generated calculation guide, cache-busting strings, and
-  live page synchronized.
+  live page synchronized. The daily publisher must execute the focused
+  Unit-Level PIN rendering test before staging a release; a missing label,
+  incorrect row order, invalid date-state display, or exposed private PIN value
+  must fail closed.
 - Keep the expanded unit column headings visible below the district headings
   during both outer-table and inner-unit scrolling, including Safari. Preserve
   the measured header offset, resize handling, and scoped stacking safeguards;
