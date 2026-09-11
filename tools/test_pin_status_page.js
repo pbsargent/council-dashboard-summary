@@ -37,10 +37,10 @@ const dashboard = {
     { district: "Beta", units: 2 },
   ],
   unit_pin_statuses: [
-    { district: "Alpha", unit: "Pack 1 F", unit_type: "Pack", pin_status: "Active", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: true },
-    { district: "Alpha", unit: "Pack 2 F", unit_type: "Pack", pin_status: "Inactive", pin_status_complete: true, pin_contact_complete: false, pin_meeting_complete: true, pin_details_complete: false },
-    { district: "Beta", unit: "Troop 4 F", unit_type: "Troop", pin_status: "Stale", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: true },
-    { district: "Beta", unit: "Troop 5 B", unit_type: "Troop", pin_status: "Stale", pin_status_complete: false, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: false },
+    { district: "Alpha", unit: "Pack 1 F", unit_type: "Pack", pin_status: "Active", pin_last_updated: "2026-09-09", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: true },
+    { district: "Alpha", unit: "Pack 2 F", unit_type: "Pack", pin_status: "Inactive", pin_last_updated: "2026-06-30", pin_status_complete: true, pin_contact_complete: false, pin_meeting_complete: true, pin_details_complete: false },
+    { district: "Beta", unit: "Troop 4 F", unit_type: "Troop", pin_status: "Stale", pin_last_updated: "2025-08-30", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: true },
+    { district: "Beta", unit: "Troop 5 B", unit_type: "Troop", pin_status: "Stale", pin_last_updated: null, pin_status_complete: false, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: false },
   ],
 };
 const unitData = {
@@ -67,10 +67,14 @@ assert.equal(council.detailGaps, 2);
 const alphaUnits = councilRows.find((row) => row.district === "Alpha").unitRows;
 assert.deepEqual(JSON.parse(JSON.stringify(alphaUnits.map((row) => row.unit))), ["Troop 3 B", "Pack 2 F", "Pack 1 F"], "unit detail prioritizes no PIN, Inactive, then complete Active");
 assert.equal(alphaUnits[0].pinStatus, "n/a");
+assert.equal(alphaUnits[0].lastUpdated, null, "unmatched units do not fabricate a PIN update date");
 assert.deepEqual(JSON.parse(JSON.stringify(alphaUnits[0].missing)), ["No matched PIN"]);
 assert.equal(alphaUnits[1].detailsComplete, false);
+assert.equal(alphaUnits[1].lastUpdated, "2026-06-30");
 assert.deepEqual(JSON.parse(JSON.stringify(alphaUnits[1].missing)), ["Contact"]);
 assert.equal(alphaUnits[2].detailsComplete, true);
+assert.equal(api.formatLastUpdated(alphaUnits[2].lastUpdated), "Sep 9, 2026");
+assert.equal(api.formatLastUpdated("2026-02-30"), null, "invalid calendar dates are not displayed");
 assert.deepEqual(JSON.parse(JSON.stringify(alphaUnits[2].missing)), []);
 assert.equal(alphaUnits[2].unitId, 1, "unit detail retains the Unit-Level Detail deep-link identifier");
 const betaUnits = councilRows.find((row) => row.district === "Beta").unitRows;

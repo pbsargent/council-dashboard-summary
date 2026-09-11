@@ -216,7 +216,7 @@
 }
 
 .pin-unit-table {
-  min-width: 760px;
+  min-width: 900px;
 }
 
 .pin-table > thead > tr > th {
@@ -231,6 +231,11 @@
 .pin-unit-table th,
 .pin-unit-table td {
   padding: 8px 10px;
+}
+
+.pin-last-updated {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .pin-unit-link {

@@ -222,7 +222,8 @@ District Performance.
   `data/unit-level-latest.json` from the same report date. The PIN rows must be
   nonempty when Unit-Level units exist, contain one privacy-safe row per
   matched identity, have no duplicate or extraneous unit identities, and use
-  Boolean completion flags. Preserve the fail-closed checks in
+  the privacy-safe `pin_last_updated` calendar date plus Boolean completion
+  flags. Never publish the raw timestamp. Preserve the fail-closed checks in
   `validate_unit_pin_snapshot` and their focused tests.
 - Keep freshness and field completeness separate. PIN Currency uses matched
   current `Active` or `Inactive` rows divided by all tracked units. Required
@@ -236,16 +237,18 @@ District Performance.
   one contact method (email or phone), meeting location, and meeting details
   are present. Website, fee, fundraising, and availability fields are not
   counted unless this product definition is explicitly revised.
-- Publish only the Boolean flags `pin_status_complete`,
+- Publish only the privacy-safe `pin_last_updated` calendar date and the Boolean flags `pin_status_complete`,
   `pin_contact_complete`, `pin_meeting_complete`, and
-  `pin_details_complete`. Never publish the underlying PIN contact names,
-  email addresses, phone numbers, meeting locations, or meeting details.
+  `pin_details_complete`. Never publish the raw source timestamp or underlying
+  PIN contact names, email addresses, phone numbers, meeting locations, or
+  meeting details.
 - Preserve the master program filter, Service Area and District filters,
   Stale/Inactive/details-gap/no-PIN focuses, district aggregates, and the
   approved reader wording for Stale.
 - Preserve expandable District PIN Detail rows that list every unit matching
-  the active filters, prioritize follow-up units, show only privacy-safe PIN
-  status/completeness and missing-category indicators, and deep-link to the
+  the active filters, prioritize follow-up units, and show Last Updated between
+  PIN Status and Required PIN Details. Show only privacy-safe status, calendar
+  date, completeness, and missing-category indicators, and deep-link to the
   selected Unit-Level Detail record.
 - Preserve PIN state in Overview Signals to Watch, the direct PIN Status &
   Completeness link in Overview Explore, and the PIN indicators in Unit-Level

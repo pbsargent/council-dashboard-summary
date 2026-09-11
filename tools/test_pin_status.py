@@ -52,6 +52,18 @@ class PinDisplayStatusTests(unittest.TestCase):
     def test_unmatched_pin_record_remains_unavailable(self) -> None:
         self.assertIsNone(BUILD_SITE.pin_display_status(None, self.AS_OF))
 
+    def test_last_updated_is_published_as_a_calendar_date(self) -> None:
+        self.assertEqual(
+            BUILD_SITE.pin_last_updated({"lastmodifieddate": datetime(2026, 8, 30, 23, 45)}),
+            "2026-08-30",
+        )
+        self.assertEqual(
+            BUILD_SITE.pin_last_updated({"lastmodifieddate": "2026-08-30T23:45:00"}),
+            "2026-08-30",
+        )
+        self.assertIsNone(BUILD_SITE.pin_last_updated({"lastmodifieddate": "not-a-date"}))
+        self.assertIsNone(BUILD_SITE.pin_last_updated(None))
+
     def test_leap_day_cutoff_uses_calendar_year(self) -> None:
         self.assertEqual(BUILD_SITE.twelve_month_cutoff(date(2024, 2, 29)), date(2023, 2, 28))
 
@@ -133,6 +145,7 @@ class PublishedPinBundleTests(unittest.TestCase):
                     "unit": "Pack 14 F",
                     "unit_type": "Pack",
                     "pin_status": "Active",
+                    "pin_last_updated": "2026-09-09",
                     "pin_status_complete": True,
                     "pin_contact_complete": True,
                     "pin_meeting_complete": False,
@@ -186,6 +199,32 @@ class PublishedPinBundleTests(unittest.TestCase):
             sum("current PIN rows divided by all tracked units" in error for error in errors),
             2,
         )
+
+    def test_last_updated_must_be_a_valid_iso_calendar_date(self) -> None:
+        row = self.latest["dashboard"]["unit_pin_statuses"][0]
+        row["pin_last_updated"] = "09/09/2026"
+        errors = validate_unit_pin_snapshot(self.latest, self.unit_level)
+        self.assertTrue(any("pin_last_updated must be an ISO calendar date" in error for error in errors))
+
+        row["pin_last_updated"] = None
+        errors = validate_unit_pin_snapshot(self.latest, self.unit_level)
+        self.assertTrue(any("may be null only when pin_status is Stale" in error for error in errors))
+
+        row["pin_status"] = "Stale"
+        self.latest["dashboard"]["council"]["pin_pct"] = 0.0
+        self.latest["dashboard"]["districts"][0]["pin_pct"] = 0.0
+        self.assertEqual(validate_unit_pin_snapshot(self.latest, self.unit_level), [])
+
+    def test_last_updated_must_reconcile_to_stale_status(self) -> None:
+        row = self.latest["dashboard"]["unit_pin_statuses"][0]
+        row["pin_last_updated"] = "2025-09-09"
+        errors = validate_unit_pin_snapshot(self.latest, self.unit_level)
+        self.assertTrue(any("must reconcile to pin_last_updated freshness" in error for error in errors))
+
+        row["pin_status"] = "Stale"
+        self.latest["dashboard"]["council"]["pin_pct"] = 0.0
+        self.latest["dashboard"]["districts"][0]["pin_pct"] = 0.0
+        self.assertEqual(validate_unit_pin_snapshot(self.latest, self.unit_level), [])
 
 
 if __name__ == "__main__":

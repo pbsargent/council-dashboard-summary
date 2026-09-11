@@ -293,6 +293,11 @@ def validate_unit_pin_snapshot(latest_payload: dict, unit_level_payload: dict) -
             "daily PIN and Unit-Level bundles must have the same report date "
             f"({latest_date!r} != {unit_level_date!r})"
         )
+    try:
+        report_as_of = datetime.strptime(latest_date, "%Y-%m-%d").date() if isinstance(latest_date, str) else None
+    except ValueError:
+        report_as_of = None
+        errors.append("daily PIN bundles must use YYYY-MM-DD report dates")
 
     dashboard = latest_payload.get("dashboard")
     pin_rows = dashboard.get("unit_pin_statuses") if isinstance(dashboard, dict) else None
@@ -317,7 +322,7 @@ def validate_unit_pin_snapshot(latest_payload: dict, unit_level_payload: dict) -
         unit_keys[identity] = row
 
     allowed_fields = {
-        "district", "unit", "unit_type", "pin_status",
+        "district", "unit", "unit_type", "pin_status", "pin_last_updated",
         "pin_status_complete", "pin_contact_complete",
         "pin_meeting_complete", "pin_details_complete",
     }
@@ -328,7 +333,7 @@ def validate_unit_pin_snapshot(latest_payload: dict, unit_level_payload: dict) -
             errors.append(f"{label} must be an object")
             continue
         if set(row) != allowed_fields:
-            errors.append(f"{label} may contain only privacy-safe PIN status and completion fields")
+            errors.append(f"{label} may contain only privacy-safe PIN status, last-updated date, and completion fields")
             continue
 
         identity = (clean_district_identity(row.get("district")), str(row.get("unit") or "").strip())
@@ -358,6 +363,28 @@ def validate_unit_pin_snapshot(latest_payload: dict, unit_level_payload: dict) -
             errors.append(f"{label}.pin_status must be Active, Inactive, Stale, or null")
         if status is None and row.get("pin_status_complete"):
             errors.append(f"{label}.pin_status_complete cannot be true when pin_status is null")
+        last_updated = row.get("pin_last_updated")
+        parsed_last_updated = None
+        if last_updated is not None:
+            if not isinstance(last_updated, str):
+                errors.append(f"{label}.pin_last_updated must be an ISO calendar date or null")
+            else:
+                try:
+                    parsed_last_updated = datetime.strptime(last_updated, "%Y-%m-%d").date()
+                    if parsed_last_updated.isoformat() != last_updated:
+                        raise ValueError
+                except ValueError:
+                    errors.append(f"{label}.pin_last_updated must be an ISO calendar date or null")
+        elif status != "Stale":
+            errors.append(f"{label}.pin_last_updated may be null only when pin_status is Stale")
+        if parsed_last_updated is not None and report_as_of is not None:
+            try:
+                cutoff = report_as_of.replace(year=report_as_of.year - 1)
+            except ValueError:
+                cutoff = report_as_of.replace(year=report_as_of.year - 1, day=28)
+            expected_stale = parsed_last_updated < cutoff
+            if expected_stale != (status == "Stale"):
+                errors.append(f"{label}.pin_status must reconcile to pin_last_updated freshness")
 
     def validate_pin_currency(label: str, aggregate: object, rows: list[dict]) -> None:
         if not isinstance(aggregate, dict):
@@ -517,14 +544,14 @@ def main() -> int:
     if pin_status_path.is_file():
         pin_page_source = pin_status_path.read_text(encoding="utf-8")
         for required in (
-            'pin-status.css?v=20260904-pin-sticky-headers-1',
-            'pin-status.js?v=20260904-pin-sticky-headers-1',
+            'pin-status.css?v=20260911-pin-last-updated-1',
+            'pin-status.js?v=20260911-pin-last-updated-1',
             'data-focus="stale"',
             'data-focus="inactive"',
             'data-focus="details"',
             'data-focus="unmatched"',
-            "Only completion flags are published",
-            "Expand a district to see its individual unit PIN status",
+            "Only the privacy-safe last-updated date and completion flags are published",
+            "Expand a district to see each unit's PIN status, last-updated date",
         ):
             if required not in pin_page_source:
                 errors.append(f"pin-status.html: missing PIN page contract {required!r}")
@@ -548,6 +575,8 @@ def main() -> int:
             'aria-expanded="${expanded}"',
             "Individual Unit Status",
             "unit-level.html?unit=",
+            'pin?.pin_last_updated || null',
+            '<th>PIN Status</th><th>Last Updated</th><th>Required PIN Details</th>',
             'pin.pin_status_complete === true ? null : "Status"',
             'pin.pin_contact_complete === true ? null : "Contact"',
             'pin.pin_meeting_complete === true ? null : "Meeting"',
@@ -815,9 +844,9 @@ def main() -> int:
             errors.append("help.html: missing Unit Key 3 SYT color-state definition")
         if "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days" not in help_source:
             errors.append("help.html: missing Unit Key 3 Status-filter definition")
-        if "<dt>Required PIN Details</dt>" not in help_source or "Only completion flags" not in help_source:
+        if "<dt>Required PIN Details</dt>" not in help_source or "Only the last-updated date and completion flags" not in help_source:
             errors.append("help.html: missing privacy-safe Required PIN Details definition")
-        if "expand a District PIN Detail row" not in help_source or "individual-unit status" not in help_source:
+        if "expand a District PIN Detail row" not in help_source or "individual-unit PIN Status" not in help_source:
             errors.append("help.html: missing District PIN Detail unit-drill-down guidance")
         if "<dt>Outdoor Leadership Depth</dt>" not in help_source:
             errors.append("help.html: missing Outdoor Leadership Depth measure definition")
@@ -971,10 +1000,10 @@ def main() -> int:
                 errors.append(f"{relative}: missing camping-readiness documentation contract {phrase!r}")
 
     pin_documentation_contracts = {
-        "README.md": ("PIN Status & Completeness", "Public `unit_pin_statuses` rows contain only Boolean completion flags", "Overview includes PIN state in Signals to Watch", "expandable individual-unit drill-down"),
-        "DASHBOARD_DATA_DICTIONARY.md": ("Required PIN Details", "pin_contact_complete", "privacy-safe individual-unit rows", "Unit Profile repeats the status and freshness explanation"),
-        "IMPLEMENTATION_RUNBOOK.md": ("PIN Status & Completeness", "Do not publish the underlying contact or meeting values", "Overview's Signals to Watch groups filtered matched rows", "expanded district unit rows"),
-        "tools/build_human_data_guide.py": ("Required PIN Details is separate from freshness", "The public data contains only completion flags", "PIN state in Signals to Watch", "expandable district rows"),
+        "README.md": ("PIN Status & Completeness", "privacy-safe `pin_last_updated` calendar date", "Overview includes PIN state in Signals to Watch", "expandable individual-unit drill-down"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("Required PIN Details", "pin_last_updated", "privacy-safe individual-unit rows", "Unit Profile repeats the status and freshness explanation"),
+        "IMPLEMENTATION_RUNBOOK.md": ("PIN Status & Completeness", "Do not publish the raw source timestamp or the underlying contact or meeting values", "Overview's Signals to Watch groups filtered matched rows", "PIN Status, Last Updated, and Required PIN Details"),
+        "tools/build_human_data_guide.py": ("Required PIN Details is separate from freshness", "The public data contains only the last-updated date and completion flags", "PIN state in Signals to Watch", "Last Updated"),
     }
     for relative, required_phrases in pin_documentation_contracts.items():
         source = (root / relative).read_text(encoding="utf-8")

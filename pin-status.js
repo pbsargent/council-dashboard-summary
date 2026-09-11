@@ -9,6 +9,13 @@
   const n = (value) => integer.format(Number(value) || 0);
   const p = (value) => Number.isFinite(value) ? percent.format(value) : "n/a";
   const ratio = (numerator, denominator) => denominator ? numerator / denominator : null;
+  const formatLastUpdated = (value) => {
+    const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return null;
+    const parsed = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12);
+    if (parsed.getFullYear() !== Number(match[1]) || parsed.getMonth() !== Number(match[2]) - 1 || parsed.getDate() !== Number(match[3])) return null;
+    return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
+  };
   const cleanDistrict = (value) => window.ProgramFilter?.cleanDistrict(value) || String(value || "").replace(/\s+\d+$/, "").trim();
   const unitName = (unit) => String(unit?.name || [unit?.unit_type, unit?.number, unit?.gender].filter((part) => part != null && part !== "").join(" ")).trim();
   const unitKey = (district, unit) => `${cleanDistrict(district)}|${String(unit || "").trim()}`;
@@ -50,6 +57,7 @@
         unit: name,
         unitType: unit.unit_type || "n/a",
         pinStatus: pin?.pin_status || "n/a",
+        lastUpdated: pin?.pin_last_updated || null,
         detailsComplete: pin?.pin_details_complete === true,
         matched: Boolean(pin),
         missing,
@@ -66,6 +74,7 @@
           unit: "Tracked unit identity unavailable",
           unitType: "n/a",
           pinStatus: "n/a",
+          lastUpdated: null,
           detailsComplete: false,
           matched: false,
           missing: ["No matched PIN"],
@@ -172,14 +181,15 @@
     const units = row.unitRows.filter(unitFocusMatches);
     if (!units.length) return '<p class="subtle pin-unit-empty">No units match the selected focus.</p>';
     return `<div class="pin-unit-table-wrap"><table class="pin-unit-table">
-      <thead><tr><th>Unit</th><th>Program</th><th>PIN Status</th><th>Required PIN Details</th><th>Missing</th><th><span class="visually-hidden">Action</span></th></tr></thead>
+      <thead><tr><th>Unit</th><th>Program</th><th>PIN Status</th><th>Last Updated</th><th>Required PIN Details</th><th>Missing</th><th><span class="visually-hidden">Action</span></th></tr></thead>
       <tbody>${units.map((unit) => {
         const detailsLabel = unit.matched ? (unit.detailsComplete ? "Complete" : "Needs follow-up") : "n/a";
+        const lastUpdatedLabel = unit.matched ? (formatLastUpdated(unit.lastUpdated) || "Not recorded") : "n/a";
         const missingLabel = unit.missing.length ? unit.missing.join(" · ") : "None";
         const link = unit.unitId != null
           ? `<a class="pin-unit-link" href="unit-level.html?unit=${encodeURIComponent(unit.unitId)}">View unit</a>`
           : "";
-        return `<tr><td><strong>${esc(unit.unit)}</strong></td><td>${esc(unit.unitType)}</td><td><span class="status ${statusTone(unit.pinStatus)}">${esc(unit.pinStatus)}</span></td><td><span class="status ${unit.detailsComplete ? "good" : "warn"}">${esc(detailsLabel)}</span></td><td>${esc(missingLabel)}</td><td>${link}</td></tr>`;
+        return `<tr><td><strong>${esc(unit.unit)}</strong></td><td>${esc(unit.unitType)}</td><td><span class="status ${statusTone(unit.pinStatus)}">${esc(unit.pinStatus)}</span></td><td class="pin-last-updated">${esc(lastUpdatedLabel)}</td><td><span class="status ${unit.detailsComplete ? "good" : "warn"}">${esc(detailsLabel)}</span></td><td>${esc(missingLabel)}</td><td>${link}</td></tr>`;
       }).join("")}</tbody>
     </table></div>`;
   }
@@ -344,7 +354,7 @@
     }
   }
 
-  window.PinStatusPage = { unitCountsByDistrict, unitDetailsByDistrict, summarizeDistricts, rollup, unitHeaderOffset };
+  window.PinStatusPage = { unitCountsByDistrict, unitDetailsByDistrict, summarizeDistricts, rollup, unitHeaderOffset, formatLastUpdated };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
 })();

@@ -660,7 +660,7 @@ def build_doc():
     add_callout(
         doc,
         "Required PIN Details is separate from freshness",
-        "A matched PIN is complete when status, contact name plus either email or phone, meeting location, and meeting details are present. Website, fee, fundraising, and availability are not counted. Complete matched PINs are divided by all tracked units, including units without a matched PIN. Unit Profile shows the overall result and separate status, contact, and meeting completion indicators. The public data contains only completion flags, not contact or meeting values.",
+        "A matched PIN is complete when status, contact name plus either email or phone, meeting location, and meeting details are present. Website, fee, fundraising, and availability are not counted. Complete matched PINs are divided by all tracked units, including units without a matched PIN. District PIN Detail shows Last Updated between PIN Status and Required PIN Details. The public data contains only the last-updated date and completion flags, not the raw timestamp or contact or meeting values.",
     )
 
     add_heading(doc, "6. What Each Dashboard Page Adds", 1)
