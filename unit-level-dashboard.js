@@ -17,6 +17,16 @@ function dateLabel(value) {
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+function pinLastUpdatedLabel(record) {
+  if (!record) return "n/a";
+  const value = typeof record === "string" ? null : record.pin_last_updated;
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return "Not recorded";
+  const parsed = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12);
+  if (parsed.getFullYear() !== Number(match[1]) || parsed.getMonth() !== Number(match[2]) - 1 || parsed.getDate() !== Number(match[3])) return "Not recorded";
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
+}
+
 function metricStatus(metric) {
   if (metric >= 4) return ["Healthy", "good"];
   if (metric === 3) return ["Monitor", "warning"];
@@ -51,6 +61,7 @@ function pinSummary(unit) {
   };
   const status = Object.hasOwn(presentations, recordedStatus) ? recordedStatus : "n/a";
   const [detail, tone] = presentations[status];
+  const lastUpdated = pinLastUpdatedLabel(record);
   const completeness = !record
     ? { label: "Details n/a", tone: "warning" }
     : record.pin_details_complete === true
@@ -63,7 +74,7 @@ function pinSummary(unit) {
     contact: pinFieldSummary(record, "pin_contact_complete", "Contact name and email or phone are recorded", "Contact name or contact method is missing"),
     meeting: pinFieldSummary(record, "pin_meeting_complete", "Meeting location and details are recorded", "Meeting location or details are missing"),
   };
-  return { status, detail, tone, completeness, fields };
+  return { status, detail, tone, lastUpdated, completeness, fields };
 }
 
 function outdoorSummary(unit) {
@@ -217,6 +228,8 @@ function renderProfile() {
       <span class="status ${chipTone(pin.tone)}">${esc(pin.status)}</span>
       <small>${esc(pin.detail)}</small>
     </dd>
+    <dt>Last Updated</dt>
+    <dd>${esc(pin.lastUpdated)}</dd>
     <dt>Required PIN Details</dt>
     <dd class="pin-context-indicator"><span class="status ${chipTone(pin.completeness.tone)}">${esc(pin.completeness.label)}</span></dd>
     <dt>PIN status field</dt>

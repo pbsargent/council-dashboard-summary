@@ -254,10 +254,13 @@ District Performance.
   Completeness link in Overview Explore, and the PIN indicators in Unit-Level
   Detail's Unit Profile. All three reuse the shared privacy-safe row and
   established denominators.
-- Unit-Level Detail's Unit Profile must show PIN status and freshness, overall
-  Required PIN Details, and separate privacy-safe indicators for the status,
-  contact, and meeting completion categories. These indicators must use the
-  published Boolean flags and must not expose the underlying private values.
+- Unit-Level Detail's Unit Profile must show Last Updated immediately below PIN
+  status and freshness, followed by overall Required PIN Details and separate
+  privacy-safe indicators for the status, contact, and meeting completion
+  categories. Last Updated uses the published `pin_last_updated` calendar date,
+  displays `Not recorded` for a matched PIN without a usable date, and displays
+  `n/a` for an unmatched unit. These indicators must use the shared published
+  PIN row and must not expose the raw timestamp or underlying private values.
 - Keep the builder, focused tests, validator, Dashboard Guide, README, data
   dictionary, runbook, generated calculation guide, cache-busting strings, and
   live page synchronized.

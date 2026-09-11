@@ -660,7 +660,7 @@ def build_doc():
     add_callout(
         doc,
         "Required PIN Details is separate from freshness",
-        "A matched PIN is complete when status, contact name plus either email or phone, meeting location, and meeting details are present. Website, fee, fundraising, and availability are not counted. Complete matched PINs are divided by all tracked units, including units without a matched PIN. District PIN Detail shows Last Updated between PIN Status and Required PIN Details. The public data contains only the last-updated date and completion flags, not the raw timestamp or contact or meeting values.",
+        "A matched PIN is complete when status, contact name plus either email or phone, meeting location, and meeting details are present. Website, fee, fundraising, and availability are not counted. Complete matched PINs are divided by all tracked units, including units without a matched PIN. District PIN Detail shows Last Updated between PIN Status and Required PIN Details. Unit Profile shows Last Updated directly below PIN status and freshness; it uses the formatted calendar date, Not recorded for a matched PIN without a usable date, and n/a for an unmatched unit. The public data contains only the last-updated date and completion flags, not the raw timestamp or contact or meeting values.",
     )
 
     add_heading(doc, "6. What Each Dashboard Page Adds", 1)
@@ -683,7 +683,7 @@ def build_doc():
             ["Cub Scout JSN", "How school recruiting plans, dates, locations, materials, and uncovered schools compare with the monday.com source dashboard."],
             ["Popcorn", "How unit commitments, goals, prior sales, onboarding, and training roll up from Service Area to District to Unit."],
             ["Unit Metrics", "How districts and unit sections compare across unit health, training, outdoor, advancement, and the current workbook retention metric."],
-            ["Unit-Level Detail", "Which individual units and members drive program-specific youth, growth, training, SYT, health, assignment, BeAScout PIN status and freshness, overall Required PIN Details, separate status, contact, and meeting completion categories in Unit Profile, and Pack/Troop camping-readiness status."],
+            ["Unit-Level Detail", "Which individual units and members drive program-specific youth, growth, training, SYT, health, assignment, BeAScout PIN status and freshness, PIN Last Updated, overall Required PIN Details, separate status, contact, and meeting completion categories in Unit Profile, and Pack/Troop camping-readiness status."],
             ["Unit Key 3 Coverage", "Which units have current Unit Leader, Committee Chair, and COR/CUR coverage, which positions are missing, and how completion compares by unit type. Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days and combines with the other filters. Detail is organized in collapsible Service Area and District groups and shows SYT expiration beneath each holder. Dates due within 90 days are yellow and expired dates are red. Either a current COR or CUR satisfies the third position."],
             ["Renewal Status", "Which units are initiated, submitted, pending acceptance, posted, or otherwise need renewal follow-up."],
             ["Data & Help", "Which source workbooks are current, how values are calculated, where to report a problem, and which external training references apply."],

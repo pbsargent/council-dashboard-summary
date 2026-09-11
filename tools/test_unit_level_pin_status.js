@@ -23,16 +23,17 @@ assert.equal(vm.runInContext('preferredUnit([{ unit_id: 1 }, { unit_id: 2 }], 2,
 assert.equal(vm.runInContext('preferredUnit([{ unit_id: 1 }, { unit_id: 2 }], 9, 1).unit_id', context), 1, "unknown deep links fall back to the configured default");
 vm.runInContext(`
   state.pinByUnit = new Map([
-    ["Armadillo|Crew 4", { pin_status: "Active", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: true }],
-    ["Armadillo|Crew 3", { pin_status: "Inactive", pin_status_complete: true, pin_contact_complete: false, pin_meeting_complete: true, pin_details_complete: false }],
-    ["Armadillo|Crew 8787", { pin_status: "Stale", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: false, pin_details_complete: false }],
+    ["Armadillo|Crew 4", { pin_status: "Active", pin_last_updated: "2026-09-09", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: true, pin_details_complete: true }],
+    ["Armadillo|Crew 3", { pin_status: "Inactive", pin_last_updated: "2026-06-30", pin_status_complete: true, pin_contact_complete: false, pin_meeting_complete: true, pin_details_complete: false }],
+    ["Armadillo|Crew 8787", { pin_status: "Stale", pin_last_updated: null, pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: false, pin_details_complete: false }],
+    ["Armadillo|Crew 99", { pin_status: "Stale", pin_last_updated: "2026-02-30", pin_status_complete: true, pin_contact_complete: true, pin_meeting_complete: false, pin_details_complete: false }],
   ]);
 `, context);
 
 assert.deepEqual(
   JSON.parse(JSON.stringify(vm.runInContext('pinSummary({ district: "Armadillo 02", unit_type: "Crew", number: 4, gender: null, name: "Crew 4" })', context))),
   {
-    status: "Active", detail: "Current BeAScout PIN record", tone: "good", completeness: { label: "Details complete", tone: "good" },
+    status: "Active", detail: "Current BeAScout PIN record", tone: "good", lastUpdated: "Sep 9, 2026", completeness: { label: "Details complete", tone: "good" },
     fields: {
       status: { label: "Complete", detail: "PIN status is recorded", tone: "good" },
       contact: { label: "Complete", detail: "Contact name and email or phone are recorded", tone: "good" },
@@ -42,12 +43,14 @@ assert.deepEqual(
 );
 assert.equal(vm.runInContext('pinSummary({ district: "Armadillo 02", unit_type: "Crew", number: 3, name: "Crew 3" }).status', context), "Inactive");
 assert.equal(vm.runInContext('pinSummary({ district: "Armadillo 02", unit_type: "Crew", number: 8787, name: "Crew 8787" }).status', context), "Stale");
+assert.equal(vm.runInContext('pinSummary({ district: "Armadillo 02", unit_type: "Crew", number: 8787, name: "Crew 8787" }).lastUpdated', context), "Not recorded");
+assert.equal(vm.runInContext('pinSummary({ district: "Armadillo 02", unit_type: "Crew", number: 99, name: "Crew 99" }).lastUpdated', context), "Not recorded");
 assert.equal(vm.runInContext('pinSummary({ district: "Armadillo 02", unit_type: "Crew", number: 3, name: "Crew 3" }).fields.contact.label', context), "Needs follow-up");
 assert.equal(vm.runInContext('pinSummary({ district: "Armadillo 02", unit_type: "Crew", number: 8787, name: "Crew 8787" }).fields.meeting.detail', context), "Meeting location or details are missing");
 assert.deepEqual(
   JSON.parse(JSON.stringify(vm.runInContext('pinSummary({ district: "Armadillo 02", unit_type: "Ship", number: 999, name: "Ship 999" })', context))),
   {
-    status: "n/a", detail: "No matched BeAScout PIN record", tone: "warning", completeness: { label: "Details n/a", tone: "warning" },
+    status: "n/a", detail: "No matched BeAScout PIN record", tone: "warning", lastUpdated: "n/a", completeness: { label: "Details n/a", tone: "warning" },
     fields: {
       status: { label: "n/a", detail: "No matched PIN record", tone: "warning" },
       contact: { label: "n/a", detail: "No matched PIN record", tone: "warning" },
@@ -73,7 +76,10 @@ const unitProfile = { innerHTML: "" };
 context.document = { getElementById(id) { return id === "unitProfile" ? unitProfile : null; } };
 vm.runInContext("renderProfile()", context);
 assert.match(unitProfile.innerHTML, /PIN status \/ freshness/);
+assert.match(unitProfile.innerHTML, /<dt>Last Updated<\/dt>\s*<dd>Sep 9, 2026<\/dd>/);
 assert.match(unitProfile.innerHTML, /Required PIN Details/);
+assert.ok(unitProfile.innerHTML.indexOf("PIN status / freshness") < unitProfile.innerHTML.indexOf("Last Updated"));
+assert.ok(unitProfile.innerHTML.indexOf("Last Updated") < unitProfile.innerHTML.indexOf("Required PIN Details"));
 assert.match(unitProfile.innerHTML, /PIN status field/);
 assert.match(unitProfile.innerHTML, /PIN contact requirements/);
 assert.match(unitProfile.innerHTML, /PIN meeting requirements/);

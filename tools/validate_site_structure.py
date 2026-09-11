@@ -141,7 +141,7 @@ HELP_ASSETS = (
 
 PERSON_NAME_PRIVACY_ASSET = "tools/sanitize_public_person_names.py"
 
-SCROLL_ASSET_VERSION = "20260910-pin-profile-details-1"
+SCROLL_ASSET_VERSION = "20260911-pin-profile-last-updated-1"
 RENEWAL_BOARD_ASSET_VERSION = "20260904-renewal-unit-columns-v1"
 SHARED_TABLE_ASSET_VERSION = "20260904-operational-sticky-headers-1"
 SHARED_TABLE_STYLE_PAGES = (
@@ -956,9 +956,9 @@ def main() -> int:
     if unit_level_path.is_file() and unit_level_script_path.is_file():
         unit_level_page = unit_level_path.read_text(encoding="utf-8")
         unit_level_script = unit_level_script_path.read_text(encoding="utf-8")
-        if "unit-level-dashboard.js?v=20260910-pin-profile-details-1" not in unit_level_page:
+        if "unit-level-dashboard.js?v=20260911-pin-profile-last-updated-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-context script")
-        if "unit-level-dashboard.css?v=20260910-pin-profile-details-1" not in unit_level_page:
+        if "unit-level-dashboard.css?v=20260911-pin-profile-last-updated-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-detail styles")
         if "panel-help.js?v=20260630-active-help" not in unit_level_page:
             errors.append("unit-level.html: Commissioner Context PIN help must load panel help")
@@ -975,6 +975,10 @@ def main() -> int:
             'pinFieldSummary(record, "pin_contact_complete"',
             'pinFieldSummary(record, "pin_meeting_complete"',
             "PIN status / freshness",
+            "pin_last_updated",
+            "Last Updated",
+            "function pinLastUpdatedLabel",
+            'return "Not recorded"',
             "Required PIN Details",
             "PIN contact requirements",
             "PIN meeting requirements",
@@ -986,6 +990,11 @@ def main() -> int:
         ):
             if required not in unit_level_script:
                 errors.append(f"unit-level-dashboard.js: missing Commissioner Context PIN completeness contract {required!r}")
+        if unit_level_script.index("PIN status / freshness") > unit_level_script.index("Last Updated") or unit_level_script.index("Last Updated") > unit_level_script.index("Required PIN Details"):
+            errors.append("unit-level-dashboard.js: Unit Profile must show Last Updated between PIN status / freshness and Required PIN Details")
+        for required in ("Last Updated shows the privacy-safe calendar date directly below status and freshness", "no raw timestamp, contact, or meeting values are published"):
+            if required not in unit_level_page:
+                errors.append(f"unit-level.html: missing Unit Profile Last Updated help contract {required!r}")
 
     documentation_contracts = {
         "README.md": ("Gap / Fragile / Preferred Depth / Unknown", "Unit-Level Detail uses the same shared classification"),
