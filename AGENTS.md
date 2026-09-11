@@ -228,6 +228,10 @@ District Performance.
   current `Active` or `Inactive` rows divided by all tracked units. Required
   PIN Details uses matched rows where `pin_details_complete` is true divided
   by all tracked units. Stale and unmatched units remain in both denominators.
+- Do not source the public `pin_pct` field from the Membership worksheet's
+  `Pin`, `Pin Meeting`, or any later renamed summary column. Reconcile council
+  and district `pin_pct` to the shared privacy-safe PIN rows before deployment;
+  the structural validator must reject a mismatch.
 - A PIN has Required PIN Details only when status, contact name plus at least
   one contact method (email or phone), meeting location, and meeting details
   are present. Website, fee, fundraising, and availability fields are not

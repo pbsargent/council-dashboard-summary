@@ -126,6 +126,8 @@ class PublishedPinBundleTests(unittest.TestCase):
         self.latest = {
             "generated_date": "2026-09-10",
             "dashboard": {
+                "council": {"units": 2, "pin_pct": 0.5},
+                "districts": [{"district": "Armadillo", "units": 2, "pin_pct": 0.5}],
                 "unit_pin_statuses": [{
                     "district": "Armadillo",
                     "unit": "Pack 14 F",
@@ -175,6 +177,15 @@ class PublishedPinBundleTests(unittest.TestCase):
         self.latest["dashboard"]["unit_pin_statuses"] = [private_row]
         errors = validate_unit_pin_snapshot(self.latest, self.unit_level)
         self.assertTrue(any("privacy-safe" in error for error in errors))
+
+    def test_membership_summary_rate_cannot_replace_pin_currency(self) -> None:
+        self.latest["dashboard"]["council"]["pin_pct"] = 1.0
+        self.latest["dashboard"]["districts"][0]["pin_pct"] = 1.0
+        errors = validate_unit_pin_snapshot(self.latest, self.unit_level)
+        self.assertEqual(
+            sum("current PIN rows divided by all tracked units" in error for error in errors),
+            2,
+        )
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import json
+import math
 import re
 import sys
 from datetime import datetime
@@ -357,6 +358,40 @@ def validate_unit_pin_snapshot(latest_payload: dict, unit_level_payload: dict) -
             errors.append(f"{label}.pin_status must be Active, Inactive, Stale, or null")
         if status is None and row.get("pin_status_complete"):
             errors.append(f"{label}.pin_status_complete cannot be true when pin_status is null")
+
+    def validate_pin_currency(label: str, aggregate: object, rows: list[dict]) -> None:
+        if not isinstance(aggregate, dict):
+            errors.append(f"{label} must be an object with units and pin_pct")
+            return
+        units = aggregate.get("units")
+        rate = aggregate.get("pin_pct")
+        if (
+            isinstance(units, bool)
+            or not isinstance(units, (int, float))
+            or not math.isfinite(units)
+            or units <= 0
+        ):
+            errors.append(f"{label}.units must be a positive finite number")
+            return
+        if isinstance(rate, bool) or not isinstance(rate, (int, float)) or not math.isfinite(rate):
+            errors.append(f"{label}.pin_pct must be a finite numeric PIN Currency rate")
+            return
+        current = sum(row.get("pin_status") in {"Active", "Inactive"} for row in rows)
+        expected = current / units
+        if not math.isclose(rate, expected, rel_tol=1e-9, abs_tol=1e-9):
+            errors.append(f"{label}.pin_pct must equal current PIN rows divided by all tracked units")
+
+    valid_pin_rows = [row for row in pin_rows if isinstance(row, dict)]
+    validate_pin_currency("data/latest.json: dashboard.council", dashboard.get("council"), valid_pin_rows)
+    districts = dashboard.get("districts")
+    if not isinstance(districts, list):
+        errors.append("data/latest.json: dashboard.districts must be a list")
+    else:
+        for index, district in enumerate(districts):
+            label = f"data/latest.json: dashboard.districts[{index}]"
+            name = clean_district_identity(district.get("district")) if isinstance(district, dict) else ""
+            rows = [row for row in valid_pin_rows if clean_district_identity(row.get("district")) == name]
+            validate_pin_currency(label, district, rows)
     return errors
 
 
