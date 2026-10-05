@@ -8,7 +8,7 @@ import json
 import math
 import re
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from validate_monday_snapshot import validate_snapshot
@@ -78,6 +78,7 @@ DETAIL_PAGES = {
     "troop-camping-readiness.html": "troop-camping-readiness",
     "unit-level.html": "unit-level",
     "key3-status.html": "key3-status",
+    "membership-followup.html": "membership-followup",
     "renewal-board/index.html": "renewal",
     "training.html": "training",
     "syt.html": "syt",
@@ -103,6 +104,7 @@ NAVIGATION_ROUTES = {
     "troop-camping-readiness": "troop-camping-readiness.html",
     "unit-level": "unit-level.html",
     "key3-status": "key3-status.html",
+    "membership-followup": "membership-followup.html",
     "renewal": "renewal-board/index.html",
     "people": "people.html",
     "training": "training.html",
@@ -115,7 +117,7 @@ NAVIGATION_HIERARCHY = {
     "overview": ("commissioner-portal", "comparison"),
     "districts": ("pin-status", "popcorn"),
     "membership": ("monday", "fall-recruitment"),
-    "unit-health": ("unit-metrics", "unit-level", "key3-status", "renewal"),
+    "unit-health": ("unit-metrics", "unit-level", "membership-followup", "key3-status", "renewal"),
     # Persistent user-approved placement: both camping readiness pages belong
     # under People & Readiness and must survive every scheduled build/publish.
     "people": ("training", "syt", "camping-readiness", "troop-camping-readiness"),
@@ -422,6 +424,65 @@ def validate_unit_pin_snapshot(latest_payload: dict, unit_level_payload: dict) -
     return errors
 
 
+def validate_membership_operations(payload: dict, unit_payload: dict) -> list[str]:
+    errors = []
+    data = payload.get("dashboard", {}).get("membership_operations")
+    if not isinstance(data, dict):
+        return ["Membership Follow-up data is required"]
+    unit_fields = {"unit_id", "district", "service_area", "unit_type", "unit", "youth", "adults", "missing_key3", "renewal_date", "renewal_status"}
+    role_fields = {"role", "registration_issue", "syt_issue", "missing_holder"}
+    rows = data.get("units", [])
+    if not isinstance(rows, list) or not rows:
+        return ["Membership Follow-up unit population is empty"]
+    ids = set()
+    for row in rows:
+        if not isinstance(row, dict) or set(row) != unit_fields:
+            errors.append("Membership Follow-up unit schema exposes unapproved or missing fields")
+            continue
+        identity = row["unit_id"]
+        if not isinstance(identity, str) or not identity.isdigit() or identity in ids:
+            errors.append("Membership Follow-up unit ID is invalid or duplicated")
+        ids.add(identity)
+        if type(row["missing_key3"]) is not bool:
+            errors.append("Membership Follow-up missing Key3 must be Boolean")
+        for field in ("youth", "adults"):
+            if type(row[field]) is not int or row[field] < 0:
+                errors.append("Membership Follow-up counts must be nonnegative integers")
+        if row["renewal_date"] is not None:
+            try:
+                if date.fromisoformat(row["renewal_date"]).isoformat() != row["renewal_date"]:
+                    raise ValueError()
+            except (ValueError, TypeError):
+                errors.append("Membership Follow-up renewal date is invalid")
+    if data.get("unit_count") != len(rows):
+        errors.append("Membership Follow-up population count does not reconcile")
+    expected_ids = {str(row.get("unit_id")) for row in unit_payload.get("units", [])}
+    if not expected_ids <= ids:
+        errors.append("Membership Follow-up is missing a Unit-Level unit")
+    if payload.get("dashboard", {}).get("report_date") != unit_payload.get("data_date"):
+        errors.append("Membership Follow-up and Unit-Level report dates differ")
+    if data.get("membership_grace_period_ends") != "2027-01-01":
+        errors.append("Membership grace period must end January 1, 2027")
+    ready = data.get("readiness")
+    if not isinstance(ready, list):
+        return errors + ["Membership Follow-up readiness must be a list"]
+    seen = set()
+    for row in ready:
+        if not isinstance(row, dict) or set(row) != {"unit_id", "issue_count", "youth_issue", "roles"}:
+            errors.append("Renewal readiness schema exposes unapproved or missing fields")
+            continue
+        if row["unit_id"] not in ids or row["unit_id"] in seen:
+            errors.append("Renewal readiness unit is unmatched or duplicated")
+        seen.add(row["unit_id"])
+        roles = row["roles"]
+        if not isinstance(roles, list) or len(roles) != 6 or any(not isinstance(r, dict) or set(r) != role_fields or any(type(r[k]) is not bool for k in role_fields - {"role"}) for r in roles):
+            errors.append("Renewal readiness requires six privacy-safe role flag records")
+            continue
+        if type(row["youth_issue"]) is not bool or type(row["issue_count"]) is not int or row["issue_count"] != int(row["youth_issue"]) + sum(int(r[k]) for r in roles for k in role_fields - {"role"}):
+            errors.append("Renewal readiness issue count does not reconcile")
+    return errors
+
+
 def main() -> int:
     root = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
     errors: list[str] = []
@@ -444,6 +505,7 @@ def main() -> int:
                 )
             )
             errors.extend(validate_unit_pin_snapshot(latest_payload, unit_level_payload))
+            errors.extend(validate_membership_operations(latest_payload, unit_level_payload))
         except (OSError, ValueError, TypeError, KeyError) as error:
             errors.append(f"Unit-Level data: {error}")
 
@@ -490,7 +552,7 @@ def main() -> int:
                 errors.append(f"{relative}: missing required heading {heading!r}")
         if not any("cac-theme.css?v=20260812-discrete-pages-1" in href for href in parsed.stylesheets):
             errors.append(f"{relative}: missing discrete-page CAC theme reference")
-        if not any("site-navigation.js?v=20260906-key3-status-page-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20261005-membership-followup-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
 
     help_page_path = root / "help.html"
@@ -881,7 +943,7 @@ def main() -> int:
         parsed = parse_page(path)
         if parsed.body_page != page_key:
             errors.append(f"{relative}: expected data-page={page_key!r}, found {parsed.body_page!r}")
-        if not any("site-navigation.js?v=20260906-key3-status-page-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20261005-membership-followup-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
         if relative in REQUIRED_PARENT_LINKS:
             expected_href, expected_label = REQUIRED_PARENT_LINKS[relative]
@@ -958,7 +1020,7 @@ def main() -> int:
     if unit_level_path.is_file() and unit_level_script_path.is_file():
         unit_level_page = unit_level_path.read_text(encoding="utf-8")
         unit_level_script = unit_level_script_path.read_text(encoding="utf-8")
-        if "unit-level-dashboard.js?v=20260911-pin-profile-last-updated-1" not in unit_level_page:
+        if "unit-level-dashboard.js?v=20261005-membership-grace-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-context script")
         if "unit-level-dashboard.css?v=20260911-pin-profile-last-updated-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-detail styles")
@@ -1253,6 +1315,22 @@ def main() -> int:
     daily_updater_path = root / "update_daily.zsh"
     if daily_updater_path.is_file() and "schools_affiliated={}/{} schools_verified={}" not in daily_updater_path.read_text(encoding="utf-8"):
         errors.append("update_daily.zsh: daily status must report affiliated, total, and verified school counts")
+
+    followup_page = root / "membership-followup.html"
+    followup_script = root / "membership-followup.js"
+    if not followup_page.is_file() or not followup_script.is_file():
+        errors.append("Membership Follow-up page and renderer are required")
+    else:
+        html = followup_page.read_text(encoding="utf-8")
+        script = followup_script.read_text(encoding="utf-8")
+        for text in ("Missing Key 3", "Zero Total Youth", "Unit Renewal Readiness", "Unit Renewal Calendar", "January 1, 2027", "followupArea", "followupDistrict", "followupSearch"):
+            if text not in html:
+                errors.append(f"Membership Follow-up is missing {text}")
+        for text in ("programfilterchange", "matchesUnitType", "Not in Unit-Level source", "No units match these filters."):
+            if text not in script:
+                errors.append(f"Membership Follow-up renderer is missing {text}")
+        if "Membership Follow-up" not in (root / "help.html").read_text(encoding="utf-8"):
+            errors.append("Dashboard Guide must document Membership Follow-up")
 
     if errors:
         print("Dashboard structure validation FAILED:", file=sys.stderr)

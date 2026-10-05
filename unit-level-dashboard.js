@@ -211,7 +211,7 @@ function renderRenewal() {
       </table>
     </div>` : '<p class="subtle">No member renewal records are attached to this unit in the source tab.</p>';
   document.getElementById("renewalCount").textContent = `${n(renewal.total)} records`;
-  document.getElementById("renewalBody").innerHTML = `<div class="renewal-summary"><div><span>Youth</span><strong>${n(renewal.youth)}</strong></div><div><span>Adults</span><strong>${n(renewal.adults)}</strong></div><div><span>Opt-outs</span><strong>${n(renewal.opt_outs)}</strong></div></div>${memberTable}`;
+  document.getElementById("renewalBody").innerHTML = `<p class="subtle">Beginning January 1, 2027, membership renewals will no longer have a grace period. These are member renewal dates; unit renewal dates are separate.</p><div class="renewal-summary"><div><span>Youth</span><strong>${n(renewal.youth)}</strong></div><div><span>Adults</span><strong>${n(renewal.adults)}</strong></div><div><span>Opt-outs</span><strong>${n(renewal.opt_outs)}</strong></div></div>${memberTable}`;
 }
 
 function renderProfile() {

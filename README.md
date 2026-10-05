@@ -77,3 +77,12 @@ For a more shareable reader-facing guide, see:
 
 - `docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.docx`
 - `docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.pdf`
+
+
+## Membership Follow-up (2026-10-05)
+
+`membership-followup.html` publishes `dashboard.membership_operations` from the same Dashboard workbook as the Council snapshot. Its Units population retains every source unit (298 on October 5; never a fixed count). Missing Key 3 uses the Units `Missing Key3` Yes/blank flag, matching the workbook Training Dive queue; it is distinct from training-derived Unit Key 3 Coverage. Zero Total Youth means the recorded Units count equals zero, not missing information.
+
+Renewal Prep is scoped to the workbook renewal window or grace period. Units absent from it are not classified as ready. `Fix before Renewal` must reconcile to Youth and all R/S/N role flags. Only unit identities and Boolean issue flags are published; names, member IDs, registration dates, and PIN values are excluded from this feature. All unit renewal cohorts reconcile to the filtered Units population, including unknown dates. Program, Service Area, District, and Search filters combine across all four panels.
+
+Membership renewal grace ends January 1, 2027, as confirmed by the council user. It is separate from unit renewal dates; this release does not infer new drop deadlines. Recruiting YTD compares the same period in both years; year-end comparisons use the December membership population. These councilwide manual trends are not recalculated by district/program filters.

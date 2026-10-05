@@ -495,6 +495,7 @@ function latestSeriesValue(values) {
 
 function renderUnitYouthKpis(data) {
   const ytd = data.ytd || {};
+  document.getElementById("recruitingPeriod").textContent = `Recruiting comparison: ${ytd.current_period || "Period unavailable"} versus ${ytd.prior_period || "Period unavailable"}. Councilwide workbook totals; district and program filters do not recalculate these trends.`;
   const totalYouth = latestSeriesValue(trendSeries("total_youth").values?.["2026"]);
   const totalUnits = latestSeriesValue(trendSeries("total_units").values?.["2026"]);
   const youthPrior = totalYouth ? trendSeries("total_youth").values?.["2025"]?.[totalYouth.index] : null;
