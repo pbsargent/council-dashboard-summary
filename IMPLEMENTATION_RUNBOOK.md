@@ -541,8 +541,9 @@ campaign. Sales means traditional app sales plus online sales, summed across
 product rows; inventory orders are excluded. Unit type, number, and district
 must match uniquely. Missing or ambiguous matches display n/a rather than zero.
 Rollups retain the committed-unit scope and show available-sales coverage;
-Sales / Goal is sales divided by goal and is unavailable when coverage is
-incomplete. A same-day timezone-aware campaign receipt and matching SHA-256
+Sales / Goal divides reported sales by all committed-unit goals, even when
+sales coverage is incomplete; the coverage note remains visible. It is n/a
+only when no sales are available or the goal is not positive. A same-day timezone-aware campaign receipt and matching SHA-256
 are required before daily publication. The importer never publishes raw sales
 product rows, contact information, or internal unit keys. Run
 `python3 tools/test_popcorn_sales.py` before releasing changes.

@@ -120,7 +120,7 @@ function aggregate(rows) {
     sales,
     salesCoverage: `${salesRows.length} of ${committedRows.length} committed units with sales data`,
     goal,
-    goalDelta: sales != null && goal > 0 && salesRows.length === committedRows.length ? sales / goal : null,
+    goalDelta: sales != null && goal > 0 ? sales / goal : null,
     onboarded: committedRows.filter((row) => row.onboarding === "11/11").length,
     onboardingComplete: committedRows.filter((row) => row.onboarding_complete).length,
     trained: committedRows.filter((row) => row.unit_trained).length,
@@ -162,7 +162,7 @@ function renderKpis() {
     ["Committed Units", n(summary.committed), "Units marked Committed", "good"],
     ["Total Sales to Date", money(summary.totalSales), `2026 app + online sales · ${summary.totalSalesCoverage}`, "teal"],
     ["Committed 2026 Goal", money(summary.goal), "Goal from committed units", "teal"],
-    ["2026 Sales / Goal", summary.goalDelta == null ? "n/a" : percent.format(summary.goalDelta), `${money(summary.sales)} / ${money(summary.goal)} · ${summary.salesCoverage}`, goalTone],
+    ["2026 Sales / Goal", summary.goalDelta == null ? "n/a" : percent.format(summary.goalDelta), `Reported sales ${money(summary.sales)} / ${money(summary.goal)} · ${summary.salesCoverage}`, goalTone],
     ["Fully Onboarded", n(summary.onboarded), `${n(summary.onboardingComplete)} completion boxes checked`, "teal"],
     ["Unit Trained", n(summary.trained), `${p(summary.committed ? summary.trained / summary.committed : null)} of committed units`, "warning"],
   ];

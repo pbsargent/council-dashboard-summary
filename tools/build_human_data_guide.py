@@ -766,7 +766,7 @@ def build_doc():
             ["Participation", "Committed unit rows divided by all unit rows in the selected population."],
             ["Committed goal", "Sum of 2026 goal values for committed units only."],
             ["2026 Sales to Date", "Sum of traditional app plus online sales for committed units with data; coverage is shown."],
-            ["Sales / Goal", "Sales to date divided by committed goal; n/a when sales coverage is incomplete."],
+            ["Sales / Goal", "Reported sales to date divided by all committed-unit goals; sales coverage is shown."],
             ["Onboarded", "Committed units whose onboarding progress is 11/11."],
             ["Unit trained", "Committed units marked trained in the Popcorn source."],
             ["Unit follow-up", "Commitment, goal, sales, onboarding, training, kernel, kickoff, and last-update context shown beneath the District."],

@@ -568,7 +568,7 @@ The page groups rows as Service Area → District → Unit in one drill-down tab
 | Committed Units | Count of filtered rows where `commitment` is `Committed` |
 | Committed Goal | Sum of `sales_goal` for committed rows only |
 | 2026 Sales to Date | Recorded traditional app plus online sales for committed units with available data; coverage is shown |
-| Sales / Goal | Sales to date divided by committed goal; unavailable with incomplete sales coverage |
+| Sales / Goal | Sales to date divided by committed goal; reported sales divided by all committed-unit goals, with coverage shown |
 | Onboarded | Count of committed rows with the onboarding-completed checkbox selected |
 | Trained | Count of committed rows with the leader-trained checkbox selected |
 
@@ -726,8 +726,9 @@ campaign. Sales means traditional app sales plus online sales, summed across
 product rows; inventory orders are excluded. Unit type, number, and district
 must match uniquely. Missing or ambiguous matches display n/a rather than zero.
 Rollups retain the committed-unit scope and show available-sales coverage;
-Sales / Goal is sales divided by goal and is unavailable when coverage is
-incomplete. A same-day timezone-aware campaign receipt and matching SHA-256
+Sales / Goal divides reported sales by all committed-unit goals, even when
+sales coverage is incomplete; the coverage note remains visible. It is n/a
+only when no sales are available or the goal is not positive. A same-day timezone-aware campaign receipt and matching SHA-256
 are required before daily publication. The importer never publishes raw sales
 product rows, contact information, or internal unit keys. Run
 `python3 tools/test_popcorn_sales.py` before releasing changes.

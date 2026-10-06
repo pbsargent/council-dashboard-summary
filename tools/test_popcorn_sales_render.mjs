@@ -5,7 +5,7 @@ const source=fs.readFileSync(new URL('../popcorn-detail.js',import.meta.url),'ut
 const context=vm.createContext({Intl,Date,Number,Set,Map,document:{addEventListener(){}},window:{addEventListener(){}},ProgramFilter:{getType:()=> 'Pack'}});
 vm.runInContext(source.split('async function init()')[0],context);
 const result=vm.runInContext(`aggregate([{commitment:'Committed',sales_2026_to_date:100,goal_2026:200},{commitment:'Committed',sales_2026_to_date:null,goal_2026:200}])`,context);
-assert.equal(result.sales,100);assert.equal(result.goalDelta,null);
+assert.equal(result.sales,100);assert.equal(result.goalDelta,.25);
 assert.equal(vm.runInContext('money(null)',context),'n/a');
 assert.equal(vm.runInContext(`aggregate([{commitment:'Committed',sales_2026_to_date:0,goal_2026:200}]).goalDelta`,context),0);
 assert.equal(vm.runInContext(`aggregate([{commitment:'Committed',sales_2026_to_date:100,goal_2026:200}]).goalDelta`,context),.5);
@@ -14,3 +14,5 @@ assert.equal(totalResult.totalSales,150);assert.equal(totalResult.sales,100);
 assert.equal(totalResult.totalSalesCoverage,'2 of 3 units with sales data');
 assert.equal(vm.runInContext(`aggregate([{commitment:'Committed',sales_2026_to_date:null}]).totalSales`,context),null);
 console.log('Popcorn sales rendering checks passed');
+
+assert.equal(vm.runInContext(`aggregate([{commitment:"Committed",sales_2026_to_date:100,goal_2026:0}]).goalDelta`,context),null);
