@@ -105,12 +105,16 @@ function selectedRows() {
 }
 
 function aggregate(rows) {
+  const availableSalesRows = rows.filter((row) => Number.isFinite(row.sales_2026_to_date));
+  const totalSales = availableSalesRows.length ? availableSalesRows.reduce((total, row) => total + row.sales_2026_to_date, 0) : null;
   const committedRows = rows.filter((row) => row.commitment === "Committed");
   const salesRows = committedRows.filter((row) => Number.isFinite(row.sales_2026_to_date));
   const sales = salesRows.length ? salesRows.reduce((total, row) => total + row.sales_2026_to_date, 0) : null;
   const goal = committedRows.reduce((total, row) => total + Number(row.goal_2026 || 0), 0);
   return {
     total: rows.length,
+    totalSales,
+    totalSalesCoverage: `${availableSalesRows.length} of ${rows.length} units with sales data`,
     committed: committedRows.length,
     participation: rows.length ? committedRows.length / rows.length : null,
     sales,
@@ -156,6 +160,7 @@ function renderKpis() {
   const tiles = [
     ["Popcorn Participation", p(summary.participation), `${n(summary.committed)} of ${n(summary.total)} units committed`, "teal"],
     ["Committed Units", n(summary.committed), "Units marked Committed", "good"],
+    ["Total Sales to Date", money(summary.totalSales), `2026 app + online sales · ${summary.totalSalesCoverage}`, "teal"],
     ["Committed 2026 Goal", money(summary.goal), "Goal from committed units", "teal"],
     ["2026 Sales / Goal", summary.goalDelta == null ? "n/a" : percent.format(summary.goalDelta), `${money(summary.sales)} / ${money(summary.goal)} · ${summary.salesCoverage}`, goalTone],
     ["Fully Onboarded", n(summary.onboarded), `${n(summary.onboardingComplete)} completion boxes checked`, "teal"],

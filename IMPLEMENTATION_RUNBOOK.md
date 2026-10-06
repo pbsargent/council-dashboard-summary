@@ -546,3 +546,9 @@ incomplete. A same-day timezone-aware campaign receipt and matching SHA-256
 are required before daily publication. The importer never publishes raw sales
 product rows, contact information, or internal unit keys. Run
 `python3 tools/test_popcorn_sales.py` before releasing changes.
+
+The Total Sales to Date KPI sums available 2026 traditional app plus online
+sales across all unit rows in the active program, Service Area, district,
+commitment, and search filters, including units not marked Committed. Its
+coverage shows available unit records against all selected units. Missing
+records remain unavailable; an entirely unavailable selection displays n/a.

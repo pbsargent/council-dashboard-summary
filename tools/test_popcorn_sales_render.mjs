@@ -9,4 +9,8 @@ assert.equal(result.sales,100);assert.equal(result.goalDelta,null);
 assert.equal(vm.runInContext('money(null)',context),'n/a');
 assert.equal(vm.runInContext(`aggregate([{commitment:'Committed',sales_2026_to_date:0,goal_2026:200}]).goalDelta`,context),0);
 assert.equal(vm.runInContext(`aggregate([{commitment:'Committed',sales_2026_to_date:100,goal_2026:200}]).goalDelta`,context),.5);
+const totalResult=vm.runInContext(`aggregate([{commitment:'Committed',sales_2026_to_date:100,goal_2026:200},{commitment:'Not Committed',sales_2026_to_date:50},{commitment:'Committed',sales_2026_to_date:null}])`,context);
+assert.equal(totalResult.totalSales,150);assert.equal(totalResult.sales,100);
+assert.equal(totalResult.totalSalesCoverage,'2 of 3 units with sales data');
+assert.equal(vm.runInContext(`aggregate([{commitment:'Committed',sales_2026_to_date:null}]).totalSales`,context),null);
 console.log('Popcorn sales rendering checks passed');
