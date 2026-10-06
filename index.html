@@ -10,6 +10,14 @@
   <link rel="stylesheet" href="council-dashboard-summary.css?v=20260904-operational-sticky-headers-1">
   <link rel="stylesheet" href="cac-theme.css?v=20260812-discrete-pages-1">
   <style>
+    .overview-start { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; }
+    .overview-start-copy { flex: 1 1 16rem; }
+    .overview-start-copy h2 { margin: 0 0 .35rem; }
+    .overview-start-copy p { margin: 0; }
+    .overview-start-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; }
+    .overview-topic-button { display: inline-block; padding: .7rem 1rem; border-radius: .5rem; background: var(--cac-blue, #003f87); color: #fff; font-weight: 700; text-decoration: none; }
+    .overview-topic-button:visited { color: #fff; }
+    .overview-topic-button:focus-visible { outline: 3px solid #ffcc00; outline-offset: 3px; }
     @media (min-width: 1101px) {
       body[data-page="overview"] #kpiGrid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -27,7 +35,16 @@
     </aside>
 
     <main>
-      <section class="panel"><a href="membership-followup.html">Membership Follow-up: missing Key 3, zero youth, renewal readiness, and renewal calendar</a></section>
+      <section class="panel overview-start" aria-labelledby="overviewStartTitle">
+        <div class="overview-start-copy">
+          <h2 id="overviewStartTitle">Find what you need</h2>
+          <p>Explore dashboard topics and detailed unit views.</p>
+        </div>
+        <div class="overview-start-actions">
+          <a class="overview-topic-button" href="help.html#pageGuideTitle">Browse Dashboard Topics</a>
+          <a href="membership-followup.html">Membership Follow-up</a>
+        </div>
+      </section>
       <header class="hero">
         <div>
           <p class="eyebrow">Capitol Area Council (CAC)</p>
