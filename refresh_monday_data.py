@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from collections import Counter
@@ -14,6 +15,8 @@ from urllib.request import Request, urlopen
 
 from openpyxl import load_workbook
 from openpyxl.utils.datetime import from_excel
+from tools.popcorn_sales import enrich_popcorn, validate_public_sales
+from zoneinfo import ZoneInfo
 from tools.validate_monday_snapshot import (
     SCHOOL_AFFILIATION_COLUMN_ID,
     SCHOOL_AFFILIATION_METHOD,
@@ -772,6 +775,15 @@ def main() -> int:
         token = read_token(args.token_file)
         snapshot = build_snapshot(token)
 
+    report_date = datetime.fromisoformat(snapshot['generated_at'].replace('Z', '+00:00'))
+    if report_date.tzinfo is None:
+        report_date = report_date.replace(tzinfo=ZoneInfo('America/Chicago'))
+    report_date = report_date.astimezone(ZoneInfo('America/Chicago')).date().isoformat()
+    sales_root = Path(os.environ.get('CAC_TRAILS_END_SOURCE_DIR',
+        '/Volumes/MacProData/Codex/10-Active-Projects/Trails-End/outputs/daily-source'))
+    enrich_popcorn(snapshot['boards']['popcorn'],
+        sales_root / report_date / 'Unit_Sales_Tracking.csv', report_date)
+    validate_public_sales(snapshot['boards']['popcorn'], report_date)
     validate_snapshot(snapshot)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")

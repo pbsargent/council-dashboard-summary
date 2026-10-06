@@ -12,6 +12,7 @@ from datetime import date, datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from validate_monday_snapshot import validate_snapshot
+from popcorn_sales import validate_public_sales
 
 
 class PageParser(HTMLParser):
@@ -489,7 +490,10 @@ def main() -> int:
 
     if "--require-data" in sys.argv:
         try:
-            validate_snapshot(json.loads((root / "data/monday-latest.json").read_text(encoding="utf-8")))
+            monday_payload = json.loads((root / "data/monday-latest.json").read_text(encoding="utf-8"))
+            validate_snapshot(monday_payload)
+            report_date = json.loads((root / "data/latest.json").read_text(encoding="utf-8"))['generated_date']
+            validate_public_sales(monday_payload['boards']['popcorn'], report_date)
         except (OSError, ValueError, TypeError, KeyError) as error:
             errors.append(f"monday-latest.json: {error}")
         try:

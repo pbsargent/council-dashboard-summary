@@ -86,3 +86,17 @@ For a more shareable reader-facing guide, see:
 Renewal Prep is scoped to the workbook renewal window or grace period. Units absent from it are not classified as ready. `Fix before Renewal` must reconcile to Youth and all R/S/N role flags. Only unit identities and Boolean issue flags are published; names, member IDs, registration dates, and PIN values are excluded from this feature. All unit renewal cohorts reconcile to the filtered Units population, including unknown dates. Program, Service Area, District, and Search filters combine across all four panels.
 
 Membership renewal grace ends January 1, 2027, as confirmed by the council user. It is separate from unit renewal dates; this release does not infer new drop deadlines. Recruiting YTD compares the same period in both years; year-end comparisons use the December membership population. These councilwide manual trends are not recalculated by district/program filters.
+
+## 2026 Popcorn sales to date
+
+Participation and Readiness and its Unit Follow-up rows use `sales_2026_to_date`
+from a same-day Trail’s End Unit Sales Tracking export in the active 2026
+campaign. Sales means traditional app sales plus online sales, summed across
+product rows; inventory orders are excluded. Unit type, number, and district
+must match uniquely. Missing or ambiguous matches display n/a rather than zero.
+Rollups retain the committed-unit scope and show available-sales coverage;
+Sales / Goal is sales divided by goal and is unavailable when coverage is
+incomplete. A same-day timezone-aware campaign receipt and matching SHA-256
+are required before daily publication. The importer never publishes raw sales
+product rows, contact information, or internal unit keys. Run
+`python3 tools/test_popcorn_sales.py` before releasing changes.

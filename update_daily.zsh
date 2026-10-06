@@ -178,6 +178,10 @@ LAST_STEP="validate discrete dashboard page structure"
 log "Validating required dashboard pages, routes, and branded assets"
 "$PYTHON" "$SITE_STRUCTURE_VALIDATOR" "$SUMMARY_REPO"
 
+LAST_STEP="validate current campaign popcorn sales contract"
+"$PYTHON" "${SUMMARY_REPO}/tools/test_popcorn_sales.py"
+"$NODE" "${SUMMARY_REPO}/tools/test_popcorn_sales_render.mjs"
+
 LAST_STEP="validate Unit Profile PIN rendering contract"
 log "Validating Unit Profile PIN status, Last Updated, completeness, and privacy behavior"
 "$NODE" "$UNIT_LEVEL_PIN_TEST"

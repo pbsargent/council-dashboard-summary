@@ -8,7 +8,6 @@ const state = {
 
 const integer = new Intl.NumberFormat("en-US");
 const percent = new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 1 });
-const signedPercent = new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 1, signDisplay: "always" });
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const viewerTimestamp = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -38,7 +37,7 @@ function p(value) {
 }
 
 function money(value) {
-  return Number.isFinite(Number(value)) ? currency.format(Number(value)) : "n/a";
+  return value != null && Number.isFinite(Number(value)) ? currency.format(Number(value)) : "n/a";
 }
 
 function sourceTimestampDate(value) {
@@ -107,15 +106,17 @@ function selectedRows() {
 
 function aggregate(rows) {
   const committedRows = rows.filter((row) => row.commitment === "Committed");
-  const sales = committedRows.reduce((total, row) => total + Number(row.sales_2025 || 0), 0);
+  const salesRows = committedRows.filter((row) => Number.isFinite(row.sales_2026_to_date));
+  const sales = salesRows.length ? salesRows.reduce((total, row) => total + row.sales_2026_to_date, 0) : null;
   const goal = committedRows.reduce((total, row) => total + Number(row.goal_2026 || 0), 0);
   return {
     total: rows.length,
     committed: committedRows.length,
     participation: rows.length ? committedRows.length / rows.length : null,
     sales,
+    salesCoverage: `${salesRows.length} of ${committedRows.length} committed units with sales data`,
     goal,
-    goalDelta: sales ? (goal - sales) / sales : null,
+    goalDelta: sales != null && goal > 0 && salesRows.length === committedRows.length ? sales / goal : null,
     onboarded: committedRows.filter((row) => row.onboarding === "11/11").length,
     onboardingComplete: committedRows.filter((row) => row.onboarding_complete).length,
     trained: committedRows.filter((row) => row.unit_trained).length,
@@ -147,7 +148,7 @@ function renderControls() {
 
 function renderKpis() {
   const summary = aggregate(selectedRows());
-  const goalTone = summary.goalDelta == null ? "teal" : summary.goalDelta >= 0 ? "good" : "warning";
+  const goalTone = summary.goalDelta == null ? "teal" : summary.goalDelta >= 1 ? "good" : "warning";
   if (ProgramFilter.getType() === "Post") {
     document.getElementById("popcornKpis").innerHTML = `<article class="kpi teal"><div><div class="kpi-label">Popcorn Participation</div><div class="kpi-value">Not tracked</div></div><div class="kpi-sub">Posts are excluded from the published popcorn population</div></article>`;
     return;
@@ -156,7 +157,7 @@ function renderKpis() {
     ["Popcorn Participation", p(summary.participation), `${n(summary.committed)} of ${n(summary.total)} units committed`, "teal"],
     ["Committed Units", n(summary.committed), "Units marked Committed", "good"],
     ["Committed 2026 Goal", money(summary.goal), "Goal from committed units", "teal"],
-    ["Goal vs 2025 Sales", summary.goalDelta == null ? "n/a" : signedPercent.format(summary.goalDelta), `${money(summary.goal)} vs ${money(summary.sales)}`, goalTone],
+    ["2026 Sales / Goal", summary.goalDelta == null ? "n/a" : percent.format(summary.goalDelta), `${money(summary.sales)} / ${money(summary.goal)} · ${summary.salesCoverage}`, goalTone],
     ["Fully Onboarded", n(summary.onboarded), `${n(summary.onboardingComplete)} completion boxes checked`, "teal"],
     ["Unit Trained", n(summary.trained), `${p(summary.committed ? summary.trained / summary.committed : null)} of committed units`, "warning"],
   ];
@@ -170,7 +171,7 @@ function renderKpis() {
 
 function rollupRow(label, rows, className, note = "", options = {}) {
   const summary = aggregate(rows);
-  const goalDelta = summary.goalDelta == null ? "n/a" : signedPercent.format(summary.goalDelta);
+  const goalDelta = summary.goalDelta == null ? "n/a" : percent.format(summary.goalDelta);
   const toggleData = options.level === "district"
     ? `data-level="district" data-key="${esc(options.key)}"`
     : `data-level="service-area" data-service-area="${esc(label)}"`;
@@ -188,7 +189,7 @@ function rollupRow(label, rows, className, note = "", options = {}) {
       <td class="num">${n(summary.committed)}</td>
       <td class="num">${n(summary.total)}</td>
       <td class="num">${money(summary.goal)}</td>
-      <td class="num">${money(summary.sales)}</td>
+      <td class="num">${money(summary.sales)}<div class="subtle">${esc(summary.salesCoverage)}</div></td>
       <td class="num">${goalDelta}</td>
       <td class="num">${n(summary.onboarded)} / ${n(summary.committed)}</td>
       <td class="num">${n(summary.trained)} / ${n(summary.committed)}</td>
@@ -202,9 +203,9 @@ function districtKey(serviceArea, district) {
 
 function unitRollupRow(row) {
   const committed = row.commitment === "Committed";
-  const sales = Number(row.sales_2025 || 0);
+  const sales = row.sales_2026_to_date;
   const goal = Number(row.goal_2026 || 0);
-  const goalDelta = committed && sales ? signedPercent.format((goal - sales) / sales) : "—";
+  const goalDelta = committed && Number.isFinite(sales) && goal > 0 ? percent.format(sales / goal) : "n/a";
   const operationalNote = [
     `Kernel: ${row.kernel_recruited ? "Yes" : "No"}`,
     `Kickoff: ${shortDate(row.kickoff)}`,
@@ -323,8 +324,10 @@ async function init() {
   const popcorn = state.monday?.boards?.popcorn;
   if (!popcorn?.rows) throw new Error("Popcorn data is not present in the monday.com snapshot.");
   state.rows = popcorn.rows.map(decorate);
+  const salesDate = popcorn.sales_2026_source?.downloaded_at;
+  if (!salesDate) throw new Error("Verified 2026 sales source is missing.");
   document.getElementById("generatedDate").textContent = dateLabel(state.monday.generated_at);
-  document.getElementById("titleDataDate").textContent = `Data extracted ${dateLabel(state.monday.generated_at)}`;
+  document.getElementById("titleDataDate").textContent = `Data extracted ${dateLabel(state.monday.generated_at)} · Sales through ${dateLabel(salesDate)}`;
   document.getElementById("boardLink").href = popcorn.url;
   renderControls();
   bindEvents();
