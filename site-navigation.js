@@ -11,6 +11,7 @@
   const overviewItems = [
     { key: "commissioner-portal", label: "Commissioner Portal", href: "https://pbsargent.github.io/council-commissioner-dashboard/", external: true },
     { key: "comparison", label: "Council Comparison", path: "comparison.html" },
+    { key: "school-atlas", label: "Council School Atlas", href: "https://pbsargent.github.io/council-school-atlas/", external: true },
   ];
 
   const groups = [
