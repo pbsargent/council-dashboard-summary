@@ -3,6 +3,7 @@
     month: "long",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   });
 
   function formatSnapshotDate(value) {
@@ -31,7 +32,7 @@
         loadJson("data/monday-latest.json").catch(() => null),
       ]);
       const dashboardDate = formatSnapshotDate(
-        latest.dashboard?.source_mtime || latest.generated_at || latest.generated_date
+        latest.dashboard?.report_date || latest.dashboard?.source_mtime || latest.generated_at || latest.generated_date
       );
       const mondayDate = formatSnapshotDate(monday?.generated_at);
       const primaryLabel = dashboardDate ? "Dashboard data refreshed " + dashboardDate : "Refresh date unavailable";

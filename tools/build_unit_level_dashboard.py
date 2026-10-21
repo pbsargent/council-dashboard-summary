@@ -68,6 +68,9 @@ def complete_unit_population(units, council, report_date, training_by_id, renewa
     existing_ids = [row["unit_id"] for row in units]
     if len(source_ids) != len(set(source_ids)) or len(existing_ids) != len(set(existing_ids)) or not set(existing_ids) <= set(source_ids):
         raise ValueError("Duplicate or unmatched Unit-Level identity")
+    population_by_id = {int(row["unit_id"]): row for row in population}
+    for unit in units:
+        unit["district"] = population_by_id[unit["unit_id"]]["district"]
     for row in population:
         uid = int(row["unit_id"])
         if uid in existing_ids:

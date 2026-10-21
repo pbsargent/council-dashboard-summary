@@ -564,7 +564,7 @@ def main() -> int:
         help_page = parse_page(help_page_path)
         if not any("help.css?v=20260823-help-1" in href for href in help_page.stylesheets):
             errors.append("help.html: missing cache-busted help stylesheet")
-        if not any("help.js?v=20260823-help-1" in src for src in help_page.scripts):
+        if not any("help.js?v=20261021-calendar-date-1" in src for src in help_page.scripts):
             errors.append("help.html: missing cache-busted help script")
         help_source = help_page_path.read_text(encoding="utf-8")
         for href in ("sources.html", "docs/Council-Dashboard-Summary-Source-and-Calculation-Guide.pdf"):
