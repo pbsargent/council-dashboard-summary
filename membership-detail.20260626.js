@@ -328,8 +328,8 @@ function buildRows() {
       const members = units.reduce((sum, unit) => sum + (Number(unit.youth) || 0), 0);
       const lastYear = units.reduce((sum, unit) => sum + (Number(unit.youth_prior) || 0), 0);
       const yoyDelta = units.reduce((sum, unit) => sum + (Number(unit.youth_change) || 0), 0);
-      const atRisk = units.filter((unit) => unit.metric <= 2).length;
-      const healthy = units.filter((unit) => unit.metric >= 4).length;
+      const atRisk = units.filter((unit) => Number.isFinite(unit.metric) && unit.metric <= 2).length;
+      const healthy = units.filter((unit) => Number.isFinite(unit.metric) && unit.metric >= 4).length;
       const atRiskRate = atRisk / Math.max(1, units.length);
       const yoyPct = lastYear ? yoyDelta / lastYear : null;
       return { ...meta, district, members, last_year_members: lastYear, yoy_delta: yoyDelta, yoy_pct: yoyPct,

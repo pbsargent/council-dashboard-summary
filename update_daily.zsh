@@ -243,6 +243,7 @@ LAST_STEP="build Unit Level Dashboard data"
 UNIT_LEVEL_SOURCE="$(latest_valid_workbook "$UNIT_LEVEL_SOURCE_DIR" "*_CAC - Unit Metric Scorecard.xlsx")"
 log "Building Unit Level Dashboard data from ${UNIT_LEVEL_SOURCE}"
 "$PYTHON" "$UNIT_LEVEL_BUILDER" "$UNIT_LEVEL_SOURCE" \
+  --council-snapshot "${SITE_STAGE}/data/latest.json" \
   --output "${SITE_STAGE}/data/unit-level-latest.json" \
   --js-output "${SITE_STAGE}/data/unit-level-latest.js"
 UNIT_LEVEL_STATUS="updated from ${UNIT_LEVEL_SOURCE:t}"

@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from collections import defaultdict
 from datetime import date, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from openpyxl import load_workbook
 
@@ -47,11 +49,50 @@ def unit_name(row):
     return " ".join(part for part in parts if part)
 
 
+def workbook_report_date(path):
+    match = re.fullmatch(r"(\d{4}-\d{2}-\d{2})_CAC - Unit Metric Scorecard\.xlsx", Path(path).name)
+    if not match:
+        raise ValueError("Unit Level source requires a dated CAC - Unit Metric Scorecard filename")
+    return date.fromisoformat(match[1]).isoformat()
+
+
+def complete_unit_population(units, council, report_date, training_by_id, renewals):
+    """Keep source Units identities when the scorecard has no usable metric."""
+    dashboard = council.get("dashboard", {})
+    if dashboard.get("report_date") != report_date:
+        raise ValueError("Council/Unit-Level source dates differ")
+    population = dashboard.get("membership_operations", {}).get("units")
+    if not isinstance(population, list) or not population:
+        raise ValueError("Council snapshot lacks authoritative Units population")
+    source_ids = [int(row["unit_id"]) for row in population]
+    existing_ids = [row["unit_id"] for row in units]
+    if len(source_ids) != len(set(source_ids)) or len(existing_ids) != len(set(existing_ids)) or not set(existing_ids) <= set(source_ids):
+        raise ValueError("Duplicate or unmatched Unit-Level identity")
+    for row in population:
+        uid = int(row["unit_id"])
+        if uid in existing_ids:
+            continue
+        match = re.fullmatch(r"(Pack|Troop|Crew|Ship|Post)\s+(\d+(?:\.0+)?)(?:\s+(.+))?", row["unit"], flags=re.I)
+        if not match:
+            raise ValueError("Authoritative unit display identity is invalid")
+        due = renewals.get(uid, {"records": 0, "youth": 0, "adults": 0, "opt_outs": 0, "dates": {}, "members": []})
+        units.append({"unit_id":uid,"district":row["district"],"name":row["unit"],"unit_type":row["unit_type"],
+                      "number":int(match[2].split('.')[0]),"gender":match[3],"metric":None,"youth":row["youth"],
+                      "youth_prior":None,"youth_change":None,"retention_pct":None,"advancement_pct":None,
+                      "last_outdoor_date":None,"last_connection":None,"commissioner":None,"chartered_organization":None,
+                      "drivers":{key:None for key in ("ul_cc_trained","size","growth","advancement_or_officers","outdoor")},
+                      "unit_leader_trained":None,"committee_chair_trained":None,"training":training_by_id.get(uid, {}),
+                      "renewal_records":{"total":due["records"],"youth":due["youth"],"adults":due["adults"],
+                                         "opt_outs":due["opt_outs"],"by_date":dict(due["dates"]),"members":due["members"]}})
+    return units
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("workbook", type=Path)
     parser.add_argument("--output", type=Path, default=Path("data/unit-level-latest.json"))
     parser.add_argument("--js-output", type=Path, default=Path("data/unit-level-latest.js"))
+    parser.add_argument("--council-snapshot", type=Path, help="Same-day Council JSON with complete source Units identities")
     args = parser.parse_args()
 
     workbook = load_workbook(args.workbook, read_only=True, data_only=True)
@@ -146,15 +187,18 @@ def main():
             },
         })
 
+    snapshot_date = workbook_report_date(args.workbook)
+    if args.council_snapshot:
+        complete_unit_population(units, json.loads(args.council_snapshot.read_text()), snapshot_date, training_by_id, renewals)
     units.sort(key=lambda row: (row["district"] or "", row["name"] or ""))
-    snapshot_date = datetime.fromtimestamp(args.workbook.stat().st_mtime).date().isoformat()
     output = {
-        "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "generated_at": datetime.now(ZoneInfo("America/Chicago")).isoformat(timespec="seconds"),
         "data_date": snapshot_date,
         "source": {
             "name": args.workbook.name,
             "method": "openpyxl read_only=True, data_only=True; compact JSON snapshot",
             "sheets": ["Unit_Metrics", "Units", "MembersDueToRenew"],
+            "population_source": "Same-day Council Units via membership_operations" if args.council_snapshot else "Scorecard metric rows only",
         },
         "default_unit_id": 258381 if any(row["unit_id"] == 258381 for row in units) else (units[0]["unit_id"] if units else None),
         "units": units,

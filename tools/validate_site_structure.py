@@ -458,8 +458,8 @@ def validate_membership_operations(payload: dict, unit_payload: dict) -> list[st
     if data.get("unit_count") != len(rows):
         errors.append("Membership Follow-up population count does not reconcile")
     expected_ids = {str(row.get("unit_id")) for row in unit_payload.get("units", [])}
-    if not expected_ids <= ids:
-        errors.append("Membership Follow-up is missing a Unit-Level unit")
+    if expected_ids != ids:
+        errors.append("Unit-Level and authoritative Membership Follow-up unit populations differ")
     if payload.get("dashboard", {}).get("report_date") != unit_payload.get("data_date"):
         errors.append("Membership Follow-up and Unit-Level report dates differ")
     if data.get("membership_grace_period_ends") != "2027-01-01":
@@ -583,7 +583,7 @@ def main() -> int:
 
     unit_health_path = root / "unit-health.html"
     priority_script_path = root / "council-dashboard-summary.20260626-tay-kpi.js"
-    shared_dashboard_script = "council-dashboard-summary.20260626-tay-kpi.js?v=20260904-operational-sticky-headers-1"
+    shared_dashboard_script = "council-dashboard-summary.20260626-tay-kpi.js?v=20261020-unit-coverage-1"
     for page_name in ("index.html", "comparison.html", "districts.html", "unit-health.html", "people.html", "sources.html"):
         page_source = (root / page_name).read_text(encoding="utf-8")
         if shared_dashboard_script not in page_source:
@@ -1024,7 +1024,7 @@ def main() -> int:
     if unit_level_path.is_file() and unit_level_script_path.is_file():
         unit_level_page = unit_level_path.read_text(encoding="utf-8")
         unit_level_script = unit_level_script_path.read_text(encoding="utf-8")
-        if "unit-level-dashboard.js?v=20261005-membership-grace-1" not in unit_level_page:
+        if "unit-level-dashboard.js?v=20261020-unit-coverage-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-context script")
         if "unit-level-dashboard.css?v=20260911-pin-profile-last-updated-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-detail styles")

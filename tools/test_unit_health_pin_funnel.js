@@ -48,3 +48,4 @@ vm.runInContext("state.data.dashboard.unit_pin_statuses = []; renderHealthFunnel
 assert.match(funnel.innerHTML, /Inactive \+ stale PINs[\s\S]*?<div class="funnel-value">n\/a<\/div>/);
 
 console.log("Unit Health PIN funnel tests passed.");
+assert.equal(vm.runInContext('matchesPriorityMetricBand(null)', context), false, "unknown metrics must not enter the 0-2 band");

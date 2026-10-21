@@ -321,6 +321,7 @@ function selectedPriorityMetricBand() {
 }
 
 function matchesPriorityMetricBand(value) {
+  if (value == null || value === "") return false;
   const metricValue = Number(value);
   if (!Number.isFinite(metricValue)) return false;
   const band = selectedPriorityMetricBand();
@@ -378,8 +379,8 @@ function programDistrictRows() {
     const members = units.reduce((sum, unit) => sum + (Number(unit.youth) || 0), 0);
     const yoyDelta = units.reduce((sum, unit) => sum + (Number(unit.youth_change) || 0), 0);
     const lastYear = units.reduce((sum, unit) => sum + (Number(unit.youth_prior) || 0), 0);
-    const atRisk = units.filter((unit) => unit.metric <= 2).length;
-    const healthy = units.filter((unit) => unit.metric >= 4).length;
+    const atRisk = units.filter((unit) => Number.isFinite(unit.metric) && unit.metric <= 2).length;
+    const healthy = units.filter((unit) => Number.isFinite(unit.metric) && unit.metric >= 4).length;
     const assigned = units.filter((unit) => unit.commissioner).length;
     const average = (getter) => {
       const values = units.map(getter).filter(Number.isFinite);

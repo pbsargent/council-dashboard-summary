@@ -28,6 +28,7 @@ function pinLastUpdatedLabel(record) {
 }
 
 function metricStatus(metric) {
+  if (!Number.isFinite(metric)) return ["Metric unavailable", "warning"];
   if (metric >= 4) return ["Healthy", "good"];
   if (metric === 3) return ["Monitor", "warning"];
   return ["Priority attention", "danger"];
@@ -137,7 +138,7 @@ function renderHero() {
   const [status] = metricStatus(unit.metric);
   document.getElementById("unitTitle").textContent = unit.name;
   document.getElementById("unitSubtitle").textContent = `${unit.district} · ${unit.chartered_organization || "Chartered organization not recorded"} · Data current ${dateLabel(state.data.data_date)}`;
-  document.getElementById("heroMetric").textContent = unit.metric;
+  document.getElementById("heroMetric").textContent = unit.metric == null ? "n/a" : unit.metric;
   document.getElementById("heroStatus").textContent = status;
 }
 
@@ -146,7 +147,8 @@ function renderKpis() {
   const training = unit.training || {};
   const change = unit.youth_change == null ? "n/a" : `${signed.format(unit.youth_change)} YoY`;
   const districtUnits = unitsForDistrict(unit.district);
-  const rank = [...districtUnits].sort((a, b) => b.metric - a.metric).findIndex((row) => row.unit_id === unit.unit_id) + 1;
+  const scoredUnits = districtUnits.filter((row) => Number.isFinite(row.metric));
+  const rank = Number.isFinite(unit.metric) ? [...scoredUnits].sort((a, b) => b.metric - a.metric).findIndex((row) => row.unit_id === unit.unit_id) + 1 : null;
   const outdoor = outdoorSummary(unit);
   const pin = pinSummary(unit);
   const tiles = [
@@ -155,7 +157,7 @@ function renderKpis() {
     ["Retention", pct100(unit.retention_pct), "Rounded to nearest whole percent; may exceed 100%", unit.retention_pct >= 90 ? "good" : "warning"],
     ["Direct Contact Trained", p(training.direct_contact_trained_rate), "Unit leadership readiness", training.direct_contact_trained_rate >= .8 ? "good" : "warning"],
     ["SYT Compliance", p(training.syt_compliance_rate), `${n(training.syt_0_30)} due in 0–30 days`, training.syt_compliance_rate >= .95 ? "good" : "danger"],
-    ["District Position", `${rank} of ${districtUnits.length}`, "Ranked by unit metric", "teal"],
+    ["District Position", rank == null ? "n/a" : `${rank} of ${scoredUnits.length}`, "Ranked among units with a recorded metric", "teal"],
   ];
   if (outdoor) tiles.push(["Camping Readiness", outdoor.label, outdoor.detail, outdoor.tone]);
   document.getElementById("unitKpis").innerHTML = tiles.map(([label, value, sub, tone]) => `<article class="kpi ${tone}"><div><div class="kpi-label">${esc(label)}</div><div class="kpi-value">${esc(value)}</div></div><div class="kpi-sub">${esc(sub)}</div></article>`).join("");
@@ -171,16 +173,16 @@ function renderDrivers() {
     ["outdoor", "Outdoor or super activity", `Last recorded: ${dateLabel(unit.last_outdoor_date)}.`],
   ];
   const met = labels.filter(([key]) => unit.drivers[key]).length;
-  document.getElementById("driverCount").textContent = `${met} of ${labels.length} met`;
-  document.getElementById("driverRows").innerHTML = labels.map(([key, label, detail]) => `<div class="driver-row"><div><strong>${esc(label)}</strong><p>${esc(detail)}</p></div><span class="driver-status ${unit.drivers[key] ? "met" : "gap"}">${unit.drivers[key] ? "Met" : "Gap"}</span></div>`).join("");
+  document.getElementById("driverCount").textContent = unit.metric == null ? "Metric inputs unavailable" : `${met} of ${labels.length} met`;
+  document.getElementById("driverRows").innerHTML = labels.map(([key, label, detail]) => `<div class="driver-row"><div><strong>${esc(label)}</strong><p>${esc(detail)}</p></div><span class="driver-status ${unit.drivers[key] == null ? "unknown" : unit.drivers[key] ? "met" : "gap"}">${unit.drivers[key] == null ? "Unavailable" : unit.drivers[key] ? "Met" : "Gap"}</span></div>`).join("");
 }
 
 function renderTraining() {
   const unit = state.unit;
   const training = unit.training || {};
   const rows = [
-    ["Unit leader trained", unit.unit_leader_trained ? 1 : 0],
-    ["Committee chair trained", unit.committee_chair_trained ? 1 : 0],
+    ["Unit leader trained", unit.unit_leader_trained == null ? null : unit.unit_leader_trained ? 1 : 0],
+    ["Committee chair trained", unit.committee_chair_trained == null ? null : unit.committee_chair_trained ? 1 : 0],
     ["Direct contact leaders", training.direct_contact_trained_rate],
     ["All adult leaders", training.all_leaders_trained_rate],
     ["SYT compliance", training.syt_compliance_rate],

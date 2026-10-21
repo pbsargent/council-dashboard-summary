@@ -91,3 +91,14 @@ assert.match(unitProfile.innerHTML, /Contact name and email or phone are recorde
 assert.match(unitProfile.innerHTML, /Meeting location and details are recorded/);
 
 console.log("Unit-Level PIN status tests passed.");
+
+// A tracked unit can be present even when the metric feed has no record.
+assert.equal(vm.runInContext('metricStatus(null)[0]', context), "Metric unavailable");
+const outputNodes = Object.fromEntries(["unitTitle", "unitSubtitle", "heroMetric", "heroStatus", "driverCount", "driverRows", "trainingRows"].map((id) => [id, { textContent: "", innerHTML: "" }]));
+context.document = { getElementById(id) { return outputNodes[id] || unitKpis; } };
+vm.runInContext(`state.unit = { name: "Crew 999", unit_type: "Crew", district: "Armadillo", metric: null, youth: 6, youth_prior: null, drivers: { ul_cc_trained: null, size: null, growth: null, advancement_or_officers: null, outdoor: null }, training: {}, unit_leader_trained: null, committee_chair_trained: null }; state.data.data_date = "2026-10-20"; renderHero(); renderDrivers(); renderTraining();`, context);
+assert.equal(outputNodes.heroMetric.textContent, "n/a");
+assert.equal(outputNodes.heroStatus.textContent, "Metric unavailable");
+assert.match(outputNodes.driverRows.innerHTML, /Unavailable/);
+assert.doesNotMatch(outputNodes.driverRows.innerHTML, />Gap</);
+assert.doesNotMatch(outputNodes.trainingRows.innerHTML, />0%</);
