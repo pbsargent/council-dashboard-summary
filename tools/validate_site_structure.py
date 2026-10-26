@@ -74,7 +74,8 @@ SUMMARY_PAGES = {
 
 DETAIL_PAGES = {
     "monday.html": "monday",
-    "fall-recruitment.html": "fall-recruitment",
+    "cubs-joins.html": "cubs",
+    "scouts-bsa-joins.html": "scouts-bsa",
     "popcorn.html": "popcorn",
     "unit-metrics.html": "unit-metrics",
     "camping-readiness.html": "camping-readiness",
@@ -99,7 +100,8 @@ NAVIGATION_ROUTES = {
     "pin-status": "pin-status.html",
     "membership": "membership.html",
     "monday": "monday.html",
-    "fall-recruitment": "fall-recruitment.html",
+    "cubs": "cubs-joins.html",
+    "scouts-bsa": "scouts-bsa-joins.html",
     "popcorn": "popcorn.html",
     "unit-health": "unit-health.html",
     "unit-metrics": "unit-metrics.html",
@@ -119,7 +121,7 @@ NAVIGATION_ROUTES = {
 NAVIGATION_HIERARCHY = {
     "overview": ("commissioner-portal", "comparison", "school-atlas"),
     "districts": ("pin-status", "popcorn"),
-    "membership": ("monday", "fall-recruitment"),
+    "membership": ("monday", "cubs", "scouts-bsa"),
     "unit-health": ("unit-metrics", "unit-level", "membership-followup", "key3-status", "renewal"),
     # Persistent user-approved placement: both camping readiness pages belong
     # under People & Readiness and must survive every scheduled build/publish.
@@ -549,6 +551,11 @@ def main() -> int:
 
     if "--require-data" in sys.argv:
         try:
+            from build_join_dashboards import validate_public_bundle
+            validate_public_bundle(root / 'data/joins-latest.js')
+        except (OSError, ValueError, TypeError, KeyError) as error:
+            errors.append(f"Joins data: {error}")
+        try:
             monday_payload = json.loads((root / "data/monday-latest.json").read_text(encoding="utf-8"))
             validate_snapshot(monday_payload)
             report_date = json.loads((root / "data/latest.json").read_text(encoding="utf-8"))['generated_date']
@@ -617,7 +624,7 @@ def main() -> int:
                 errors.append(f"{relative}: missing required heading {heading!r}")
         if not any("cac-theme.css?v=20260812-discrete-pages-1" in href for href in parsed.stylesheets):
             errors.append(f"{relative}: missing discrete-page CAC theme reference")
-        if not any("site-navigation.js?v=20261009-school-atlas-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20261026-joins-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
 
     help_page_path = root / "help.html"
@@ -1008,7 +1015,7 @@ def main() -> int:
         parsed = parse_page(path)
         if parsed.body_page != page_key:
             errors.append(f"{relative}: expected data-page={page_key!r}, found {parsed.body_page!r}")
-        if not any("site-navigation.js?v=20261009-school-atlas-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20261026-joins-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
         if relative in REQUIRED_PARENT_LINKS:
             expected_href, expected_label = REQUIRED_PARENT_LINKS[relative]
@@ -1194,33 +1201,15 @@ def main() -> int:
     if syt_detail_path.is_file() and 'if (baloo.issue) issues.push("BALOO")' in syt_detail_path.read_text(encoding="utf-8"):
         errors.append("syt-detail.js: BALOO must not be counted as an individual leader issue")
 
-    fall_page_path = root / "fall-recruitment.html"
-    fall_script_path = root / "fall-recruitment.js"
-    if fall_page_path.is_file():
-        fall_page = parse_page(fall_page_path)
-        for chart_id in ("noPackChart", "noPlansChart"):
-            element = fall_page.elements_by_id.get(chart_id)
-            if element is None:
-                errors.append(f"fall-recruitment.html: missing required chart #{chart_id}")
-            elif "pie-widget" not in element[1]:
-                errors.append(
-                    f"fall-recruitment.html: #{chart_id} must remain a pie-widget to match monday.com"
-                )
-    if fall_script_path.is_file():
-        fall_script = fall_script_path.read_text(encoding="utf-8")
-        pie_bindings = {
-            "noPackChart": "noCubPacksOrder",
-            "noPlansChart": "noRecruitmentPlansOrder",
-        }
-        for chart_id, order_name in pie_bindings.items():
-            pattern = (
-                rf'targetId:\s*"{re.escape(chart_id)}"'
-                rf'[\s\S]{{0,240}}?order:\s*DATA\.{re.escape(order_name)}'
-            )
-            if not re.search(pattern, fall_script):
-                errors.append(
-                    f"fall-recruitment.js: #{chart_id} must be bound to the monday.com pie renderer"
-                )
+    for page_name in ("cubs-joins.html", "scouts-bsa-joins.html"):
+        page_path = root / page_name
+        if page_path.is_file():
+            page = parse_page(page_path)
+            for element_id in ("joinDistrict", "joinSearch", "joinCoverage", "joinReset", "joinExport", "joinKpis", "joinDistrictChart", "joinAgeChart", "joinRows"):
+                if element_id not in page.elements_by_id:
+                    errors.append(f"{page_name}: missing joins component #{element_id}")
+            if not any("data/joins-latest.js?v=" in src for src in page.scripts):
+                errors.append(f"{page_name}: missing dated joins bundle")
 
     navigation_path = root / "site-navigation.js"
     if navigation_path.is_file():
@@ -1411,7 +1400,7 @@ def main() -> int:
         "Dashboard structure validation passed: "
         f"{len(SUMMARY_PAGES)} summary pages, {len(DETAIL_PAGES)} detail pages, "
         f"{len(NAVIGATION_ROUTES)} routes, {len(NAVIGATION_HIERARCHY)} hierarchy groups, "
-        f"{len(REQUIRED_ASSETS)} shared assets, {len(HELP_ASSETS)} help assets, Cub Scout JSN pie-chart parity, "
+        f"{len(REQUIRED_ASSETS)} shared assets, {len(HELP_ASSETS)} help assets, Cub and Scouts BSA joins components, "
         "District Operational Detail retention, PIN Currency, and plain-percentage safeguards, Priority Units metric filtering, Unit-Level PIN status, Unit Health PIN follow-up, "
         "Unit Key 3 completeness, COR/CUR substitution, two-level hierarchy, public person-name privacy, and scroll-table safeguards."
     )

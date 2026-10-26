@@ -1,53 +1,37 @@
 # Council Dashboard Summary project instructions
 
-## Cub Scout JSN Dashboard
+## New-youth joins pages — October 26, 2026 replacement
 
-Treat the authenticated monday.com Cub Scout JSN Dashboard as the source of truth for the website page:
+Peter replaced Cub Scout JSN with `cubs-joins.html` (Cub Scout Joins) and
+`scouts-bsa-joins.html` (Scouts BSA Joins). This supersedes the former JSN
+widget parity and monday-board refresh requirements for that page only.
+Keep other monday.com inputs and School Market Context unchanged.
 
-- monday overview: `https://capitolareacouncil564.monday.com/overviews/32299792`
-- underlying board ID: `18420720719`
-- public page: `https://pbsargent.github.io/council-dashboard-summary/fall-recruitment.html`
+`tools/build_join_dashboards.py` selects the newest date in each
+`CAC_All_Cub_Pack_Joins_Sept1_2026_to_YYYY-MM-DD.xlsx` and
+`CAC_All_Scout_Troop_Joins_Sept1_2026_to_YYYY-MM-DD.xlsx` filename in
+CAC-Published-Reports. Require both newest files to match the Central run date;
+never fall back to an older valid workbook. Validate periods, schemas, unit and
+age totals, review flags, district-sheet equality, unique available unit IDs,
+and unchanged hashes across the pair read. Publish a single atomic
+`data/joins-latest.js` bundle only after both pass.
 
-The implementation is primarily in:
+Preserve zero-join units, workbook council ranks and ties, unavailable ages,
+and units flagged for missing current unit-report coverage. Flagged units may
+have unavailable unit IDs and organizations; do not fabricate them or drop
+their joins. Counts are distinct new youth per unit, not deduplicated council
+people. Ages describe the current roster date, not age at joining. Exclude
+transfers and re-registrations. Publish unit aggregates only, never youth names,
+member IDs or raw join records. Unit IDs are organizational identifiers.
 
-- `tools/build_fall_recruitment_dashboard.py`
-- `fall-recruitment.html`
-- `fall-recruitment.js`
-- `fall-recruitment.css`
-- generated data: `data/fall-recruitment-latest.js`
-
-When updating this page, query the monday API for current data and inspect the authenticated monday dashboard when widget appearance or filter behavior is relevant. Match each widget's chart type, labels, category scope, stacking, date bucketing, and gauge scale. Do not replace widget-specific scopes with one page-wide approximation.
-
-Preserve these established widget semantics unless the monday dashboard itself changes:
-
-- District recruitment is a horizontal stacked chart by recruitment date and includes `No Date`.
-- `School with no Cub Packs` is a pie chart filtered to Cub Recruiting Target `Core` or `Partial`, blank Unit Associated, and No Recruitment Plans not checked. Its selected district scope excludes North Shore and Waterloo.
-- Location, time-of-day, week, month, and day charts use the selected scouting-district scope. Waterloo and Exploring are excluded from that scope.
-- Week buckets start on Monday.
-- Materials gauges sum the entire board rather than the Cub-target subset. Gauge maxima are 63,000 fliers, 40,000 stickers, and 11,000 peer-to-peer cards.
-- `Schools with no Recruitment Plans` is a district pie chart filtered to Cub Recruiting Target `Core` or `Partial`, blank Unit Associated, and No Recruitment Plans checked. Waterloo and Exploring are excluded.
-- The current monday.com dashboard does not include the former expenses gauge; do not restore it unless it returns to the source dashboard.
-
-Counts are live values, not permanent requirements. The 2026-08-14 parity implementation is commit `f49c069bf14c064da3f0dcfa752425e1c798dc11`; use it as the visual and filter baseline if a later edit regresses the page.
-
-Before publishing a Cub Scout JSN Dashboard change:
-
-1. Regenerate `data/fall-recruitment-latest.js` through the builder/API path.
-2. Run syntax and repository validation checks.
-3. Render the page and visually compare it with monday.com.
-4. Publish and verify the live GitHub Pages output rather than relying only on the local render.
-
-## Cub Scout JSN Dashboard daily automation
-
-The Cub Scout JSN data refresh is part of the normal Council web refresh. The active production checkout is `/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary`; `/Users/petersargent/CACDashboardPlatform/tools/daily_build_publish.zsh` invokes its `update_daily.zsh` during the regular dashboard build.
-
-Daily generated data must be written to the platform's isolated Pages staging tree and deployed through `.github/workflows/deploy-pages-payload.yml`. Do not commit daily JSON, create orphan commits, or force-push. Source-code changes remain ordinary linear commits on `main`.
-
-That updater fetches and fast-forwards `main`, queries monday.com board `18420720719`, regenerates `data/fall-recruitment-latest.js`, runs `tools/validate_site_structure.py`, publishes the refreshed data, and reports the Cub Scout JSN status with the other web dashboards. The validator fails closed unless both `School with no Cub Packs` and `Schools with no Recruitment Plans` remain monday.com-style pie charts. The refresh must not modify monday.com.
-
-The older standalone Codex task `daily-fall-recruitment-dashboard-refresh` is redundant after this consolidation and should remain paused or be removed so two jobs do not publish the same data independently.
-
-The end-to-end test completed on 2026-08-14 with published commit `7d5c552fff90a15a6e2e848efbe39d53a07d7572`. The test observed 732 board items, 350 eligible items, 128 scheduled recruitments, and 34,191 total materials. These counts are evidence that the workflow worked on that date, not fixed expectations for future runs.
+Keep both pages under Membership & Growth, redirect old JSN bookmarks to Cubs,
+apply district/search/unit-view filters to all charts, KPIs, rows and exports,
+and retain bounded two-axis table scrolling at mobile widths. Keep navigation
+cache versions, Dashboard Guide, data dictionary, updater, validator, sanitizer,
+release manifest and `tools/test_join_dashboards.py` synchronized. Daily data
+belongs only in the isolated Pages payload; do not commit generated bundles.
+Source changes use linear source commits and the normal validated artifact
+publisher. Verify both live pages and exact public bundle after deployment.
 
 ## School Market Context unit-affiliation contract
 

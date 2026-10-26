@@ -30,7 +30,8 @@
       path: "membership.html",
       items: [
         { key: "monday", label: "Recruitment Pipeline", path: "monday.html" },
-        { key: "fall-recruitment", label: "Cub Scout JSN", path: "fall-recruitment.html" },
+        { key: "cubs", label: "Cub Scout Joins", path: "cubs-joins.html" },
+        { key: "scouts-bsa", label: "Scouts BSA Joins", path: "scouts-bsa-joins.html" },
       ],
     },
     {

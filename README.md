@@ -19,7 +19,7 @@ Freshness timestamps shown in the dashboard are rendered in the viewer browser's
 
 The scheduled daily updater runs from the active working copy at `/Users/petersargent/CACDashboardPlatform/sites/council-dashboard-summary`, orchestrated by `/Users/petersargent/CACDashboardPlatform/tools/daily_build_publish.zsh`. Older checkouts are retained only for reference and must not be used for production edits.
 
-The normal web refresh also rebuilds `data/fall-recruitment-latest.js` from monday.com board `18420720719` for the Cub Scout JSN Dashboard. Its pre-publish validation requires both school-planning graphics to remain pie charts, matching the monday.com dashboard.
+The normal web refresh builds Cub Scout Joins and Scouts BSA Joins from the newest same-day dated CAC-Published-Reports workbooks through `tools/build_join_dashboards.py`. The validated unit-aggregate pair is published in `data/joins-latest.js`.
 
 Global navigation is defined once in `site-navigation.js`. Major navigation selections open focused summary pages: `index.html` (Overview), `comparison.html`, `districts.html`, `membership.html`, `unit-health.html`, `people.html`, and `sources.html`. `pin-status.html` is the PIN Status & Completeness child page under District Performance. `key3-status.html` is the Unit Key 3 Coverage child page under Unit Health & Renewal. Existing operational detail pages remain indented beneath their parent summaries. CAC typography, color tokens, approved logo treatment, topo pattern usage, responsive navigation, and Overview action-path styling are defined in `cac-theme.css`.
 
@@ -115,3 +115,13 @@ Unit Profile includes an Open BeAScout listing link when its public unit page ha
 
 
 Link publication requires every authoritative workbook-matched PIN unit to resolve successfully. Partial outages, changed sources, mismatched identities, and mixed JSON/JavaScript generations block publication and retain the prior live snapshot. The resolver uses bounded HTTPS requests and a five-minute run budget. `source.beascout_links` records schema version, verified/unavailable/matched counts, a timezone-aware verification timestamp and source SHA-256; these must reconcile with the unit links and report date. CSV mtime is only an intake-date check, not proof of the report’s generation date. Counts are recalculated each run.
+
+## New-youth joins pages (October 26, 2026)
+
+Cub Scout Joins (`cubs-joins.html`) and Scouts BSA Joins (`scouts-bsa-joins.html`) replace Cub Scout JSN and its event-planning board view. Earlier JSN sections describe the retired page only.
+
+The daily updater selects the newest filename date independently for the Cub Pack and Scout Troop joins workbooks in CAC-Published-Reports, requires a same-day pair, and validates all unit, district, age and coverage totals before atomically writing `data/joins-latest.js`. Missing or invalid latest files block publication; no stale fallback is allowed. Source filenames, report dates and SHA-256 hashes accompany the unit aggregates. No youth names or member IDs are published.
+
+The inclusive period starts September 1, 2026. Counts are distinct New Youth Member IDs per unit, excluding transfers and re-registrations; summing units does not deduplicate people across units. Roster ages are measured at the report date. Zero joins, unavailable ages and coverage-review units are retained. Council rank and tied ranks match the workbook. Blank unit details are unavailable. District, search and unit-view filters apply together to every KPI, district/age bar chart, complete unit table and CSV export. Reset restores the full population.
+
+Run `tools/test_join_dashboards.py`, syntax checks, the site validator with `--require-data`, and the public-name sanitizer before deployment. Verify rendered filters, empty states, scrolling and live data equality. Generated bundles remain in the isolated Pages artifact, outside source commits.

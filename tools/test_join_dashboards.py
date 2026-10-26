@@ -1,0 +1,69 @@
+"""Regressions for newest-file selection, coverage and fail-closed publication."""
+from datetime import date
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+
+from build_join_dashboards import build, newest, read_report
+
+
+class Sheet:
+    title = 'Pack joins'
+    def __init__(self, rows): self.values = rows
+
+
+class Workbook:
+    sheetnames = ['Pack joins', 'North Shore 11']
+    def __init__(self, rows): self.rows = rows
+    def __getitem__(self, name):
+        rows = [list(r) for r in self.rows]
+        if name != 'Pack joins': rows[7][0] = 'Council rank'
+        sheet = Sheet(rows)
+        sheet.title = name
+        return sheet
+    def close(self): pass
+
+
+class JoinsTests(unittest.TestCase):
+    def rows(self):
+        return [[], ['Council'], ['September 1, 2026–October 26, 2026. New youth only. Transfers and re-registrations excluded.'],
+                ['1 unit(s) need review'], ['Packs', 1], ['Joins', 2, None, None, None, None, 0,0,0,0,0,0,0,0,2], [],
+                ['Rank','Pack','District','New joins','Unit ID','Chartered organization', *[f'Age {i}' for i in range(4,12)],'Age unavailable','Review status','Sources and method'],
+                [1,'Pack 0198','North Shore 11',2,None,None,0,0,0,0,0,0,0,0,2,'Review — missing from current unit report']]
+
+    def parse(self, rows):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'source.xlsx'
+            path.write_bytes(b'fixture')
+            with patch('build_join_dashboards.openpyxl.load_workbook', return_value=Workbook(rows)):
+                return read_report(path, date(2026,10,26), 'cubs')
+
+    def test_retains_unmatched_unit_and_unavailable_age(self):
+        result = self.parse(self.rows())
+        self.assertIsNone(result['units'][0]['unit_id'])
+        self.assertEqual(result['units'][0]['joins'], 2)
+        self.assertEqual(result['units'][0]['ages'][-1], 2)
+        self.assertNotIn('Sources and method', result['units'][0])
+
+    def test_malformed_counts_and_period_fail(self):
+        for row, column, value in [(8,3,3), (8,6,-1), (2,0,'Stale period'), (8,4,'bad id'), (8,15,None)]:
+            with self.subTest(value=value):
+                rows=self.rows(); rows[row][column]=value
+                with self.assertRaises(ValueError): self.parse(rows)
+
+    def test_newest_dated_name_and_no_stale_fallback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder=Path(directory)
+            for day in ('2026-10-25','2026-10-26'):
+                for kind in ('Cub_Pack','Scout_Troop'):
+                    (folder / f'CAC_All_{kind}_Joins_Sept1_2026_to_{day}.xlsx').write_bytes(b'invalid')
+            self.assertEqual(newest(folder,'cubs')[0],date(2026,10,26))
+            output=folder/'public.js'; output.write_text('previous verified data')
+            with self.assertRaises(ValueError): build(folder,output,date(2026,10,27))
+            self.assertEqual(output.read_text(),'previous verified data')
+            with self.assertRaises(Exception): build(folder,output,date(2026,10,26))
+            self.assertEqual(output.read_text(),'previous verified data')
+
+
+if __name__ == '__main__': unittest.main()

@@ -16,7 +16,7 @@ SERVICE_HIERARCHY_REFRESHER="${ROOT}/work/renewal_recreation/refresh_service_are
 MONDAY_REFRESHER="${SUMMARY_REPO}/refresh_monday_data.py"
 UNIT_YOUTH_INJECTOR="${SUMMARY_REPO}/tools/inject_unit_youth_trends.py"
 UNIT_LEVEL_BUILDER="${SUMMARY_REPO}/tools/build_unit_level_dashboard.py"
-FALL_RECRUITMENT_BUILDER="${SUMMARY_REPO}/tools/build_fall_recruitment_dashboard.py"
+JOINS_BUILDER="${SUMMARY_REPO}/tools/build_join_dashboards.py"
 SITE_STRUCTURE_VALIDATOR="${SUMMARY_REPO}/tools/validate_site_structure.py"
 UNIT_LEVEL_PIN_TEST="${SUMMARY_REPO}/tools/test_unit_level_pin_status.js"
 PERSON_NAME_SANITIZER="${SUMMARY_REPO}/tools/sanitize_public_person_names.py"
@@ -72,7 +72,7 @@ send_refresh_email() {
     print -r -- ""
     print -r -- "monday.com refresh: ${MONDAY_STATUS}"
     print -r -- "monday.com summary: ${MONDAY_SUMMARY}"
-    print -r -- "Cub Scout JSN Dashboard: ${FALL_RECRUITMENT_STATUS}"
+    print -r -- "Cub and Scouts BSA joins: ${FALL_RECRUITMENT_STATUS}"
     print -r -- "Unit Level Dashboard: ${UNIT_LEVEL_STATUS}"
     print -r -- ""
     print -r -- "Renewal board refresh: ${RENEWAL_STATUS}"
@@ -146,7 +146,7 @@ require_file "$SERVICE_HIERARCHY_REFRESHER"
 require_file "$MONDAY_REFRESHER"
 require_file "$UNIT_YOUTH_INJECTOR"
 require_file "$UNIT_LEVEL_BUILDER"
-require_file "$FALL_RECRUITMENT_BUILDER"
+require_file "$JOINS_BUILDER"
 require_file "$SITE_STRUCTURE_VALIDATOR"
 require_file "$UNIT_LEVEL_PIN_TEST"
 require_file "$PERSON_NAME_SANITIZER"
@@ -229,16 +229,10 @@ else
   exit 1
 fi
 
-LAST_STEP="build Cub Scout JSN Dashboard data"
-log "Building Cub Scout JSN Dashboard data from monday.com"
-if "$PYTHON" "$FALL_RECRUITMENT_BUILDER" \
-  --token-file "$MONDAY_TOKEN_FILE" \
-  --output "${SITE_STAGE}/data/fall-recruitment-latest.js"; then
-  FALL_RECRUITMENT_STATUS="updated data/fall-recruitment-latest.js"
-else
-  FALL_RECRUITMENT_STATUS="failed; previous data bundle retained if available"
-  print -u2 -r -- "Cub Scout JSN Dashboard refresh failed; keeping the previous data bundle if available."
-fi
+LAST_STEP="build Cub and Scouts BSA joins data"
+log "Building joins dashboards from the newest dated workbooks"
+"$PYTHON" "$JOINS_BUILDER" --output "${SITE_STAGE}/data/joins-latest.js"
+FALL_RECRUITMENT_STATUS="updated both joins pages from same-day workbooks"
 
 LAST_STEP="build Unit Level Dashboard data"
 UNIT_LEVEL_SOURCE="$(latest_valid_workbook "$UNIT_LEVEL_SOURCE_DIR" "*_CAC - Unit Metric Scorecard.xlsx")"
@@ -262,8 +256,8 @@ if [[ -d "$PREVIEW_SITE" ]]; then
   if [[ -f "${SITE_STAGE}/data/monday-latest.json" ]]; then
     copy_file "${SITE_STAGE}/data/monday-latest.json" "${PREVIEW_SITE}/data/monday-latest.json"
   fi
-  if [[ -f "${SITE_STAGE}/data/fall-recruitment-latest.js" ]]; then
-    copy_file "${SITE_STAGE}/data/fall-recruitment-latest.js" "${PREVIEW_SITE}/data/fall-recruitment-latest.js"
+  if [[ -f "${SITE_STAGE}/data/joins-latest.js" ]]; then
+    copy_file "${SITE_STAGE}/data/joins-latest.js" "${PREVIEW_SITE}/data/joins-latest.js"
   fi
   copy_file "${SITE_STAGE}/data/unit-level-latest.json" "${PREVIEW_SITE}/data/unit-level-latest.json"
   copy_file "${SITE_STAGE}/data/unit-level-latest.js" "${PREVIEW_SITE}/data/unit-level-latest.js"

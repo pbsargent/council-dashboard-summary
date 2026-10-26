@@ -746,3 +746,13 @@ Unit Profile includes an Open BeAScout listing link when its public unit page ha
 
 
 Link publication requires every authoritative workbook-matched PIN unit to resolve successfully. Partial outages, changed sources, mismatched identities, and mixed JSON/JavaScript generations block publication and retain the prior live snapshot. The resolver uses bounded HTTPS requests and a five-minute run budget. `source.beascout_links` records schema version, verified/unavailable/matched counts, a timezone-aware verification timestamp and source SHA-256; these must reconcile with the unit links and report date. CSV mtime is only an intake-date check, not proof of the report’s generation date. Counts are recalculated each run.
+
+## New-youth joins pages (October 26, 2026)
+
+Cub Scout Joins (`cubs-joins.html`) and Scouts BSA Joins (`scouts-bsa-joins.html`) replace Cub Scout JSN and its event-planning board view. Earlier JSN sections describe the retired page only.
+
+The daily updater selects the newest filename date independently for the Cub Pack and Scout Troop joins workbooks in CAC-Published-Reports, requires a same-day pair, and validates all unit, district, age and coverage totals before atomically writing `data/joins-latest.js`. Missing or invalid latest files block publication; no stale fallback is allowed. Source filenames, report dates and SHA-256 hashes accompany the unit aggregates. No youth names or member IDs are published.
+
+The inclusive period starts September 1, 2026. Counts are distinct New Youth Member IDs per unit, excluding transfers and re-registrations; summing units does not deduplicate people across units. Roster ages are measured at the report date. Zero joins, unavailable ages and coverage-review units are retained. Council rank and tied ranks match the workbook. Blank unit details are unavailable. District, search and unit-view filters apply together to every KPI, district/age bar chart, complete unit table and CSV export. Reset restores the full population.
+
+Run `tools/test_join_dashboards.py`, syntax checks, the site validator with `--require-data`, and the public-name sanitizer before deployment. Verify rendered filters, empty states, scrolling and live data equality. Generated bundles remain in the isolated Pages artifact, outside source commits.

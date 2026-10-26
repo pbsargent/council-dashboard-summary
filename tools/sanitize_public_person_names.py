@@ -16,6 +16,7 @@ from typing import Any
 
 
 PUBLIC_DATA_FILES = (
+    "data/joins-latest.js",
     "data/latest.json",
     "data/unit-level-latest.json",
     "data/unit-level-latest.js",

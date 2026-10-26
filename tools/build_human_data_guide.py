@@ -503,7 +503,7 @@ def build_doc():
             ["CST comparison workbook", "Service Territory comparison metrics and Capitol Area Council comparison fields.", "`data/latest.json`"],
             ["monday.com daily workbook", "Hot prospects, 2026 renewal status, schools, Total Available Youth, and Popcorn commitments/readiness.", "`data/monday-latest.json`"],
             ["Unit Level Metrics workbook", "Unit-level youth, health, growth, training, SYT, and commissioner-assignment detail by program.", "`data/unit-level-latest.*`"],
-            ["Cub Scout JSN board", "School recruiting plans, scheduled recruitments, location and date patterns, and recruiting-material totals.", "`data/fall-recruitment-latest.js`"],
+            ["New-youth joins workbooks", "New youth joins by district, unit and roster age, including zero joins and coverage review flags.", "`data/joins-latest.js`"],
             ["Service Areas board", "Authoritative Service Area hierarchy, Field Directors, district professionals, Volunteer Chairs, and District Commissioners.", "`data/latest.json`"],
         ],
         [2200, 5000, 2160],
@@ -531,7 +531,7 @@ def build_doc():
         "Build `data/latest.json`, including Service Area rollups and a dated working archive outside the Pages source tree.",
         "Find the newest monday.com export workbook in the Council monday.com Reports shared drive.",
         "Build `data/monday-latest.json`, falling back to the monday.com API only if needed.",
-        "Rebuild Unit-Level Detail, Renewal Status, Units-Youth history, and the Cub Scout JSN data bundle.",
+        "Rebuild Unit-Level Detail, Renewal Status, Units-Youth history, and the Cub and Scouts BSA joins data bundle.",
         "Abbreviate every covered public person-name field to first name plus last initial and stop the deployment if a covered full name remains.",
         "Run the site-structure validator and stage the complete static site in an isolated Pages tree.",
         "Deploy the Council Summary site tree as a checksum-verified GitHub Pages artifact without committing generated data.",
@@ -681,7 +681,7 @@ def build_doc():
             ["Pack Camping Readiness", "Which Packs are Gap, Fragile, Preferred Depth, or Unknown for BALOO leadership depth, with Hazardous Weather filtered separately."],
             ["Troop Camping Readiness", "Which Troops are Gap, Fragile, Preferred Depth, or Unknown for IOLS-trained Scoutmaster/Assistant Scoutmaster depth, with Hazardous Weather filtered separately."],
             ["Recruitment Pipeline", "Where prospect, renewal, and school operating follow-up is concentrated."],
-            ["Cub Scout JSN", "How school recruiting plans, dates, locations, materials, and uncovered schools compare with the monday.com source dashboard."],
+            ["Cub Scout Joins / Scouts BSA Joins", "New youth joins since September 1 by district, unit and roster age; includes zero joins and coverage review flags."],
             ["Popcorn", "How unit commitments, goals, 2026 sales to date, onboarding, and training roll up from Service Area to District to Unit."],
             ["Unit Metrics", "How districts and unit sections compare across unit health, training, outdoor, advancement, and the current workbook retention metric."],
             ["Unit-Level Detail", "Which individual units and members drive program-specific youth, growth, training, SYT, health, assignment, BeAScout PIN status and freshness, PIN Last Updated, verified public BeAScout listing link (units without an authoritative PIN match display Link unavailable), overall Required PIN Details, separate status, contact, and meeting completion categories in Unit Profile, and Pack/Troop camping-readiness status."],
@@ -712,10 +712,10 @@ def build_doc():
         "https://www.scouting.org/wp-content/uploads/2025/05/Position-Trained-Requirements-Jun2025.pdf",
     )
 
-    add_heading(doc, "Cub Scout JSN interpretation", 2)
+    add_heading(doc, "New-youth joins interpretation", 2)
     add_body(
         doc,
-        "The Cub Scout JSN page is rebuilt directly from monday.com board 18420720719. Its charts preserve the source dashboard's widget-specific filters rather than applying one page-wide population to every graphic.",
+        "The Cub Scout Joins and Scouts BSA Joins pages use the newest same-day dated joins workbooks. Counts are distinct new Youth Member IDs per unit since September 1, excluding transfers and re-registrations. Ages are roster-reported as of the report date. Coverage review flags and zero joins remain included. District, search and unit-view filters apply to all charts, KPIs, rows and CSV exports.",
     )
     add_bullet(doc, "District recruitment includes dated recruitments and a No Date category.")
     add_bullet(doc, "School-planning gaps remain pie charts with their documented Cub-target, unit-association, plan-status, and district scopes.")
@@ -963,7 +963,7 @@ def build_doc():
     add_reference_bullet(doc, "`panel-help.js` documents the website's active ? help popover behavior.")
     add_reference_bullet(doc, "`refresh_monday_data.py` documents the monday.com workbook/API extraction.")
     add_reference_bullet(doc, "`tools/build_unit_level_dashboard.py` documents the Unit-Level Detail data build.")
-    add_reference_bullet(doc, "`tools/build_fall_recruitment_dashboard.py` documents the Cub Scout JSN data build.")
+    add_reference_bullet(doc, "`tools/build_join_dashboards.py` documents validation and the new-youth joins build.")
     add_reference_bullet(doc, "`work/renewal_recreation/build_renewal_board_data.py` documents the Renewal Status data build.")
     add_reference_bullet(doc, "`work/commissioner_site/build_site.py` documents the source workbook parsing and `latest.json` formulas.")
 
