@@ -312,6 +312,21 @@ def validate_unit_pin_snapshot(latest_payload: dict, unit_level_payload: dict) -
     if unit_rows and not pin_rows:
         errors.append("data/latest.json: unit_pin_statuses cannot be empty when Unit-Level units exist")
 
+    for row in unit_rows:
+        if not isinstance(row, dict):
+            continue
+        url = row.get("beascout_url")
+        if url is not None and (not isinstance(url, str) or not re.fullmatch(r"https://beascout\.scouting\.org/units/[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", url)):
+            errors.append("Unit-Level BeAScout link must be a canonical public unit URL")
+    urls = [row.get("beascout_url") for row in unit_rows if isinstance(row, dict) and isinstance(row.get("beascout_url"), str)]
+    if len(urls) != len(set(urls)):
+        errors.append("Different unit IDs must not share a BeAScout listing")
+    link_meta = unit_level_payload.get("source", {}).get("beascout_links")
+    if link_meta:
+        count = sum(isinstance(row, dict) and row.get("beascout_url") is not None for row in unit_rows)
+        if link_meta.get("verified") != count or link_meta.get("unavailable") != len(unit_rows) - count:
+            errors.append("BeAScout link coverage does not reconcile")
+
     unit_keys: dict[tuple[str, str], dict] = {}
     for index, row in enumerate(unit_rows):
         if not isinstance(row, dict):
@@ -1024,7 +1039,9 @@ def main() -> int:
     if unit_level_path.is_file() and unit_level_script_path.is_file():
         unit_level_page = unit_level_path.read_text(encoding="utf-8")
         unit_level_script = unit_level_script_path.read_text(encoding="utf-8")
-        if "unit-level-dashboard.js?v=20261020-unit-coverage-1" not in unit_level_page:
+        if "BeAScout listing" not in unit_level_script or (help_page_path.is_file() and "BeAScout listing links" not in help_source):
+            errors.append("Unit Profile and Dashboard Guide must describe BeAScout listing links")
+        if "unit-level-dashboard.js?v=20261026-beascout-links-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-context script")
         if "unit-level-dashboard.css?v=20260911-pin-profile-last-updated-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-detail styles")

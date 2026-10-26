@@ -102,3 +102,12 @@ assert.equal(outputNodes.heroStatus.textContent, "Metric unavailable");
 assert.match(outputNodes.driverRows.innerHTML, /Unavailable/);
 assert.doesNotMatch(outputNodes.driverRows.innerHTML, />Gap</);
 assert.doesNotMatch(outputNodes.trainingRows.innerHTML, />0%</);
+
+// Only canonical public information links may become clickable.
+const canonicalPinUrl = 'https://beascout.scouting.org/units/5d8f6736-4bd3-47ec-8d81-095707dc2dc2';
+context.canonicalPinUrl = canonicalPinUrl;
+assert.match(vm.runInContext('beascoutLink({beascout_url: canonicalPinUrl})', context), /Open BeAScout listing/);
+for (const url of [null, 'javascript:alert(1)', 'https://beascout.scouting.org.evil.example/units/test', 'https://beascout.scouting.org/search', 'https://beascout.scouting.org/registration?unitId=foo']) {
+  context.testPinUrl = url;
+  assert.equal(vm.runInContext('beascoutLink({beascout_url: testPinUrl})', context), 'Link unavailable');
+}

@@ -216,6 +216,13 @@ function renderRenewal() {
   document.getElementById("renewalBody").innerHTML = `<p class="subtle">Beginning January 1, 2027, membership renewals will no longer have a grace period. These are member renewal dates; unit renewal dates are separate.</p><div class="renewal-summary"><div><span>Youth</span><strong>${n(renewal.youth)}</strong></div><div><span>Adults</span><strong>${n(renewal.adults)}</strong></div><div><span>Opt-outs</span><strong>${n(renewal.opt_outs)}</strong></div></div>${memberTable}`;
 }
 
+function beascoutLink(unit) {
+  const url = unit.beascout_url;
+  return typeof url === "string" && /^https:\/\/beascout\.scouting\.org\/units\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(url)
+    ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">Open BeAScout listing ↗</a>`
+    : "Link unavailable";
+}
+
 function renderProfile() {
   const unit = state.unit;
   const pin = pinSummary(unit);
@@ -240,6 +247,8 @@ function renderProfile() {
     <dd class="pin-field-indicator"><span class="status ${chipTone(pin.fields.contact.tone)}">${esc(pin.fields.contact.label)}</span><small>${esc(pin.fields.contact.detail)}</small></dd>
     <dt>PIN meeting requirements</dt>
     <dd class="pin-field-indicator"><span class="status ${chipTone(pin.fields.meeting.tone)}">${esc(pin.fields.meeting.label)}</span><small>${esc(pin.fields.meeting.detail)}</small></dd>
+    <dt>BeAScout listing</dt>
+    <dd>${beascoutLink(unit)}</dd>
     ${fields.map(([label, value]) => `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`).join("")}`;
 }
 

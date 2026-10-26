@@ -185,6 +185,7 @@ LAST_STEP="validate current campaign popcorn sales contract"
 LAST_STEP="validate Unit Profile PIN rendering contract"
 log "Validating Unit Profile PIN status, Last Updated, completeness, and privacy behavior"
 "$NODE" "$UNIT_LEVEL_PIN_TEST"
+"$PYTHON" "${SUMMARY_REPO}/tools/test_beascout_links.py"
 
 LAST_STEP="stage source-only GitHub Pages site"
 log "Preparing isolated GitHub Pages staging tree"
@@ -244,6 +245,8 @@ UNIT_LEVEL_SOURCE="$(latest_valid_workbook "$UNIT_LEVEL_SOURCE_DIR" "*_CAC - Uni
 log "Building Unit Level Dashboard data from ${UNIT_LEVEL_SOURCE}"
 "$PYTHON" "$UNIT_LEVEL_BUILDER" "$UNIT_LEVEL_SOURCE" \
   --council-snapshot "${SITE_STAGE}/data/latest.json" \
+  --beascout-pin-report "${BEASCOUT_PIN_REPORT:-/Volumes/MacProData/Capitol Area Council Dashboard/Capitol Area Council/PinDataReport.csv}" \
+  --beascout-audit "${BUILD_DIR}/beascout-link-audit.json" \
   --output "${SITE_STAGE}/data/unit-level-latest.json" \
   --js-output "${SITE_STAGE}/data/unit-level-latest.js"
 UNIT_LEVEL_STATUS="updated from ${UNIT_LEVEL_SOURCE:t}"

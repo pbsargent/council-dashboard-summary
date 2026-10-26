@@ -107,3 +107,8 @@ sales across all unit rows in the active program, Service Area, district,
 commitment, and search filters, including units not marked Committed. Its
 coverage shows available unit records against all selected units. Missing
 records remain unavailable; an entirely unavailable selection displays n/a.
+
+
+### BeAScout unit listing links
+
+Unit Profile includes an Open BeAScout listing link when its public unit page has been verified. Links are resolved using the same-day raw PIN report’s internal unit ID and ZIP code, with unit identity and council checked on the returned page. Unresolved links display Link unavailable; this does not change PIN status or completeness. PIN measures continue to use the dashboard workbook’s Pin tab.

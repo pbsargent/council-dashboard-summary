@@ -17,6 +17,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from openpyxl import load_workbook
+from beascout_links import enrich
 
 
 def clean(value):
@@ -96,6 +97,8 @@ def main():
     parser.add_argument("--output", type=Path, default=Path("data/unit-level-latest.json"))
     parser.add_argument("--js-output", type=Path, default=Path("data/unit-level-latest.js"))
     parser.add_argument("--council-snapshot", type=Path, help="Same-day Council JSON with complete source Units identities")
+    parser.add_argument("--beascout-pin-report", type=Path, help="Same-day raw PIN CSV used only to resolve public listing URLs")
+    parser.add_argument("--beascout-audit", type=Path, help="Private link-resolution audit outside the public site")
     args = parser.parse_args()
 
     workbook = load_workbook(args.workbook, read_only=True, data_only=True)
@@ -206,6 +209,14 @@ def main():
         "default_unit_id": 258381 if any(row["unit_id"] == 258381 for row in units) else (units[0]["unit_id"] if units else None),
         "units": units,
     }
+
+    if args.beascout_pin_report:
+        summary, audit = enrich(units, args.beascout_pin_report, snapshot_date)
+        output["source"]["beascout_links"] = summary
+        if args.beascout_audit:
+            args.beascout_audit.parent.mkdir(parents=True, exist_ok=True)
+            args.beascout_audit.write_text(json.dumps(audit, indent=2) + "\n")
+        print("BeAScout links: " + json.dumps(summary))
 
     payload = json.dumps(output, indent=2, ensure_ascii=False)
     args.output.parent.mkdir(parents=True, exist_ok=True)
