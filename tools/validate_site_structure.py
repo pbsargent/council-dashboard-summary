@@ -551,8 +551,11 @@ def main() -> int:
 
     if "--require-data" in sys.argv:
         try:
-            from build_join_dashboards import validate_public_bundle
-            validate_public_bundle(root / 'data/joins-latest.js')
+            from build_join_dashboards import validate_public_bundle, service_area_mapping
+            joins = validate_public_bundle(root / 'data/joins-latest.js')
+            mapping = service_area_mapping(root / 'data/latest.json', joins, date.fromisoformat(joins['cubs']['report_date']))
+            if any(area != mapping[district] for report in joins.values() for district, area in report['district_service_areas'].items()):
+                raise ValueError('Joins service areas differ from the council snapshot')
         except (OSError, ValueError, TypeError, KeyError) as error:
             errors.append(f"Joins data: {error}")
         try:
@@ -1205,7 +1208,7 @@ def main() -> int:
         page_path = root / page_name
         if page_path.is_file():
             page = parse_page(page_path)
-            for element_id in ("joinDistrict", "joinSearch", "joinCoverage", "joinReset", "joinExport", "joinKpis", "joinDistrictChart", "joinAgeChart", "joinRows"):
+            for element_id in ("joinDistrict", "joinSearch", "joinCoverage", "joinReset", "joinExport", "joinKpis", "joinDistrictChart", "joinAgeChart", "joinRows", "joinExpandAll", "joinCollapseAll"):
                 if element_id not in page.elements_by_id:
                     errors.append(f"{page_name}: missing joins component #{element_id}")
             if not any("data/joins-latest.js?v=" in src for src in page.scripts):

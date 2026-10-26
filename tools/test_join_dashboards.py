@@ -5,7 +5,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from build_join_dashboards import build, newest, read_report
+from build_join_dashboards import build, newest, read_report, service_area_mapping
+import json
 
 
 class Sheet:
@@ -64,6 +65,17 @@ class JoinsTests(unittest.TestCase):
             self.assertEqual(output.read_text(),'previous verified data')
             with self.assertRaises(Exception): build(folder,output,date(2026,10,26))
             self.assertEqual(output.read_text(),'previous verified data')
+
+    def test_authoritative_service_areas_require_complete_unambiguous_same_day_mapping(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'council.json'
+            reports = {'cubs': {'units': [{'district': 'North Shore 11'}]}}
+            base = {'report_date': '2026-10-26', 'districts': [{'district': 'North Shore', 'service_area': 'Northern Service Area'}]}
+            path.write_text(json.dumps({'dashboard': base}))
+            self.assertEqual(service_area_mapping(path, reports, date(2026,10,26)), {'North Shore 11':'Northern Service Area'})
+            for rows, day in [([], '2026-10-26'), (base['districts'] * 2, '2026-10-26'), (base['districts'], '2026-10-25')]:
+                path.write_text(json.dumps({'dashboard': {'report_date':day,'districts':rows}}))
+                with self.assertRaises(ValueError): service_area_mapping(path,reports,date(2026,10,26))
 
 
 if __name__ == '__main__': unittest.main()

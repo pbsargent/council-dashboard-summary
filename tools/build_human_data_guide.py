@@ -715,7 +715,7 @@ def build_doc():
     add_heading(doc, "New-youth joins interpretation", 2)
     add_body(
         doc,
-        "The Cub Scout Joins and Scouts BSA Joins pages use the newest same-day dated joins workbooks. Counts are distinct new Youth Member IDs per unit since September 1, excluding transfers and re-registrations. Ages are roster-reported as of the report date. Coverage review flags and zero joins remain included. District, search and unit-view filters apply to all charts, KPIs, rows and CSV exports.",
+        "The Cub Scout Joins and Scouts BSA Joins pages use the newest same-day dated joins workbooks. Counts are distinct new Youth Member IDs per unit since September 1, excluding transfers and re-registrations. Ages are roster-reported as of the report date. Coverage review flags and zero joins remain included. District, search and unit-view filters apply to all charts, KPIs, rows and CSV exports. Unit joins groups units into collapsible Service Area and District sections, each with filtered unit and new-join totals. Expand all and Collapse all control the hierarchy; focused filters reveal matching units.",
     )
     add_bullet(doc, "District recruitment includes dated recruitments and a No Date category.")
     add_bullet(doc, "School-planning gaps remain pie charts with their documented Cub-target, unit-association, plan-status, and district scopes.")

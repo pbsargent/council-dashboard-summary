@@ -80,10 +80,37 @@ def read_report(path, report_date, kind):
     return dict(program=kind, report_date=report_date.isoformat(), period_start='2026-09-01', source_name=path.name, source_sha256=before, age_labels=ages, units=units)
 
 
-def build(folder, output, expected_date):
+def district_key(value):
+    return re.sub(r'\s+\d{2}$', '', value.strip()).casefold()
+
+
+def service_area_mapping(snapshot_path, reports, expected_date):
+    snapshot = json.loads(snapshot_path.read_text())
+    require(snapshot['dashboard']['report_date'] == expected_date.isoformat(), 'Service-area snapshot must match joins report date')
+    mapping = {}
+    for row in snapshot['dashboard']['districts']:
+        key = district_key(row['district'])
+        area = row['service_area']
+        require(key not in mapping and isinstance(area, str) and area.strip(), 'Missing or ambiguous district service area')
+        mapping[key] = area
+    result = {}
+    for report in reports.values():
+        for district in {u['district'] for u in report['units']}:
+            require(district_key(district) in mapping, f'No authoritative service area for {district}')
+            result[district] = mapping[district_key(district)]
+    return result
+
+
+def build(folder, output, expected_date, council_snapshot=None):
     selected = {kind: newest(folder, kind) for kind in KINDS}
     require(all(day == expected_date for day, _ in selected.values()), 'Both newest joins workbooks must match the run date')
     reports = {kind: read_report(path, day, kind) for kind, (day, path) in selected.items()}
+    require(council_snapshot is not None, 'A same-day council snapshot is required for service areas')
+    snapshot_before = hashlib.sha256(council_snapshot.read_bytes()).hexdigest()
+    areas = service_area_mapping(council_snapshot, reports, expected_date)
+    for report in reports.values():
+        report['district_service_areas'] = {d: areas[d] for d in sorted({u['district'] for u in report['units']})}
+    require(snapshot_before == hashlib.sha256(council_snapshot.read_bytes()).hexdigest(), 'Service-area source changed while reading')
     # Validate the complete pair before replacing the single public bundle.
     for kind, (_, path) in selected.items():
         require(hashlib.sha256(path.read_bytes()).hexdigest() == reports[kind]['source_sha256'], 'Source changed across pair read')
@@ -102,10 +129,12 @@ def validate_public_bundle(path):
     require(len({r['report_date'] for r in reports.values()}) == 1, 'Mismatched joins dates')
     fields = {'rank','unit','district','joins','unit_id','organization','ages','review'}
     for kind, report in reports.items():
-        require(set(report) == {'program','report_date','period_start','source_name','source_sha256','age_labels','units'}, 'Unexpected public report field')
+        require(set(report) == {'program','report_date','period_start','source_name','source_sha256','age_labels','units','district_service_areas'}, 'Unexpected public report field')
         require(report['program'] == kind and report['units'], 'Missing joins population')
         date.fromisoformat(report['report_date'])
         require(len(report['age_labels']) == 9, 'Missing age buckets')
+        require(set(report['district_service_areas']) == {u['district'] for u in report['units']}, 'Incomplete joins service-area coverage')
+        require(all(isinstance(a, str) and a.strip() for a in report['district_service_areas'].values()), 'Invalid joins service area')
         for unit in report['units']:
             require(set(unit) == fields, 'Unexpected public unit field')
             require(len(unit['ages']) == 9 and sum(count(n) for n in unit['ages']) == count(unit['joins']), 'Invalid public joins counts')
@@ -116,6 +145,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-dir', type=Path, default=DEFAULT_SOURCE)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--council-snapshot', type=Path, required=True)
     parser.add_argument('--date', type=date.fromisoformat, default=datetime.now(ZoneInfo('America/Chicago')).date())
     args = parser.parse_args()
-    build(args.source_dir, args.output, args.date)
+    build(args.source_dir, args.output, args.date, args.council_snapshot)

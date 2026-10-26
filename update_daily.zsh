@@ -231,7 +231,7 @@ fi
 
 LAST_STEP="build Cub and Scouts BSA joins data"
 log "Building joins dashboards from the newest dated workbooks"
-"$PYTHON" "$JOINS_BUILDER" --output "${SITE_STAGE}/data/joins-latest.js"
+"$PYTHON" "$JOINS_BUILDER" --council-snapshot "${SITE_STAGE}/data/latest.json" --output "${SITE_STAGE}/data/joins-latest.js"
 FALL_RECRUITMENT_STATUS="updated both joins pages from same-day workbooks"
 
 LAST_STEP="build Unit Level Dashboard data"

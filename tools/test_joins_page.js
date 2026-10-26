@@ -3,21 +3,34 @@ const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const nodes = {};
-for (const id of ['joinStatus','joinSource','joinDistrict','joinSearch','joinCoverage','joinKpis','joinCount','joinEmpty','joinDistrictChart','joinAgeChart','joinHead','joinRows','joinReset','joinExport']) {
+for (const id of ['joinStatus','joinSource','joinDistrict','joinSearch','joinCoverage','joinKpis','joinCount','joinEmpty','joinDistrictChart','joinAgeChart','joinRows','joinReset','joinExport','joinExpandAll','joinCollapseAll']) {
   nodes[id] = {value:'',innerHTML:'',textContent:'',hidden:false,handlers:{},addEventListener(event,fn){this.handlers[event]=fn;}};
 }
+let groups = [];
+Object.defineProperty(nodes.joinRows, 'innerHTML', {
+  get(){ return this.html || ''; },
+  set(html){ this.html=html; groups=[...html.matchAll(/<details[^>]+data-join-group="([^"]+)"([^>]*)>/g)].map(match => ({dataset:{joinGroup:match[1].replace(/&quot;/g,'"')},open:match[2].includes(' open'),addEventListener(event,fn){this[event]=fn;}})); }
+});
+nodes.joinRows.querySelectorAll=()=>groups;
 let blob, download;
 const units = [
   {rank:1,unit:'Pack 0001',district:'North Shore 11',joins:3,unit_id:null,organization:null,ages:[3,0,0,0,0,0,0,0,0],review:'Review'},
   {rank:2,unit:'Pack 0002',district:'Bee Cave 01',joins:2,unit_id:'2',organization:'Example',ages:[2,0,0,0,0,0,0,0,0],review:''},
   {rank:3,unit:'Pack 0003',district:'Bee Cave 01',joins:0,unit_id:'3',organization:'Example',ages:[0,0,0,0,0,0,0,0,0],review:''},
 ];
-const data={report_date:'2026-10-26',source_name:'source.xlsx',units,age_labels:['Age 4','Age 5','Age 6','Age 7','Age 8','Age 9','Age 10','Age 11','Age unavailable']};
+const data={report_date:'2026-10-26',source_name:'source.xlsx',units,district_service_areas:{'North Shore 11':'Northern Service Area','Bee Cave 01':'Northern Service Area'},age_labels:['Age 4','Age 5','Age 6','Age 7','Age 8','Age 9','Age 10','Age 11','Age unavailable']};
 const context = {Intl,Date,setTimeout:fn=>fn(),Blob:class{constructor(parts){blob=parts.join('');}},URL:{createObjectURL:()=>'',revokeObjectURL(){}},window:{CAC_JOINS:{cubs:data}},document:{body:{dataset:{page:'cubs'}},getElementById:id=>nodes[id],createElement:()=>({click(){download=this.download;}})}};
 vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../joins.js'),'utf8'),context);
 assert.equal(nodes.joinCount.textContent,'3 units · 5 joins');
+assert.equal(groups.length,3); assert.ok(groups.every(g=>!g.open));
+assert.match(nodes.joinRows.innerHTML,/Northern Service Area<\/span><span class="join-group-totals">3 units · <strong>5 joins/);
+assert.match(nodes.joinRows.innerHTML,/Bee Cave 01<\/span><span class="join-group-totals">2 units · <strong>2 joins/);
+nodes.joinExpandAll.handlers.click(); assert.ok(groups.every(g=>g.open));
+nodes.joinCollapseAll.handlers.click(); assert.ok(groups.every(g=>!g.open));
 nodes.joinDistrict.value='North Shore 11'; nodes.joinDistrict.handlers.input();
 assert.equal(nodes.joinCount.textContent,'1 units · 3 joins');
+assert.ok(groups.every(g=>g.open));
+assert.match(nodes.joinRows.innerHTML,/Northern Service Area<\/span><span class="join-group-totals">1 unit · <strong>3 joins/);
 assert.match(nodes.joinRows.innerHTML,/Unavailable/);
 nodes.joinExport.handlers.click(); assert.match(blob,/Pack 0001/); assert.doesNotMatch(blob,/Pack 0002/); assert.equal(download,'cubs-joins-2026-10-26.csv');
 nodes.joinReset.handlers.click(); assert.equal(nodes.joinCount.textContent,'3 units · 5 joins');
