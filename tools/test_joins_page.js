@@ -3,7 +3,7 @@ const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const nodes = {};
-for (const id of ['joinStatus','joinSource','joinDistrict','joinSearch','joinCoverage','joinKpis','joinCount','joinEmpty','joinDistrictChart','joinAgeChart','joinRows','joinReset','joinExport','joinExpandAll','joinCollapseAll']) {
+for (const id of ['joinStatus','joinSource','joinArea','joinDistrict','joinSearch','joinCoverage','joinKpis','joinCount','joinEmpty','joinDistrictChart','joinAgeChart','joinRows','joinReset','joinExport','joinExpandAll','joinCollapseAll']) {
   nodes[id] = {value:'',innerHTML:'',textContent:'',hidden:false,handlers:{},addEventListener(event,fn){this.handlers[event]=fn;}};
 }
 let groups = [];
@@ -15,16 +15,16 @@ nodes.joinRows.querySelectorAll=()=>groups;
 let blob, download;
 const units = [
   {rank:1,unit:'Pack 0001',district:'North Shore 11',joins:3,unit_id:null,organization:null,ages:[3,0,0,0,0,0,0,0,0],review:'Review'},
-  {rank:2,unit:'Pack 0002',district:'Bee Cave 01',joins:2,unit_id:'2',organization:'Example',ages:[2,0,0,0,0,0,0,0,0],review:''},
-  {rank:3,unit:'Pack 0003',district:'Bee Cave 01',joins:0,unit_id:'3',organization:'Example',ages:[0,0,0,0,0,0,0,0,0],review:''},
+  {rank:2,unit:'Pack 0002',district:'Live Oak 09',joins:2,unit_id:'2',organization:'Example',ages:[2,0,0,0,0,0,0,0,0],review:''},
+  {rank:3,unit:'Pack 0003',district:'Live Oak 09',joins:0,unit_id:'3',organization:'Example',ages:[0,0,0,0,0,0,0,0,0],review:''},
 ];
-const data={report_date:'2026-10-26',source_name:'source.xlsx',units,district_service_areas:{'North Shore 11':'Northern Service Area','Bee Cave 01':'Northern Service Area'},age_labels:['Age 4','Age 5','Age 6','Age 7','Age 8','Age 9','Age 10','Age 11','Age unavailable']};
+const data={report_date:'2026-10-26',source_name:'source.xlsx',units,district_service_areas:{'North Shore 11':'Northern Service Area','Live Oak 09':'Southern Service Area'},age_labels:['Age 4','Age 5','Age 6','Age 7','Age 8','Age 9','Age 10','Age 11','Age unavailable']};
 const context = {Intl,Date,setTimeout:fn=>fn(),Blob:class{constructor(parts){blob=parts.join('');}},URL:{createObjectURL:()=>'',revokeObjectURL(){}},window:{CAC_JOINS:{cubs:data}},document:{body:{dataset:{page:'cubs'}},getElementById:id=>nodes[id],createElement:()=>({click(){download=this.download;}})}};
 vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../joins.js'),'utf8'),context);
 assert.equal(nodes.joinCount.textContent,'3 units · 5 joins');
-assert.equal(groups.length,3); assert.ok(groups.every(g=>!g.open));
-assert.match(nodes.joinRows.innerHTML,/Northern Service Area<\/span><span class="join-group-totals">3 units · <strong>5 joins/);
-assert.match(nodes.joinRows.innerHTML,/Bee Cave 01<\/span><span class="join-group-totals">2 units · <strong>2 joins/);
+assert.equal(groups.length,4); assert.ok(groups.every(g=>!g.open));
+assert.match(nodes.joinRows.innerHTML,/Southern Service Area<\/span><span class="join-group-totals">2 units · <strong>2 joins/);
+assert.match(nodes.joinRows.innerHTML,/Live Oak 09<\/span><span class="join-group-totals">2 units · <strong>2 joins/);
 nodes.joinExpandAll.handlers.click(); assert.ok(groups.every(g=>g.open));
 nodes.joinCollapseAll.handlers.click(); assert.ok(groups.every(g=>!g.open));
 nodes.joinDistrict.value='North Shore 11'; nodes.joinDistrict.handlers.input();
@@ -39,4 +39,25 @@ assert.match(nodes.joinRows.innerHTML,/Pack 0003/); assert.doesNotMatch(nodes.jo
 nodes.joinSearch.value='no match'; nodes.joinSearch.handlers.input(); assert.equal(nodes.joinEmpty.hidden,false);
 nodes.joinReset.handlers.click(); assert.equal(nodes.joinEmpty.hidden,true);
 nodes.joinCoverage.value='review'; nodes.joinCoverage.handlers.input(); assert.equal(nodes.joinCount.textContent,'1 units · 3 joins');
-console.log('Joins page filter, reset, missing-detail, empty-state and CSV scope regressions passed.');
+nodes.joinReset.handlers.click();
+nodes.joinDistrict.value='North Shore 11'; nodes.joinDistrict.handlers.input();
+nodes.joinArea.value='Southern Service Area'; nodes.joinArea.handlers.input();
+assert.equal(nodes.joinDistrict.value,'');
+assert.match(nodes.joinDistrict.innerHTML,/Live Oak 09/);
+assert.doesNotMatch(nodes.joinDistrict.innerHTML,/North Shore/);
+assert.equal(nodes.joinCount.textContent,'2 units · 2 joins');
+assert.doesNotMatch(nodes.joinRows.innerHTML,/Pack 0001/);
+assert.doesNotMatch(nodes.joinDistrictChart.innerHTML,/North Shore/);
+assert.match(nodes.joinAgeChart.innerHTML,/<strong>2<\/strong>/);
+nodes.joinExport.handlers.click(); assert.doesNotMatch(blob,/Pack 0001/); assert.match(blob,/Pack 0002/);
+nodes.joinArea.value='Northern Service Area'; nodes.joinArea.handlers.input();
+assert.equal(nodes.joinCount.textContent,'1 units · 3 joins');
+nodes.joinDistrict.value='North Shore 11'; nodes.joinDistrict.handlers.input();
+nodes.joinArea.value=''; nodes.joinArea.handlers.input();
+assert.equal(nodes.joinDistrict.value,'North Shore 11');
+assert.match(nodes.joinDistrict.innerHTML,/Live Oak 09/);
+assert.equal(nodes.joinCount.textContent,'1 units · 3 joins');
+nodes.joinReset.handlers.click();
+assert.equal(nodes.joinArea.value,''); assert.equal(nodes.joinDistrict.value,'');
+assert.equal(nodes.joinCount.textContent,'3 units · 5 joins');
+console.log('Joins area/district cascade, hierarchy, filter, reset and CSV scope regressions passed.');

@@ -9,7 +9,15 @@
   $('joinStatus').textContent = `September 1, 2026 – ${date}`;
   $('joinSource').textContent = data.source_name;
   const districts = [...new Set(data.units.map(u => u.district))].sort();
-  $('joinDistrict').innerHTML = '<option value="">All districts</option>' + districts.map(d => `<option>${esc(d)}</option>`).join('');
+  const serviceAreas = [...new Set(districts.map(d => data.district_service_areas[d]))].sort();
+  $('joinArea').innerHTML = '<option value="">All service areas</option>' + serviceAreas.map(area => `<option>${esc(area)}</option>`).join('');
+  function updateDistrictOptions() {
+    const current = $('joinDistrict').value;
+    const available = districts.filter(d => !$('joinArea').value || data.district_service_areas[d] === $('joinArea').value);
+    $('joinDistrict').innerHTML = '<option value="">All districts</option>' + available.map(d => `<option>${esc(d)}</option>`).join('');
+    $('joinDistrict').value = available.includes(current) ? current : '';
+  }
+  updateDistrictOptions();
   let filtered = [];
   const openGroups = new Map();
   function unitTable(units) {
@@ -22,7 +30,7 @@
     return `<span>${esc(label)}</span><span class="join-group-totals">${units.length} ${units.length === 1 ? 'unit' : 'units'} · <strong>${total.toLocaleString()} joins</strong></span>`;
   }
   function renderGroups() {
-    const revealMatches = !!($('joinDistrict').value || $('joinSearch').value.trim() || $('joinCoverage').value);
+    const revealMatches = !!($('joinArea').value || $('joinDistrict').value || $('joinSearch').value.trim() || $('joinCoverage').value);
     const areas = [...new Set(filtered.map(u => data.district_service_areas[u.district]))].sort();
     const isOpen = key => revealMatches || openGroups.get(key);
     $('joinRows').innerHTML = areas.map(area => {
@@ -43,7 +51,8 @@
   }
   function render() {
     const search = $('joinSearch').value.toLowerCase().trim();
-    filtered = data.units.filter(u => (!$('joinDistrict').value || u.district === $('joinDistrict').value) &&
+    filtered = data.units.filter(u => (!$('joinArea').value || data.district_service_areas[u.district] === $('joinArea').value) &&
+      (!$('joinDistrict').value || u.district === $('joinDistrict').value) &&
       (!search || [u.unit, u.district, u.unit_id, u.organization].some(v => String(v ?? '').toLowerCase().includes(search))) &&
       (!$('joinCoverage').value || ($('joinCoverage').value === 'review' ? !!u.review : u.joins === 0)));
     const total = filtered.reduce((s,u) => s + u.joins, 0);
@@ -56,7 +65,8 @@
     renderGroups();
   }
   ['joinDistrict','joinCoverage','joinSearch'].forEach(id => $(id).addEventListener('input',render));
-  $('joinReset').addEventListener('click',() => { ['joinDistrict','joinCoverage','joinSearch'].forEach(id => $(id).value = ''); render(); });
+  $('joinArea').addEventListener('input', () => { updateDistrictOptions(); render(); });
+  $('joinReset').addEventListener('click',() => { ['joinArea','joinDistrict','joinCoverage','joinSearch'].forEach(id => $(id).value = ''); updateDistrictOptions(); render(); });
   for (const [id, open] of [['joinExpandAll', true], ['joinCollapseAll', false]]) {
     $(id).addEventListener('click', () => $('joinRows').querySelectorAll('details').forEach(group => {
       openGroups.set(group.dataset.joinGroup, open);

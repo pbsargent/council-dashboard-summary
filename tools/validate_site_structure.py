@@ -1208,7 +1208,7 @@ def main() -> int:
         page_path = root / page_name
         if page_path.is_file():
             page = parse_page(page_path)
-            for element_id in ("joinDistrict", "joinSearch", "joinCoverage", "joinReset", "joinExport", "joinKpis", "joinDistrictChart", "joinAgeChart", "joinRows", "joinExpandAll", "joinCollapseAll"):
+            for element_id in ("joinArea", "joinDistrict", "joinSearch", "joinCoverage", "joinReset", "joinExport", "joinKpis", "joinDistrictChart", "joinAgeChart", "joinRows", "joinExpandAll", "joinCollapseAll"):
                 if element_id not in page.elements_by_id:
                     errors.append(f"{page_name}: missing joins component #{element_id}")
             if not any("data/joins-latest.js?v=" in src for src in page.scripts):

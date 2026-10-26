@@ -759,3 +759,6 @@ Run `tools/test_join_dashboards.py`, syntax checks, the site validator with `--r
 
 
 Unit joins now groups every matching unit in collapsible Service Area → District sections. Both headings show filtered unit and new-join totals. Expand all and Collapse all control the hierarchy; district, search or unit-view filters automatically reveal matching units. Collapsing a section does not remove its units from counts or CSV exports. Service-area assignments come from the same-day council snapshot using validated district labels; missing or ambiguous assignments block a new bundle.
+
+
+The Service Area filter narrows the District choices to that area. Changing areas clears a selected district only when it no longer belongs; All service areas restores every district. Service Area combines with District, search and unit view across all counts, charts, hierarchy totals and CSV exports. Reset filters restores both selectors and the full population.
