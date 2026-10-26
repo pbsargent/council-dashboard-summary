@@ -112,3 +112,6 @@ records remain unavailable; an entirely unavailable selection displays n/a.
 ### BeAScout unit listing links
 
 Unit Profile includes an Open BeAScout listing link when its public unit page has been verified. Links are resolved using the same-day raw PIN report’s internal unit ID and ZIP code, with unit identity and council checked on the returned page. Unresolved links display Link unavailable; this does not change PIN status or completeness. PIN measures continue to use the dashboard workbook’s Pin tab.
+
+
+Link publication requires every authoritative workbook-matched PIN unit to resolve successfully. Partial outages, changed sources, mismatched identities, and mixed JSON/JavaScript generations block publication and retain the prior live snapshot. The resolver uses bounded HTTPS requests and a five-minute run budget. `source.beascout_links` records schema version, verified/unavailable/matched counts, a timezone-aware verification timestamp and source SHA-256; these must reconcile with the unit links and report date. CSV mtime is only an intake-date check, not proof of the report’s generation date. Counts are recalculated each run.

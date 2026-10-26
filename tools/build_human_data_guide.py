@@ -637,6 +637,7 @@ def build_doc():
     )
 
     add_heading(doc, "BeAScout PIN status and follow-up", 2)
+    add_body(doc, "Unit Profile includes a verified public BeAScout listing link. A unit without an authoritative PIN match shows Link unavailable. If a refresh cannot verify every matched unit listing, publication pauses and the prior snapshot remains available; check the displayed refresh date. Link lookup does not change PIN status or completeness definitions.")
     add_body(
         doc,
         "The dashboard uses one PIN classification in Unit Follow-up, the first Unit-Level Detail KPI, the Unit Health Funnel, and the District Performance scorecard. It does not treat a missing match as an inactive PIN.",

@@ -311,3 +311,13 @@ The two SYT statuses evaluate every displayed holder against the viewer's
 current date; a unit with both states matches either filter. All choices combine
 with the master program, Service Area, District, Focus, and Search filters
 without changing Key 3 definitions or denominators.
+
+
+## BeAScout unit listing publication contract
+
+- Preserve `tools/beascout_links.py`, its offline regression suite, the Unit Profile link, cache versions, and `update_daily.zsh` integration as one release. Resolve numeric internal unit IDs plus ZIP through the official BeAScout resolver; publish only verified canonical `/units/UUID` URLs. Never guess UUIDs or substitute registration/search URLs.
+- The raw PIN CSV supplies link identity/ZIP only. PIN status, freshness, completeness, and denominators remain sourced from the dashboard workbook's `Pin` tab. CSV mtime is an intake-date check, not proof of report-generation freshness. Require its matched ID population to equal the authoritative workbook PIN population, validate identity/council/gender where supplied, reject normalized duplicate IDs, and verify source fingerprint/hash across the complete lookup.
+- Every matched unit must resolve successfully before a new bundle may publish. A partial outage, source mutation, ambiguous identity, or duplicate destination URL must fail closed and retain the prior published snapshot. Only units genuinely absent from the authoritative PIN population may display Link unavailable. Never encode today's 297/299 counts as future requirements.
+- Keep HTTPS-only redirects, per-request total limits, a five-minute overall lookup budget, modest concurrency and one reduced-concurrency retry. Private failed-run audits contain unit IDs and safe outcome codes; never record source contacts, addresses, server response bodies or arbitrary exception text.
+- Require strict public verification metadata, a same-report-date timezone-aware verification timestamp, reconciled coverage and source digest. Validate that the JSON and JavaScript browser bundles represent exactly the same complete generation before publication. Preserve the prior published bundle on failures.
+- Run the BeAScout and Unit Profile regressions in the read-only daily preflight before intake/report artifacts, as well as at site publication. Keep release parity, source-cleanliness gates, reader documentation, daily coverage logging, and production source copies synchronized. Test live matched/unmatched units, guide freshness, browser cache versions, staged/live payload equality, and core presentation parity after a site release.

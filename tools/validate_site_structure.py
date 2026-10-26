@@ -9,6 +9,8 @@ import math
 import re
 import sys
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
+from beascout_links import URL_PATTERN, expected_source_ids
 from html.parser import HTMLParser
 from pathlib import Path
 from validate_monday_snapshot import validate_snapshot
@@ -284,6 +286,48 @@ def unit_level_identity(row: dict) -> tuple[str, str]:
     return clean_district_identity(row.get("district")), display_name
 
 
+def validate_beascout_bundle(council: dict, payload: dict, script: str) -> list[str]:
+    """Require complete current verification and identical JSON/browser data."""
+    try:
+        units = payload["units"]
+        meta = payload["source"]["beascout_links"]
+        fields = {"version", "verified", "unavailable", "matched_source_units", "verified_at", "source_sha256"}
+        if not isinstance(meta, dict) or set(meta) != fields:
+            raise ValueError("BeAScout verification metadata is missing or outside its public schema")
+        if type(meta["version"]) is not int or meta["version"] != 1:
+            raise ValueError("Unsupported BeAScout verification version")
+        if any(type(meta[key]) is not int or meta[key] < 0 for key in ("verified", "unavailable", "matched_source_units")):
+            raise ValueError("BeAScout verification counts must be nonnegative integers")
+        if not isinstance(meta["source_sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", meta["source_sha256"]):
+            raise ValueError("Invalid BeAScout source digest")
+        verified_at = datetime.fromisoformat(meta["verified_at"])
+        now = datetime.now(ZoneInfo("America/Chicago"))
+        if verified_at.tzinfo is None or verified_at.astimezone(ZoneInfo("America/Chicago")).date().isoformat() != payload["data_date"] or (verified_at - now).total_seconds() > 300:
+            raise ValueError("BeAScout verification timestamp must match the report date and not be in the future")
+        expected = expected_source_ids(units, council)
+        linked = set()
+        urls = []
+        for unit in units:
+            if "beascout_url" not in unit:
+                raise ValueError("Unit is missing its explicit BeAScout link state")
+            url = unit["beascout_url"]
+            if url is not None:
+                if not isinstance(url, str) or not re.fullmatch(URL_PATTERN, url):
+                    raise ValueError("Invalid canonical BeAScout unit URL")
+                linked.add(unit["unit_id"])
+                urls.append(url)
+        if linked != expected or len(urls) != len(set(urls)) or len(linked) != len(urls):
+            raise ValueError("BeAScout links must uniquely cover all authoritative matched PIN units")
+        if meta["verified"] != len(linked) or meta["matched_source_units"] != len(expected) or meta["unavailable"] != len(units) - len(linked):
+            raise ValueError("BeAScout verification coverage does not reconcile")
+        match = re.fullmatch(r"window\.UNIT_LEVEL_DATA = (.*);\s*", script, re.S)
+        if not match or json.loads(match[1]) != payload:
+            raise ValueError("Unit-Level JSON and browser JavaScript bundles differ")
+    except (KeyError, TypeError, ValueError, AttributeError) as error:
+        return [str(error)]
+    return []
+
+
 def validate_unit_pin_snapshot(latest_payload: dict, unit_level_payload: dict) -> list[str]:
     """Reject mixed, empty, duplicate, or privacy-unsafe daily PIN bundles."""
     errors: list[str] = []
@@ -525,6 +569,8 @@ def main() -> int:
             )
             errors.extend(validate_unit_pin_snapshot(latest_payload, unit_level_payload))
             errors.extend(validate_membership_operations(latest_payload, unit_level_payload))
+            errors.extend(validate_beascout_bundle(latest_payload, unit_level_payload,
+                          (root / "data/unit-level-latest.js").read_text(encoding="utf-8")))
         except (OSError, ValueError, TypeError, KeyError) as error:
             errors.append(f"Unit-Level data: {error}")
 
@@ -1041,6 +1087,8 @@ def main() -> int:
         unit_level_script = unit_level_script_path.read_text(encoding="utf-8")
         if "BeAScout listing" not in unit_level_script or (help_page_path.is_file() and "BeAScout listing links" not in help_source):
             errors.append("Unit Profile and Dashboard Guide must describe BeAScout listing links")
+        if "data/unit-level-latest.js?v=20261026-beascout-links-2" not in unit_level_page:
+            errors.append("unit-level.html: missing cache-busted verified BeAScout data bundle")
         if "unit-level-dashboard.js?v=20261026-beascout-links-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-context script")
         if "unit-level-dashboard.css?v=20260911-pin-profile-last-updated-1" not in unit_level_page:

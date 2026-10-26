@@ -17,7 +17,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from openpyxl import load_workbook
-from beascout_links import enrich
+from beascout_links import enrich, expected_source_ids
 
 
 def clean(value):
@@ -100,6 +100,10 @@ def main():
     parser.add_argument("--beascout-pin-report", type=Path, help="Same-day raw PIN CSV used only to resolve public listing URLs")
     parser.add_argument("--beascout-audit", type=Path, help="Private link-resolution audit outside the public site")
     args = parser.parse_args()
+    if args.council_snapshot and not args.beascout_pin_report:
+        parser.error("Council builds require --beascout-pin-report")
+    if args.beascout_audit and "pages-stage" in args.beascout_audit.parts:
+        parser.error("BeAScout audit must remain outside the public staging tree")
 
     workbook = load_workbook(args.workbook, read_only=True, data_only=True)
     required = {"Unit_Metrics", "Units", "MembersDueToRenew"}
@@ -195,7 +199,8 @@ def main():
 
     snapshot_date = workbook_report_date(args.workbook)
     if args.council_snapshot:
-        complete_unit_population(units, json.loads(args.council_snapshot.read_text()), snapshot_date, training_by_id, renewals)
+        council = json.loads(args.council_snapshot.read_text())
+        complete_unit_population(units, council, snapshot_date, training_by_id, renewals)
     units.sort(key=lambda row: (row["district"] or "", row["name"] or ""))
     output = {
         "generated_at": datetime.now(ZoneInfo("America/Chicago")).isoformat(timespec="seconds"),
@@ -211,7 +216,14 @@ def main():
     }
 
     if args.beascout_pin_report:
-        summary, audit = enrich(units, args.beascout_pin_report, snapshot_date)
+        expected_ids = expected_source_ids(units, council) if args.council_snapshot else None
+        try:
+            summary, audit = enrich(units, args.beascout_pin_report, snapshot_date, expected_ids=expected_ids)
+        except Exception as error:
+            if args.beascout_audit:
+                args.beascout_audit.parent.mkdir(parents=True, exist_ok=True)
+                args.beascout_audit.write_text(json.dumps(getattr(error, "audit", [{"result": "Build failed: " + type(error).__name__}]), indent=2) + "\n")
+            raise
         output["source"]["beascout_links"] = summary
         if args.beascout_audit:
             args.beascout_audit.parent.mkdir(parents=True, exist_ok=True)

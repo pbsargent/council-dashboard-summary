@@ -249,7 +249,9 @@ log "Building Unit Level Dashboard data from ${UNIT_LEVEL_SOURCE}"
   --beascout-audit "${BUILD_DIR}/beascout-link-audit.json" \
   --output "${SITE_STAGE}/data/unit-level-latest.json" \
   --js-output "${SITE_STAGE}/data/unit-level-latest.js"
-UNIT_LEVEL_STATUS="updated from ${UNIT_LEVEL_SOURCE:t}"
+BEASCOUT_COVERAGE="$("$PYTHON" -c 'import json,sys; m=json.load(open(sys.argv[1]))["source"]["beascout_links"]; print("BeAScout links: {} verified, {} unavailable".format(m["verified"], m["unavailable"]))' "${SITE_STAGE}/data/unit-level-latest.json")"
+UNIT_LEVEL_STATUS="updated from ${UNIT_LEVEL_SOURCE:t}; ${BEASCOUT_COVERAGE}"
+log "$BEASCOUT_COVERAGE"
 
 if [[ -d "$PREVIEW_SITE" ]]; then
   LAST_STEP="copy refreshed JSON to local preview"
