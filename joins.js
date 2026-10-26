@@ -21,8 +21,8 @@
   let filtered = [];
   const openGroups = new Map();
   function unitTable(units) {
-    const headings = ['Council rank','Unit','District','New joins','Unit ID','Chartered organization', ...data.age_labels,'Review status'];
-    const rows = units.map(u => '<tr>' + [u.rank,u.unit,u.district,u.joins,u.unit_id ?? 'Unavailable',u.organization ?? 'Unavailable',...u.ages,u.review || '—'].map(v => `<td>${esc(v)}</td>`).join('') + '</tr>').join('');
+    const headings = ['Council rank','Unit','District','New joins','Chartered organization', ...data.age_labels,'Review status'];
+    const rows = units.map(u => '<tr>' + [u.rank,u.unit,u.district,u.joins,u.organization ?? 'Unavailable',...u.ages,u.review || '—'].map(v => `<td>${esc(v)}</td>`).join('') + '</tr>').join('');
     return `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(units[0].district)} unit joins"><table><thead><tr>${headings.map(h => `<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
   }
   function groupSummary(label, units) {
