@@ -53,6 +53,34 @@ class JoinsTests(unittest.TestCase):
                 rows=self.rows(); rows[row][column]=value
                 with self.assertRaises(ValueError): self.parse(rows)
 
+    def adult_rows(self):
+        rows = self.rows()
+        rows[2][0] = 'September 1, 2026–October 26, 2026. Youth: New only. Adults: distinct people, new to unit / reported New to Scouting.'
+        rows[4] = ['Packs',1,None,'New youth joins','New adults to unit','New to Scouting (reported)']
+        rows[5] = rows[5][:3] + [2,3,2,None,None] + rows[5][6:]
+        rows[7][3] = 'New youth joins'
+        rows[7][4:4] = ['New adults to unit','New to Scouting (reported)']
+        rows[8][4:4] = [3,2]
+        return rows
+
+    def test_adult_people_counts_and_summary_reconciliation(self):
+        report = self.parse(self.adult_rows())
+        self.assertEqual(report['units'][0]['adults_new_to_unit'],3)
+        self.assertEqual(report['units'][0]['adults_new_to_scouting_reported'],2)
+        for row,column,value in ((8,4,-1),(8,5,1),(5,4,4)):
+            rows=self.adult_rows(); rows[row][column]=value
+            with self.assertRaises(ValueError): self.parse(rows)
+        legacy=self.parse(self.rows())
+        self.assertIsNone(legacy['units'][0]['adults_new_to_unit'])
+
+    def test_timestamped_generation_takes_precedence_over_date_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder=Path(directory)
+            prefix='CAC_All_Cub_Pack_Joins_Sept1_2026_to_2026-10-26'
+            for suffix in ('.xlsx','_110000_CDT.xlsx','_165231_CDT.xlsx'):
+                (folder/(prefix+suffix)).write_bytes(b'fixture')
+            self.assertEqual(newest(folder,'cubs')[1].name,prefix+'_165231_CDT.xlsx')
+
     def test_newest_dated_name_and_no_stale_fallback(self):
         with tempfile.TemporaryDirectory() as directory:
             folder=Path(directory)

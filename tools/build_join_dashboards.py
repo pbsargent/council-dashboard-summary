@@ -24,10 +24,11 @@ def count(value):
 
 
 def newest(folder, kind):
-    pattern = re.compile(r'CAC_All_' + KINDS[kind][0] + r'_Joins_Sept1_2026_to_(\d{4}-\d{2}-\d{2})\.xlsx')
-    candidates = [(date.fromisoformat(m[1]), p) for p in folder.iterdir() if (m := pattern.fullmatch(p.name))]
+    pattern = re.compile(r'CAC_All_' + KINDS[kind][0] + r'_Joins_Sept1_2026_to_(\d{4}-\d{2}-\d{2})(?:_(\d{6})_(?:CDT|CST))?\.xlsx')
+    candidates = [(date.fromisoformat(m[1]), datetime.strptime(m[2] or '000000', '%H%M%S').time(), p) for p in folder.iterdir() if (m := pattern.fullmatch(p.name))]
     require(candidates, f'Missing {kind} joins workbook in source folder')
-    return max(candidates)
+    latest = max(candidates)
+    return latest[0], latest[2]
 
 
 def read_report(path, report_date, kind):
@@ -39,32 +40,43 @@ def read_report(path, report_date, kind):
     def parse(sheet):
         rows = list(sheet.values)
         require(len(rows) >= 8, 'Incomplete joins sheet')
-        expected_period = f'September 1, 2026–{report_date.strftime("%B")} {report_date.day}, {report_date.year}. New youth only. Transfers and re-registrations excluded.'
-        require(rows[2][0] == expected_period, 'Workbook period does not match filename')
         header = list(rows[7])
-        require(header[:6] == ['Rank' if sheet.title == main_sheet else 'Council rank', unit_type, 'District', 'New joins', 'Unit ID', 'Chartered organization'], 'Unexpected unit schema')
-        ages = header[6:15]
+        adult_schema = 'New adults to unit' in header
+        metric_headers = ['New youth joins', 'New adults to unit', 'New to Scouting (reported)'] if adult_schema else ['New joins']
+        expected = ['Rank' if sheet.title == main_sheet else 'Council rank', unit_type, 'District', *metric_headers, 'Unit ID', 'Chartered organization']
+        require(header[:len(expected)] == expected, 'Unexpected unit schema')
+        prefix = f'September 1, 2026–{report_date.strftime("%B")} {report_date.day}, {report_date.year}. '
+        wording = 'Youth: New only. Adults: distinct people, new to unit / reported New to Scouting.' if adult_schema else 'New youth only. Transfers and re-registrations excluded.'
+        require(rows[2][0] == prefix + wording, 'Workbook period does not match filename')
+        age_start = len(expected)
+        ages = header[age_start:age_start+9]
         require(ages == [f'Age {n}' for n in (range(4, 12) if kind == 'cubs' else range(10, 18))] + ['Age unavailable'], 'Unexpected age schema')
-        require(header[15] == 'Review status', 'Unexpected review schema')
+        review_index = age_start + 9
+        require(header[review_index] == 'Review status', 'Unexpected review schema')
         units = []
         for row in rows[8:]:
             if not any(v is not None for v in row[:6]):
                 continue
-            require(len(row) >= 16, 'Incomplete unit row')
-            rank, unit, district, joins, unit_id, organization = row[:6]
+            require(len(row) > review_index, 'Incomplete unit row')
+            rank, unit, district, joins = row[:4]
+            unit_id, organization = row[age_start-2:age_start]
             require(isinstance(unit, str) and unit.startswith(unit_type + ' '), 'Invalid unit label')
             require(isinstance(district, str) and district.strip(), 'Missing district')
-            require(str(unit_id).isdigit() or (unit_id is None and bool(row[15])), 'Invalid unit identity')
-            age_counts = [count(v) for v in row[6:15]]
+            require(str(unit_id).isdigit() or (unit_id is None and bool(row[review_index])), 'Invalid unit identity')
+            age_counts = [count(v) for v in row[age_start:review_index]]
             require(sum(age_counts) == count(joins), f'Age totals do not reconcile for {unit_id}')
-            require(row[15] is None or isinstance(row[15], str), 'Invalid review status')
-            units.append(dict(rank=count(rank), unit=unit, district=district, joins=count(joins), unit_id=str(unit_id) if unit_id is not None else None, organization=organization, ages=age_counts, review=row[15] or ''))
+            require(row[review_index] is None or isinstance(row[review_index], str), 'Invalid review status')
+            units.append(dict(rank=count(rank), unit=unit, district=district, joins=count(joins), adults_new_to_unit=count(row[4]) if adult_schema else None, adults_new_to_scouting_reported=count(row[5]) if adult_schema else None, unit_id=str(unit_id) if unit_id is not None else None, organization=organization, ages=age_counts, review=row[review_index] or ''))
         ids = [u['unit_id'] for u in units if u['unit_id'] is not None]
         require(len(set(ids)) == len(ids), 'Duplicate unit IDs')
         require(len({(u['district'], u['unit']) for u in units}) == len(units), 'Duplicate unit labels')
         require(len(units) == count(rows[4][1]), 'Unit count does not reconcile')
         require(sum(u['joins'] for u in units) == count(rows[5][1]), 'Join total does not reconcile')
-        require([sum(u['ages'][i] for u in units) for i in range(9)] == [count(v) for v in rows[5][6:15]], 'Summary ages do not reconcile')
+        require([sum(u['ages'][i] for u in units) for i in range(9)] == [count(v) for v in rows[5][age_start:review_index]], 'Summary ages do not reconcile')
+        if adult_schema:
+            require(list(rows[4][3:6]) == metric_headers, 'Missing adult summary headers')
+            for index, field in ((3,'joins'), (4,'adults_new_to_unit'), (5,'adults_new_to_scouting_reported')):
+                require(sum(u[field] for u in units) == count(rows[5][index]), f'{field} summary does not reconcile')
         review = re.match(r'(\d+) unit\(s\) need review', rows[3][0] or '')
         require(review and int(review[1]) == sum(bool(u['review']) for u in units), 'Review coverage does not reconcile')
         return units, ages
@@ -127,7 +139,7 @@ def validate_public_bundle(path):
     reports = json.loads(text[len('window.CAC_JOINS = '):-2])
     require(set(reports) == set(KINDS), 'Incomplete joins program pair')
     require(len({r['report_date'] for r in reports.values()}) == 1, 'Mismatched joins dates')
-    fields = {'rank','unit','district','joins','unit_id','organization','ages','review'}
+    fields = {'rank','unit','district','joins','unit_id','organization','ages','review','adults_new_to_unit','adults_new_to_scouting_reported'}
     for kind, report in reports.items():
         require(set(report) == {'program','report_date','period_start','source_name','source_sha256','age_labels','units','district_service_areas'}, 'Unexpected public report field')
         require(report['program'] == kind and report['units'], 'Missing joins population')
@@ -138,6 +150,9 @@ def validate_public_bundle(path):
         for unit in report['units']:
             require(set(unit) == fields, 'Unexpected public unit field')
             require(len(unit['ages']) == 9 and sum(count(n) for n in unit['ages']) == count(unit['joins']), 'Invalid public joins counts')
+            for field in ('adults_new_to_unit','adults_new_to_scouting_reported'):
+                if unit[field] is not None:
+                    count(unit[field])
     return reports
 
 

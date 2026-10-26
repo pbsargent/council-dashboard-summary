@@ -20,14 +20,16 @@
   updateDistrictOptions();
   let filtered = [];
   const openGroups = new Map();
+  const adultTotal = (units, field) => units.some(u => u[field] == null) ? null : units.reduce((sum,u) => sum + u[field], 0);
+  const displayCount = value => value == null ? 'Unavailable' : value.toLocaleString();
   function unitTable(units) {
-    const headings = ['Council rank','Unit','New joins','Chartered organization', ...data.age_labels,'Review status'];
-    const rows = units.map(u => '<tr>' + [u.rank,u.unit,u.joins,u.organization ?? 'Unavailable',...u.ages,u.review || '—'].map(v => `<td>${esc(v)}</td>`).join('') + '</tr>').join('');
+    const headings = ['Unit','New youth joins','New adults to unit','Adults new to Scouting (reported)','Chartered organization', ...data.age_labels,'Review status'];
+    const rows = units.map(u => '<tr>' + [u.unit,u.joins,displayCount(u.adults_new_to_unit),displayCount(u.adults_new_to_scouting_reported),u.organization ?? 'Unavailable',...u.ages,u.review || '—'].map(v => `<td>${esc(v)}</td>`).join('') + '</tr>').join('');
     return `<div class="table-wrap" tabindex="0" role="region" aria-label="${esc(units[0].district)} unit joins"><table><thead><tr>${headings.map(h => `<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
   }
   function groupSummary(label, units) {
     const total = units.reduce((sum, u) => sum + u.joins, 0);
-    return `<span>${esc(label)}</span><span class="join-group-totals">${units.length} ${units.length === 1 ? 'unit' : 'units'} · <strong>${total.toLocaleString()} joins</strong></span>`;
+    return `<span>${esc(label)}</span><span class="join-group-totals">${units.length} ${units.length === 1 ? 'unit' : 'units'} · <strong>${total.toLocaleString()} youth joins</strong><span class="join-adult-totals">${displayCount(adultTotal(units,'adults_new_to_unit'))} adults new to unit · ${displayCount(adultTotal(units,'adults_new_to_scouting_reported'))} adults new to Scouting (reported)</span></span>`;
   }
   function renderGroups() {
     const revealMatches = !!($('joinArea').value || $('joinDistrict').value || $('joinSearch').value.trim() || $('joinCoverage').value);
@@ -56,8 +58,8 @@
       (!search || [u.unit, u.district, u.unit_id, u.organization].some(v => String(v ?? '').toLowerCase().includes(search))) &&
       (!$('joinCoverage').value || ($('joinCoverage').value === 'review' ? !!u.review : u.joins === 0)));
     const total = filtered.reduce((s,u) => s + u.joins, 0);
-    const stats = [[total, 'New youth joins'], [filtered.length, program === 'cubs' ? 'Packs reported' : 'Troops reported'], [filtered.filter(u => !u.joins).length, 'Units with zero joins'], [filtered.filter(u => u.review).length, 'Units needing coverage review']];
-    $('joinKpis').innerHTML = stats.map(([v,label]) => `<article class="kpi"><span>${label}</span><strong>${v.toLocaleString()}</strong></article>`).join('');
+    const stats = [[total, 'New youth joins'], [adultTotal(filtered,'adults_new_to_unit'), 'New adults to unit'], [adultTotal(filtered,'adults_new_to_scouting_reported'), 'Adults new to Scouting (reported)'], [filtered.length, program === 'cubs' ? 'Packs reported' : 'Troops reported'], [filtered.filter(u => !u.joins).length, 'Units with zero youth joins'], [filtered.filter(u => u.review).length, 'Units needing coverage review']];
+    $('joinKpis').innerHTML = stats.map(([v,label]) => `<article class="kpi"><span>${label}</span><strong>${displayCount(v)}</strong></article>`).join('');
     $('joinCount').textContent = `${filtered.length} units · ${total.toLocaleString()} joins`;
     $('joinEmpty').hidden = filtered.length > 0;
     bars('joinDistrictChart', districts.filter(d => filtered.some(u => u.district === d)).map(d => [d, filtered.filter(u => u.district === d).reduce((s,u) => s+u.joins,0)]).sort((a,b) => b[1]-a[1]));
@@ -74,7 +76,7 @@
     }));
   }
   $('joinExport').addEventListener('click',() => {
-    const rows = [['Council rank','Unit','District','New joins','Unit ID','Chartered organization',...data.age_labels,'Review status'], ...filtered.map(u => [u.rank,u.unit,u.district,u.joins,u.unit_id,u.organization,...u.ages,u.review])];
+    const rows = [['Unit','District','New youth joins','New adults to unit','Adults new to Scouting (reported)','Chartered organization',...data.age_labels,'Review status'], ...filtered.map(u => [u.unit,u.district,u.joins,u.adults_new_to_unit,u.adults_new_to_scouting_reported,u.organization,...u.ages,u.review])];
     const csv = rows.map(r => r.map(v => '"' + String(v ?? '').replace(/^[=+@-]/,'\'$&').replace(/"/g,'""') + '"').join(',')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
     const link = document.createElement('a'); link.href=url; link.download=`${program}-joins-${data.report_date}.csv`; link.click(); setTimeout(() => URL.revokeObjectURL(url),1000);

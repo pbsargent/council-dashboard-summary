@@ -18,19 +18,23 @@ const units = [
   {rank:2,unit:'Pack 0002',district:'Live Oak 09',joins:2,unit_id:'2',organization:'Example',ages:[2,0,0,0,0,0,0,0,0],review:''},
   {rank:3,unit:'Pack 0003',district:'Live Oak 09',joins:0,unit_id:'3',organization:'Example',ages:[0,0,0,0,0,0,0,0,0],review:''},
 ];
+units.forEach((u,i) => { u.adults_new_to_unit=[2,3,0][i]; u.adults_new_to_scouting_reported=[1,2,0][i]; });
 const data={report_date:'2026-10-26',source_name:'source.xlsx',units,district_service_areas:{'North Shore 11':'Northern Service Area','Live Oak 09':'Southern Service Area'},age_labels:['Age 4','Age 5','Age 6','Age 7','Age 8','Age 9','Age 10','Age 11','Age unavailable']};
 const context = {Intl,Date,setTimeout:fn=>fn(),Blob:class{constructor(parts){blob=parts.join('');}},URL:{createObjectURL:()=>'',revokeObjectURL(){}},window:{CAC_JOINS:{cubs:data}},document:{body:{dataset:{page:'cubs'}},getElementById:id=>nodes[id],createElement:()=>({click(){download=this.download;}})}};
 vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../joins.js'),'utf8'),context);
 assert.equal(nodes.joinCount.textContent,'3 units · 5 joins');
+assert.doesNotMatch(nodes.joinRows.innerHTML, /<th scope="col">Council rank/);
+assert.match(nodes.joinKpis.innerHTML, /New adults to unit<\/span><strong>5/);
+assert.match(nodes.joinKpis.innerHTML, /Adults new to Scouting \(reported\)<\/span><strong>3/);
 assert.equal(groups.length,4); assert.ok(groups.every(g=>!g.open));
-assert.match(nodes.joinRows.innerHTML,/Southern Service Area<\/span><span class="join-group-totals">2 units · <strong>2 joins/);
-assert.match(nodes.joinRows.innerHTML,/Live Oak 09<\/span><span class="join-group-totals">2 units · <strong>2 joins/);
+assert.match(nodes.joinRows.innerHTML,/Southern Service Area<\/span><span class="join-group-totals">2 units · <strong>2 youth joins/);
+assert.match(nodes.joinRows.innerHTML,/Live Oak 09<\/span><span class="join-group-totals">2 units · <strong>2 youth joins/);
 nodes.joinExpandAll.handlers.click(); assert.ok(groups.every(g=>g.open));
 nodes.joinCollapseAll.handlers.click(); assert.ok(groups.every(g=>!g.open));
 nodes.joinDistrict.value='North Shore 11'; nodes.joinDistrict.handlers.input();
 assert.equal(nodes.joinCount.textContent,'1 units · 3 joins');
 assert.ok(groups.every(g=>g.open));
-assert.match(nodes.joinRows.innerHTML,/Northern Service Area<\/span><span class="join-group-totals">1 unit · <strong>3 joins/);
+assert.match(nodes.joinRows.innerHTML,/Northern Service Area<\/span><span class="join-group-totals">1 unit · <strong>3 youth joins/);
 assert.match(nodes.joinRows.innerHTML,/Unavailable/);
 nodes.joinExport.handlers.click(); assert.match(blob,/Pack 0001/); assert.doesNotMatch(blob,/Pack 0002/); assert.equal(download,'cubs-joins-2026-10-26.csv');
 nodes.joinReset.handlers.click(); assert.equal(nodes.joinCount.textContent,'3 units · 5 joins');
@@ -47,6 +51,7 @@ assert.match(nodes.joinDistrict.innerHTML,/Live Oak 09/);
 assert.doesNotMatch(nodes.joinDistrict.innerHTML,/North Shore/);
 assert.equal(nodes.joinCount.textContent,'2 units · 2 joins');
 assert.doesNotMatch(nodes.joinRows.innerHTML,/Pack 0001/);
+assert.match(nodes.joinKpis.innerHTML,/New adults to unit<\/span><strong>3/);
 assert.doesNotMatch(nodes.joinDistrictChart.innerHTML,/North Shore/);
 assert.match(nodes.joinAgeChart.innerHTML,/<strong>2<\/strong>/);
 nodes.joinExport.handlers.click(); assert.doesNotMatch(blob,/Pack 0001/); assert.match(blob,/Pack 0002/);
