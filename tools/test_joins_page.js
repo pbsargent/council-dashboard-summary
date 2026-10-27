@@ -3,6 +3,10 @@ const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 function verifyProgram(program) {
+const page = fs.readFileSync(path.join(__dirname,`../${program}-joins.html`),'utf8');
+for (const definition of ['distinct people per unit','additional positions in the same unit do not add a person','does not prove first-ever national membership','Age charts describe youth only']) {
+  assert.ok(page.includes(definition),`${program}: missing definition ${definition}`);
+}
 const nodes = {};
 for (const id of ['joinStatus','joinSource','joinArea','joinDistrict','joinSearch','joinCoverage','joinKpis','joinCount','joinEmpty','joinDistrictChart','joinAgeChart','joinRows','joinReset','joinExport','joinExpandAll','joinCollapseAll']) {
   nodes[id] = {value:'',innerHTML:'',textContent:'',hidden:false,handlers:{},addEventListener(event,fn){this.handlers[event]=fn;}};
