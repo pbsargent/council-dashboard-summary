@@ -1,11 +1,12 @@
 """Regressions for newest-file selection, coverage and fail-closed publication."""
 from datetime import date
+import errno
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
-from build_join_dashboards import build, newest, read_report, service_area_mapping, validate_public_bundle
+from build_join_dashboards import build, newest, read_bytes_with_retry, read_report, service_area_mapping, validate_public_bundle
 import copy
 import hashlib
 import json
@@ -29,6 +30,21 @@ class Workbook:
 
 
 class JoinsTests(unittest.TestCase):
+    def test_retries_only_transient_cloud_file_locks(self):
+        path = Mock()
+        path.read_bytes.side_effect = [OSError(errno.EDEADLK, 'Resource deadlock avoided'), b'verified']
+        with patch('build_join_dashboards.time.sleep') as sleep:
+            self.assertEqual(read_bytes_with_retry(path), b'verified')
+        self.assertEqual(path.read_bytes.call_count, 2)
+        sleep.assert_called_once_with(0.25)
+
+        missing = Mock()
+        missing.read_bytes.side_effect = OSError(errno.ENOENT, 'Missing source')
+        with self.assertRaises(OSError), patch('build_join_dashboards.time.sleep') as sleep:
+            read_bytes_with_retry(missing)
+        self.assertEqual(missing.read_bytes.call_count, 1)
+        sleep.assert_not_called()
+
     def public_reports(self):
         reports = {}
         for kind, token, unit_type in [('cubs','Cub_Pack','Pack'),('scouts-bsa','Scout_Troop','Troop')]:

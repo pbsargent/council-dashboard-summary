@@ -1,11 +1,13 @@
 """Publish only validated unit aggregates from the newest dated joins workbooks."""
 import argparse
 from datetime import date, datetime
+import errno
 import hashlib
 import json
 from pathlib import Path
 import re
 import tempfile
+import time
 from zoneinfo import ZoneInfo
 
 import openpyxl
@@ -24,6 +26,17 @@ def count(value):
     return int(value)
 
 
+def read_bytes_with_retry(path, attempts=4):
+    """Read a cloud-synced source, retrying only transient macOS lock errors."""
+    for attempt in range(attempts):
+        try:
+            return path.read_bytes()
+        except OSError as error:
+            if error.errno not in (errno.EAGAIN, errno.EDEADLK) or attempt == attempts - 1:
+                raise
+            time.sleep(0.25 * (attempt + 1))
+
+
 def newest(folder, kind):
     pattern = re.compile(r'CAC_All_' + KINDS[kind][0] + r'_Joins_Sept1_2026_to_(\d{4}-\d{2}-\d{2})(?:_(\d{6})_(?:CDT|CST))?\.xlsx')
     candidates = [(date.fromisoformat(m[1]), datetime.strptime(m[2] or '000000', '%H%M%S').time(), p) for p in folder.iterdir() if (m := pattern.fullmatch(p.name))]
@@ -33,7 +46,7 @@ def newest(folder, kind):
 
 
 def read_report(path, report_date, kind):
-    before = hashlib.sha256(path.read_bytes()).hexdigest()
+    before = hashlib.sha256(read_bytes_with_retry(path)).hexdigest()
     workbook = openpyxl.load_workbook(path, read_only=True, data_only=True)
     _, unit_type, main_sheet = KINDS[kind]
     require(main_sheet in workbook.sheetnames, f'Missing {main_sheet}')
@@ -89,7 +102,7 @@ def read_report(path, report_date, kind):
         detail, detail_ages = parse(workbook[district])
         require(detail_ages == ages and detail == [u for u in units if u['district'] == district], f'District detail differs: {district}')
     workbook.close()
-    require(before == hashlib.sha256(path.read_bytes()).hexdigest(), 'Workbook changed while reading')
+    require(before == hashlib.sha256(read_bytes_with_retry(path)).hexdigest(), 'Workbook changed while reading')
     return dict(program=kind, report_date=report_date.isoformat(), period_start='2026-09-01', source_name=path.name, source_sha256=before, age_labels=ages, units=units)
 
 
@@ -120,15 +133,15 @@ def build(folder, output, expected_date, council_snapshot=None):
     reports = {kind: read_report(path, day, kind) for kind, (day, path) in selected.items()}
     require(all(u[field] is not None for r in reports.values() for u in r['units'] for field in ('adults_new_to_unit','adults_new_to_scouting_reported')), 'Current joins publication requires both adult measures; legacy youth-only workbooks cannot replace it')
     require(council_snapshot is not None, 'A same-day council snapshot is required for service areas')
-    snapshot_before = hashlib.sha256(council_snapshot.read_bytes()).hexdigest()
+    snapshot_before = hashlib.sha256(read_bytes_with_retry(council_snapshot)).hexdigest()
     areas = service_area_mapping(council_snapshot, reports, expected_date)
     for report in reports.values():
         report['district_service_areas'] = {d: areas[d] for d in sorted({u['district'] for u in report['units']})}
-    require(snapshot_before == hashlib.sha256(council_snapshot.read_bytes()).hexdigest(), 'Service-area source changed while reading')
+    require(snapshot_before == hashlib.sha256(read_bytes_with_retry(council_snapshot)).hexdigest(), 'Service-area source changed while reading')
     # Validate the complete pair before replacing the single public bundle.
     for kind, (_, path) in selected.items():
         require(newest(folder, kind) == selected[kind], 'A newer joins generation appeared during the build; retry the complete pair')
-        require(hashlib.sha256(path.read_bytes()).hexdigest() == reports[kind]['source_sha256'], 'Source changed across pair read')
+        require(hashlib.sha256(read_bytes_with_retry(path)).hexdigest() == reports[kind]['source_sha256'], 'Source changed across pair read')
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(mode='w', dir=output.parent, prefix='.joins-', suffix='.js', delete=False) as handle:
         temporary = Path(handle.name)
@@ -136,8 +149,8 @@ def build(folder, output, expected_date, council_snapshot=None):
     try:
         validate_public_bundle(temporary)
         for kind, (_, path) in selected.items():
-            require(newest(folder, kind) == selected[kind] and hashlib.sha256(path.read_bytes()).hexdigest() == reports[kind]['source_sha256'], 'Joins sources changed before installation; retry the complete pair')
-        require(snapshot_before == hashlib.sha256(council_snapshot.read_bytes()).hexdigest(), 'Service-area source changed before installation')
+            require(newest(folder, kind) == selected[kind] and hashlib.sha256(read_bytes_with_retry(path)).hexdigest() == reports[kind]['source_sha256'], 'Joins sources changed before installation; retry the complete pair')
+        require(snapshot_before == hashlib.sha256(read_bytes_with_retry(council_snapshot)).hexdigest(), 'Service-area source changed before installation')
         temporary.replace(output)
     finally:
         temporary.unlink(missing_ok=True)
