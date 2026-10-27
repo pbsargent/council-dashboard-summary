@@ -5,7 +5,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from build_join_dashboards import build, newest, read_report, service_area_mapping
+from build_join_dashboards import build, newest, read_report, service_area_mapping, validate_public_bundle
+import copy
+import hashlib
 import json
 
 
@@ -27,6 +29,52 @@ class Workbook:
 
 
 class JoinsTests(unittest.TestCase):
+    def public_reports(self):
+        reports = {}
+        for kind, token, unit_type in [('cubs','Cub_Pack','Pack'),('scouts-bsa','Scout_Troop','Troop')]:
+            report = self.parse(self.adult_rows())
+            report.update(program=kind, source_name=f'CAC_All_{token}_Joins_Sept1_2026_to_2026-10-26.xlsx', source_sha256=hashlib.sha256(b'fixture').hexdigest(), district_service_areas={'North Shore 11':'Northern Service Area'})
+            report['units'][0]['unit'] = unit_type + ' 0198'
+            report['age_labels'] = [f'Age {i}' for i in (range(4,12) if kind == 'cubs' else range(10,18))] + ['Age unavailable']
+            reports[kind] = report
+        return reports
+
+    def test_public_bundle_rejects_corruption_and_private_fields(self):
+        base = self.public_reports()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/'joins.js'
+            def check(payload):
+                path.write_text('window.CAC_JOINS = '+json.dumps(payload)+';\n')
+                return validate_public_bundle(path)
+            check(base)
+            for field, value in [('period_start','2026-01-01'),('source_sha256','bad'),('source_name','../private.xlsx'),('age_labels',['Age 4']*9)]:
+                payload=copy.deepcopy(base); payload['cubs'][field]=value
+                with self.subTest(field=field), self.assertRaises(ValueError):check(payload)
+            for field, value in [('adults_new_to_unit',None),('adults_new_to_scouting_reported',True),('review','private person detail'),('member_name','Private Name')]:
+                payload=copy.deepcopy(base); payload['cubs']['units'][0][field]=value
+                with self.subTest(field=field), self.assertRaises(ValueError):check(payload)
+            payload=copy.deepcopy(base);payload['cubs']['units']*=2
+            with self.assertRaises(ValueError):check(payload)
+
+    def test_build_preserves_previous_bundle_on_generation_race_and_failed_candidate(self):
+        reports=self.public_reports()
+        with tempfile.TemporaryDirectory() as tmp:
+            folder=Path(tmp)
+            for report in reports.values():(folder/report['source_name']).write_bytes(b'fixture')
+            snapshot=folder/'council.json';snapshot.write_text(json.dumps({'dashboard':{'report_date':'2026-10-26','districts':[{'district':'North Shore','service_area':'Northern Service Area'}]}}))
+            output=folder/'joins.js';output.write_text('previous verified bundle')
+            selected=[(date(2026,10,26),folder/r['source_name']) for r in reports.values()]
+            later=(date(2026,10,26),folder/'newer-generation.xlsx')
+            with patch('build_join_dashboards.read_report',side_effect=lambda p,d,k:copy.deepcopy(reports[k])), patch('build_join_dashboards.newest',side_effect=[*selected,later]):
+                with self.assertRaisesRegex(ValueError,'newer joins generation'):build(folder,output,date(2026,10,26),snapshot)
+            self.assertEqual(output.read_text(),'previous verified bundle')
+            with patch('build_join_dashboards.read_report',side_effect=lambda p,d,k:copy.deepcopy(reports[k])), patch('build_join_dashboards.validate_public_bundle',side_effect=ValueError('invalid candidate')):
+                with self.assertRaisesRegex(ValueError,'invalid candidate'):build(folder,output,date(2026,10,26),snapshot)
+            self.assertEqual(output.read_text(),'previous verified bundle')
+            self.assertEqual(list(folder.glob('.joins-*.js')),[])
+            with patch('build_join_dashboards.read_report',side_effect=lambda p,d,k:copy.deepcopy(reports[k])):
+                build(folder,output,date(2026,10,26),snapshot)
+            self.assertEqual(validate_public_bundle(output),reports)
     def rows(self):
         return [[], ['Council'], ['September 1, 2026–October 26, 2026. New youth only. Transfers and re-registrations excluded.'],
                 ['1 unit(s) need review'], ['Packs', 1], ['Joins', 2, None, None, None, None, 0,0,0,0,0,0,0,0,2], [],

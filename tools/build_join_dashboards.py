@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import tempfile
 from zoneinfo import ZoneInfo
 
 import openpyxl
@@ -117,6 +118,7 @@ def build(folder, output, expected_date, council_snapshot=None):
     selected = {kind: newest(folder, kind) for kind in KINDS}
     require(all(day == expected_date for day, _ in selected.values()), 'Both newest joins workbooks must match the run date')
     reports = {kind: read_report(path, day, kind) for kind, (day, path) in selected.items()}
+    require(all(u[field] is not None for r in reports.values() for u in r['units'] for field in ('adults_new_to_unit','adults_new_to_scouting_reported')), 'Current joins publication requires both adult measures; legacy youth-only workbooks cannot replace it')
     require(council_snapshot is not None, 'A same-day council snapshot is required for service areas')
     snapshot_before = hashlib.sha256(council_snapshot.read_bytes()).hexdigest()
     areas = service_area_mapping(council_snapshot, reports, expected_date)
@@ -125,11 +127,20 @@ def build(folder, output, expected_date, council_snapshot=None):
     require(snapshot_before == hashlib.sha256(council_snapshot.read_bytes()).hexdigest(), 'Service-area source changed while reading')
     # Validate the complete pair before replacing the single public bundle.
     for kind, (_, path) in selected.items():
+        require(newest(folder, kind) == selected[kind], 'A newer joins generation appeared during the build; retry the complete pair')
         require(hashlib.sha256(path.read_bytes()).hexdigest() == reports[kind]['source_sha256'], 'Source changed across pair read')
     output.parent.mkdir(parents=True, exist_ok=True)
-    temporary = output.with_suffix('.tmp')
-    temporary.write_text('window.CAC_JOINS = ' + json.dumps(reports, ensure_ascii=False) + ';\n')
-    temporary.replace(output)
+    with tempfile.NamedTemporaryFile(mode='w', dir=output.parent, prefix='.joins-', suffix='.js', delete=False) as handle:
+        temporary = Path(handle.name)
+        handle.write('window.CAC_JOINS = ' + json.dumps(reports, ensure_ascii=False, allow_nan=False) + ';\n')
+    try:
+        validate_public_bundle(temporary)
+        for kind, (_, path) in selected.items():
+            require(newest(folder, kind) == selected[kind] and hashlib.sha256(path.read_bytes()).hexdigest() == reports[kind]['source_sha256'], 'Joins sources changed before installation; retry the complete pair')
+        require(snapshot_before == hashlib.sha256(council_snapshot.read_bytes()).hexdigest(), 'Service-area source changed before installation')
+        temporary.replace(output)
+    finally:
+        temporary.unlink(missing_ok=True)
     print(json.dumps({k: {'units': len(v['units']), 'joins': sum(u['joins'] for u in v['units']), 'source': v['source_name']} for k, v in reports.items()}))
 
 
@@ -137,22 +148,37 @@ def validate_public_bundle(path):
     text = Path(path).read_text()
     require(text.startswith('window.CAC_JOINS = ') and text.endswith(';\n'), 'Invalid joins bundle wrapper')
     reports = json.loads(text[len('window.CAC_JOINS = '):-2])
+    require(isinstance(reports, dict), 'Joins bundle must be an object')
     require(set(reports) == set(KINDS), 'Incomplete joins program pair')
+    require(all(isinstance(r,dict) and isinstance(r.get('report_date'),str) for r in reports.values()), 'Invalid report metadata')
     require(len({r['report_date'] for r in reports.values()}) == 1, 'Mismatched joins dates')
     fields = {'rank','unit','district','joins','unit_id','organization','ages','review','adults_new_to_unit','adults_new_to_scouting_reported'}
     for kind, report in reports.items():
         require(set(report) == {'program','report_date','period_start','source_name','source_sha256','age_labels','units','district_service_areas'}, 'Unexpected public report field')
-        require(report['program'] == kind and report['units'], 'Missing joins population')
-        date.fromisoformat(report['report_date'])
-        require(len(report['age_labels']) == 9, 'Missing age buckets')
+        require(report['program'] == kind and isinstance(report['units'],list) and report['units'], 'Missing joins population')
+        require(isinstance(report['source_name'],str) and isinstance(report['source_sha256'],str), 'Invalid source metadata')
+        require(report['period_start'] == '2026-09-01' and date.fromisoformat(report['report_date']) >= date(2026,9,1), 'Invalid joins period')
+        pattern = r'CAC_All_' + KINDS[kind][0] + r'_Joins_Sept1_2026_to_' + report['report_date'] + r'(?:_\d{6}_(?:CDT|CST))?\.xlsx'
+        require(re.fullmatch(pattern, report['source_name']) is not None, 'Invalid joins source identity')
+        require(re.fullmatch(r'[a-f0-9]{64}', report['source_sha256']) is not None, 'Invalid joins source digest')
+        require(report['age_labels'] == [f'Age {n}' for n in (range(4,12) if kind == 'cubs' else range(10,18))] + ['Age unavailable'], 'Invalid age buckets')
         require(set(report['district_service_areas']) == {u['district'] for u in report['units']}, 'Incomplete joins service-area coverage')
         require(all(isinstance(a, str) and a.strip() for a in report['district_service_areas'].values()), 'Invalid joins service area')
         for unit in report['units']:
+            require(isinstance(unit,dict), 'Invalid public unit record')
             require(set(unit) == fields, 'Unexpected public unit field')
+            require(isinstance(unit['unit'], str) and unit['unit'].startswith(KINDS[kind][1] + ' '), 'Invalid public unit label')
+            require(isinstance(unit['district'], str) and bool(unit['district'].strip()), 'Invalid public district')
+            require(unit['organization'] is None or isinstance(unit['organization'], str), 'Invalid public organization')
+            require(unit['review'] in ('', 'Review — missing from current unit report', 'Review — missing from current unit report; district from join records'), 'Unexpected public review status')
+            require((isinstance(unit['unit_id'],str) and unit['unit_id'].isdigit()) or (unit['unit_id'] is None and bool(unit['review'])), 'Invalid public unit identity')
+            count(unit['rank'])
             require(len(unit['ages']) == 9 and sum(count(n) for n in unit['ages']) == count(unit['joins']), 'Invalid public joins counts')
             for field in ('adults_new_to_unit','adults_new_to_scouting_reported'):
-                if unit[field] is not None:
-                    count(unit[field])
+                count(unit[field])
+        ids = [u['unit_id'] for u in report['units'] if u['unit_id'] is not None]
+        require(len(ids) == len(set(ids)), 'Duplicate public unit IDs')
+        require(len({(u['district'],u['unit']) for u in report['units']}) == len(report['units']), 'Duplicate public unit labels')
     return reports
 
 

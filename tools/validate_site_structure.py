@@ -1213,6 +1213,14 @@ def main() -> int:
                     errors.append(f"{page_name}: missing joins component #{element_id}")
             if not any("data/joins-latest.js?v=" in src for src in page.scripts):
                 errors.append(f"{page_name}: missing dated joins bundle")
+            source = page_path.read_text()
+            for required in ('distinct people per unit', 'additional positions in the same unit do not add a person', 'does not prove first-ever national membership', 'Age charts describe youth only'):
+                if required not in source:
+                    errors.append(f'{page_name}: missing joins definition: {required}')
+    joins_updater = (root / 'update_daily.zsh').read_text()
+    for test in ('test_join_dashboards.py','test_joins_page.js'):
+        if test not in joins_updater:
+            errors.append(f'update_daily.zsh: missing mandatory joins regression {test}')
 
     navigation_path = root / "site-navigation.js"
     if navigation_path.is_file():
