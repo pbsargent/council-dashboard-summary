@@ -195,6 +195,17 @@ class JoinsTests(unittest.TestCase):
                 (folder/(prefix+suffix)).write_bytes(b'fixture')
             self.assertEqual(newest(folder,'cubs')[1].name,prefix+'_165231_CDT.xlsx')
 
+    def test_published_ct_generation_is_selected_for_both_programs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            for kind, token in [('cubs', 'Cub_Pack'), ('scouts-bsa', 'Scout_Troop')]:
+                prefix = f'CAC_All_{token}_Joins_Sept1_2026_to_2026-10-29'
+                for suffix in ('.xlsx', '_080000_CDT.xlsx', '_083414-CT.xlsx'):
+                    (folder / (prefix + suffix)).touch()
+                self.assertEqual(newest(folder, kind)[1].name, prefix + '_083414-CT.xlsx')
+                (folder / (prefix + '_090000_CDT.xlsx')).touch()
+                self.assertEqual(newest(folder, kind)[1].name, prefix + '_090000_CDT.xlsx')
+
     def test_newest_dated_name_and_no_stale_fallback(self):
         with tempfile.TemporaryDirectory() as directory:
             folder=Path(directory)

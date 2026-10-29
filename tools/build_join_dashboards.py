@@ -86,7 +86,7 @@ def verify_stage(receipt_path, expected_date):
 
 
 def newest(folder, kind):
-    pattern = re.compile(r'CAC_All_' + KINDS[kind][0] + r'_Joins_Sept1_2026_to_(\d{4}-\d{2}-\d{2})(?:_(\d{6})_(?:CDT|CST))?\.xlsx')
+    pattern = re.compile(r'CAC_All_' + KINDS[kind][0] + r'_Joins_Sept1_2026_to_(\d{4}-\d{2}-\d{2})(?:_(\d{6})(?:_(?:CDT|CST)|-CT))?\.xlsx')
     candidates = [(date.fromisoformat(m[1]), datetime.strptime(m[2] or '000000', '%H%M%S').time(), p) for p in folder.iterdir() if (m := pattern.fullmatch(p.name))]
     require(candidates, f'Missing {kind} joins workbook in source folder')
     latest = max(candidates)
