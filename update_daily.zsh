@@ -190,6 +190,13 @@ log "Validating Unit Profile PIN status, Last Updated, completeness, and privacy
 "$NODE" "$UNIT_LEVEL_PIN_TEST"
 "$PYTHON" "${SUMMARY_REPO}/tools/test_beascout_links.py"
 
+LAST_STEP="verify private joins inputs before site artifact work"
+if [[ -z "${CAC_JOINS_STAGE_RECEIPT:-}" ]]; then
+  export CAC_JOINS_STAGE_RECEIPT="${ROOT}/outputs/joins-source-stage/$(TZ=America/Chicago /bin/date '+%Y-%m-%d')-summary-$$/receipt.json"
+  "$PYTHON" "$JOINS_BUILDER" --prepare-stage "${CAC_JOINS_STAGE_RECEIPT:h}"
+fi
+"$PYTHON" "$JOINS_BUILDER" --verify-stage "$CAC_JOINS_STAGE_RECEIPT"
+
 LAST_STEP="stage source-only GitHub Pages site"
 log "Preparing isolated GitHub Pages staging tree"
 "$SITE_STAGER" "$SUMMARY_REPO" "$SITE_STAGE" >/dev/null
@@ -234,7 +241,7 @@ fi
 
 LAST_STEP="build Cub and Scouts BSA joins data"
 log "Building joins dashboards from the newest dated workbooks"
-"$PYTHON" "$JOINS_BUILDER" --council-snapshot "${SITE_STAGE}/data/latest.json" --output "${SITE_STAGE}/data/joins-latest.js"
+"$PYTHON" "$JOINS_BUILDER" --stage-receipt "$CAC_JOINS_STAGE_RECEIPT" --council-snapshot "${SITE_STAGE}/data/latest.json" --output "${SITE_STAGE}/data/joins-latest.js"
 FALL_RECRUITMENT_STATUS="updated both joins pages from same-day workbooks"
 
 LAST_STEP="build Unit Level Dashboard data"

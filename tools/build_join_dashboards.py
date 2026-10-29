@@ -8,6 +8,8 @@ from pathlib import Path
 import re
 import tempfile
 import time
+import io
+import zipfile
 from zoneinfo import ZoneInfo
 
 import openpyxl
@@ -26,15 +28,61 @@ def count(value):
     return int(value)
 
 
-def read_bytes_with_retry(path, attempts=4):
+def read_bytes_with_retry(path, timeout_seconds=300, deadline=None):
     """Read a cloud-synced source, retrying only transient macOS lock errors."""
-    for attempt in range(attempts):
+    deadline = time.monotonic() + timeout_seconds if deadline is None else deadline
+    delay = 2
+    while True:
         try:
             return path.read_bytes()
         except OSError as error:
-            if error.errno not in (errno.EAGAIN, errno.EDEADLK) or attempt == attempts - 1:
+            remaining = deadline - time.monotonic()
+            if error.errno not in (errno.EAGAIN, errno.EDEADLK, errno.EBUSY, errno.ETIMEDOUT) or remaining <= 0:
                 raise
-            time.sleep(0.25 * (attempt + 1))
+            print(f'Joins input access retry: {path.name}; errno={error.errno}; {remaining:.0f}s remaining', flush=True)
+            time.sleep(min(delay, remaining))
+            delay = min(delay * 2, 30)
+
+
+def prepare_stage(folder, stage, expected_date, timeout_seconds=300):
+    """Freeze a fully readable, validated pair before any report generation."""
+    deadline = time.monotonic() + timeout_seconds
+    selected = {kind:newest(folder,kind) for kind in KINDS}
+    require(all(day == expected_date for day,_ in selected.values()), 'Both newest joins workbooks must match the run date')
+    stage.mkdir(parents=True, mode=0o700, exist_ok=False)
+    sources = {}
+    for kind,(day,path) in selected.items():
+        data = read_bytes_with_retry(path, deadline=deadline)
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            require(archive.testzip() is None, f'Invalid XLSX ZIP: {path.name}')
+        local = stage/path.name
+        local.write_bytes(data)
+        local.chmod(0o600)
+        report = read_report(local,day,kind)
+        require(all(u[field] is not None for u in report['units'] for field in ('adults_new_to_unit','adults_new_to_scouting_reported')), 'Current joins inputs require both adult measures')
+        sources[kind] = dict(name=path.name, sha256=hashlib.sha256(data).hexdigest(), size=len(data))
+    for kind,(_,path) in selected.items():
+        require(newest(folder,kind) == selected[kind], 'Newer joins generation appeared during input staging')
+        require(hashlib.sha256(read_bytes_with_retry(path,deadline=deadline)).hexdigest() == sources[kind]['sha256'], 'Joins source changed during input staging')
+    receipt = dict(version=1, report_date=expected_date.isoformat(), sources=sources)
+    (stage/'receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
+    (stage/'receipt.json').chmod(0o600)
+    print(f'Joins source readiness passed: both {expected_date} workbooks fully read, validated and staged privately',flush=True)
+    return stage/'receipt.json'
+
+
+def verify_stage(receipt_path, expected_date):
+    require(not receipt_path.is_symlink(), 'Staging receipt must not be a symlink')
+    receipt = json.loads(receipt_path.read_text())
+    require(set(receipt) == {'version','report_date','sources'} and receipt['version'] == 1 and receipt['report_date'] == expected_date.isoformat(), 'Invalid or stale joins staging receipt')
+    require(set(receipt['sources']) == set(KINDS), 'Incomplete joins staging receipt')
+    for kind,source in receipt['sources'].items():
+        require(set(source) == {'name','sha256','size'} and Path(source['name']).name == source['name'], 'Invalid staged source identity')
+        path = receipt_path.parent/source['name']
+        require(not path.is_symlink() and newest(receipt_path.parent,kind) == (expected_date,path), 'Staged source selection changed')
+        data = path.read_bytes()
+        require(len(data) == source['size'] and hashlib.sha256(data).hexdigest() == source['sha256'], 'Staged joins source hash/size mismatch')
+    return receipt
 
 
 def newest(folder, kind):
@@ -127,7 +175,12 @@ def service_area_mapping(snapshot_path, reports, expected_date):
     return result
 
 
-def build(folder, output, expected_date, council_snapshot=None):
+def build(folder, output, expected_date, council_snapshot=None, stage_receipt=None):
+    receipt_before = None
+    if stage_receipt is not None:
+        receipt_before = stage_receipt.read_bytes()
+        verify_stage(stage_receipt,expected_date)
+        folder = stage_receipt.parent
     selected = {kind: newest(folder, kind) for kind in KINDS}
     require(all(day == expected_date for day, _ in selected.values()), 'Both newest joins workbooks must match the run date')
     reports = {kind: read_report(path, day, kind) for kind, (day, path) in selected.items()}
@@ -148,6 +201,9 @@ def build(folder, output, expected_date, council_snapshot=None):
         handle.write('window.CAC_JOINS = ' + json.dumps(reports, ensure_ascii=False, allow_nan=False) + ';\n')
     try:
         validate_public_bundle(temporary)
+        if stage_receipt is not None:
+            require(stage_receipt.read_bytes() == receipt_before, 'Joins staging receipt changed during build')
+            verify_stage(stage_receipt,expected_date)
         for kind, (_, path) in selected.items():
             require(newest(folder, kind) == selected[kind] and hashlib.sha256(read_bytes_with_retry(path)).hexdigest() == reports[kind]['source_sha256'], 'Joins sources changed before installation; retry the complete pair')
         require(snapshot_before == hashlib.sha256(read_bytes_with_retry(council_snapshot)).hexdigest(), 'Service-area source changed before installation')
@@ -198,8 +254,24 @@ def validate_public_bundle(path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-dir', type=Path, default=DEFAULT_SOURCE)
-    parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--council-snapshot', type=Path, required=True)
+    parser.add_argument('--output', type=Path)
+    parser.add_argument('--council-snapshot', type=Path)
+    parser.add_argument('--prepare-stage', type=Path)
+    parser.add_argument('--stage-receipt', type=Path)
+    parser.add_argument('--verify-stage', type=Path)
+    parser.add_argument('--access-timeout-seconds', type=int, default=300)
     parser.add_argument('--date', type=date.fromisoformat, default=datetime.now(ZoneInfo('America/Chicago')).date())
     args = parser.parse_args()
-    build(args.source_dir, args.output, args.date, args.council_snapshot)
+    require(1 <= args.access_timeout_seconds <= 300, 'Input retry budget must be 1–300 seconds')
+    if args.prepare_stage:
+        prepare_stage(args.source_dir,args.prepare_stage,args.date,args.access_timeout_seconds)
+    elif args.verify_stage:
+        verify_stage(args.verify_stage,args.date)
+    else:
+        require(args.output is not None and args.council_snapshot is not None, 'Output and same-day council snapshot are required')
+        if args.stage_receipt:
+            build(args.source_dir,args.output,args.date,args.council_snapshot,args.stage_receipt)
+        else:
+            with tempfile.TemporaryDirectory(prefix='cac-joins-inputs-') as temporary:
+                receipt = prepare_stage(args.source_dir,Path(temporary)/'sources',args.date,args.access_timeout_seconds)
+                build(args.source_dir,args.output,args.date,args.council_snapshot,receipt)

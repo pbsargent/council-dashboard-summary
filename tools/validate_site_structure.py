@@ -1218,6 +1218,9 @@ def main() -> int:
                 if required not in source:
                     errors.append(f'{page_name}: missing joins definition: {required}')
     joins_updater = (root / 'update_daily.zsh').read_text()
+    for contract in ('--prepare-stage', '--verify-stage', '--stage-receipt "$CAC_JOINS_STAGE_RECEIPT"'):
+        if contract not in joins_updater:
+            errors.append(f'update_daily.zsh: missing verified private joins staging contract {contract}')
     for test in ('test_join_dashboards.py','test_joins_page.js'):
         if test not in joins_updater:
             errors.append(f'update_daily.zsh: missing mandatory joins regression {test}')

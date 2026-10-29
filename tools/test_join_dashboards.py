@@ -6,10 +6,12 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-from build_join_dashboards import build, newest, read_bytes_with_retry, read_report, service_area_mapping, validate_public_bundle
+from build_join_dashboards import build, prepare_stage, verify_stage, newest, read_bytes_with_retry, read_report, service_area_mapping, validate_public_bundle
 import copy
 import hashlib
 import json
+import io
+import zipfile
 
 
 class Sheet:
@@ -30,13 +32,61 @@ class Workbook:
 
 
 class JoinsTests(unittest.TestCase):
+    def test_retry_budget_is_bounded_and_uses_longer_backoff(self):
+        clock=[0]
+        path=Mock();path.read_bytes.side_effect=OSError(errno.EDEADLK,'locked')
+        def sleep(seconds):clock[0]+=seconds
+        with patch('build_join_dashboards.time.monotonic',side_effect=lambda:clock[0]), patch('build_join_dashboards.time.sleep',side_effect=sleep):
+            with self.assertRaises(OSError):read_bytes_with_retry(path,timeout_seconds=65)
+        self.assertEqual(clock[0],65)
+        self.assertLess(path.read_bytes.call_count,10)
+
+    def test_verified_stage_is_private_and_later_build_never_reads_originals(self):
+        reports=self.public_reports()
+        stream=io.BytesIO()
+        with zipfile.ZipFile(stream,'w') as archive:archive.writestr('fixture','validated workbook fixture')
+        data=stream.getvalue()
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);folder=root/'originals';folder.mkdir();stage=root/'private-stage'
+            for report in reports.values():
+                (folder/report['source_name']).write_bytes(data)
+                report['source_sha256']=hashlib.sha256(data).hexdigest()
+            seen=[]
+            def parse(path,day,kind):
+                seen.append(path.parent)
+                return copy.deepcopy(reports[kind])
+            with patch('build_join_dashboards.read_report',side_effect=parse):receipt=prepare_stage(folder,stage,date(2026,10,26))
+            self.assertTrue(all(p==stage for p in seen))
+            self.assertEqual(stage.stat().st_mode & 0o777,0o700)
+            verify_stage(receipt,date(2026,10,26))
+            # Original access may fail or change after readiness; this run is pinned to its receipt.
+            for path in folder.iterdir():path.write_bytes(b'changed original')
+            snapshot=root/'council.json';snapshot.write_text(json.dumps({'dashboard':{'report_date':'2026-10-26','districts':[{'district':'North Shore','service_area':'Northern Service Area'}]}}))
+            output=root/'public.js'
+            with patch('build_join_dashboards.read_report',side_effect=parse):build(folder,output,date(2026,10,26),snapshot,receipt)
+            previous=output.read_bytes()
+            (stage/reports['cubs']['source_name']).write_bytes(b'tampered')
+            with self.assertRaisesRegex(ValueError,'hash/size mismatch'):build(folder,output,date(2026,10,26),snapshot,receipt)
+            self.assertEqual(output.read_bytes(),previous)
+            with self.assertRaisesRegex(ValueError,'stale'):verify_stage(receipt,date(2026,10,27))
+
+    def test_changed_source_during_staging_leaves_no_success_receipt(self):
+        reports=self.public_reports();stream=io.BytesIO()
+        with zipfile.ZipFile(stream,'w') as archive:archive.writestr('fixture','content')
+        data=stream.getvalue()
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);folder=root/'originals';folder.mkdir();stage=root/'stage'
+            for report in reports.values():(folder/report['source_name']).write_bytes(data)
+            with patch('build_join_dashboards.read_report',side_effect=lambda p,d,k:copy.deepcopy(reports[k])), patch('build_join_dashboards.read_bytes_with_retry',side_effect=[data,data,b'changed']):
+                with self.assertRaisesRegex(ValueError,'changed during input staging'):prepare_stage(folder,stage,date(2026,10,26))
+            self.assertFalse((stage/'receipt.json').exists())
     def test_retries_only_transient_cloud_file_locks(self):
         path = Mock()
         path.read_bytes.side_effect = [OSError(errno.EDEADLK, 'Resource deadlock avoided'), b'verified']
         with patch('build_join_dashboards.time.sleep') as sleep:
             self.assertEqual(read_bytes_with_retry(path), b'verified')
         self.assertEqual(path.read_bytes.call_count, 2)
-        sleep.assert_called_once_with(0.25)
+        sleep.assert_called_once_with(2)
 
         missing = Mock()
         missing.read_bytes.side_effect = OSError(errno.ENOENT, 'Missing source')
