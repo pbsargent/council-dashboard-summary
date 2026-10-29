@@ -206,6 +206,15 @@ class JoinsTests(unittest.TestCase):
                 (folder / (prefix + '_090000_CDT.xlsx')).touch()
                 self.assertEqual(newest(folder, kind)[1].name, prefix + '_090000_CDT.xlsx')
 
+    def test_public_bundle_accepts_published_ct_generation(self):
+        reports = self.public_reports()
+        for report in reports.values():
+            report['source_name'] = report['source_name'].replace('.xlsx', '_083414-CT.xlsx')
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / 'joins.js'
+            output.write_text('window.CAC_JOINS = ' + json.dumps(reports) + ';\n')
+            self.assertEqual(validate_public_bundle(output), reports)
+
     def test_newest_dated_name_and_no_stale_fallback(self):
         with tempfile.TemporaryDirectory() as directory:
             folder=Path(directory)

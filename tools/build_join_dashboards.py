@@ -227,7 +227,7 @@ def validate_public_bundle(path):
         require(report['program'] == kind and isinstance(report['units'],list) and report['units'], 'Missing joins population')
         require(isinstance(report['source_name'],str) and isinstance(report['source_sha256'],str), 'Invalid source metadata')
         require(report['period_start'] == '2026-09-01' and date.fromisoformat(report['report_date']) >= date(2026,9,1), 'Invalid joins period')
-        pattern = r'CAC_All_' + KINDS[kind][0] + r'_Joins_Sept1_2026_to_' + report['report_date'] + r'(?:_\d{6}_(?:CDT|CST))?\.xlsx'
+        pattern = r'CAC_All_' + KINDS[kind][0] + r'_Joins_Sept1_2026_to_' + report['report_date'] + r'(?:_\d{6}(?:_(?:CDT|CST)|-CT))?\.xlsx'
         require(re.fullmatch(pattern, report['source_name']) is not None, 'Invalid joins source identity')
         require(re.fullmatch(r'[a-f0-9]{64}', report['source_sha256']) is not None, 'Invalid joins source digest')
         require(report['age_labels'] == [f'Age {n}' for n in (range(4,12) if kind == 'cubs' else range(10,18))] + ['Age unavailable'], 'Invalid age buckets')
