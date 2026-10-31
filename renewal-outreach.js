@@ -72,7 +72,11 @@
   $('outreachDistrict').addEventListener('change',render);
   $('outreachReset').addEventListener('click',()=>{$('outreachCohort').value='';$('outreachDistrict').value='';render();});
   $('outreachExport').addEventListener('click',()=>{
-    const quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+    const quote=v=>{
+      const text=String(v??'');
+      const safe=typeof v==='string' && /^[=+\-@\t\r]/.test(text) ? "'"+text : text;
+      return '"'+safe.replace(/"/g,'""')+'"';
+    };
     const header=['Source updated','District','Cohort','Due date','Members due','Adults due','Youth due','Renewed','Renewal rate (%)','Outstanding','Undecided','Not reached','Said no'];
     const rows=selected().map(r=>[snapshot.source_updated_at,r.district,r.cohort,r.due_date,r.due,r.adults_due,r.youth_due,r.renewed,r.due>0?100*r.renewed/r.due:null,r.due-r.renewed,r.undecided,r.not_reached,r.said_no]);
     const blob=new Blob([[header,...rows].map(row=>row.map(quote).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});

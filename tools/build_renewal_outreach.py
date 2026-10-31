@@ -141,6 +141,7 @@ def parse_source(source):
     council, combined = {}, []
     for raw in records(source['tabs']['Council totals']):
         row = mapped(raw, COUNTS, BASE + ('messaged', 'replied'))
+        check_rate(raw, 'Renewal rate (%)', row['renewed'], row['due'])
         if raw.get('Cohort') == 'Both cohorts':
             combined.append(row)
         else:
@@ -149,7 +150,6 @@ def parse_source(source):
             for key in BASE + OPTIONAL:
                 if row[key] is not None and totals[cohort][key] is not None:
                     require(row[key] == totals[cohort][key], 'Council summary and cohort sheet differ')
-            check_rate(raw, 'Renewal rate (%)', row['renewed'], row['due'])
             council[cohort] = row
     require(set(council) == cohorts and len(combined) == 1, 'Council cohort coverage differs')
     reconcile(list(council.values()), combined[0], BASE + ('messaged', 'replied'))
