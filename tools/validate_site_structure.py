@@ -8,6 +8,7 @@ import json
 import math
 import re
 import sys
+import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 from beascout_links import URL_PATTERN, expected_source_ids
@@ -137,6 +138,7 @@ REQUIRED_ASSETS = (
     "outdoor-readiness.js",
     "assets/cac-logo-horizontal.png",
     "assets/movo-logo.svg",
+    "assets/movo-logo-white.svg",
     "assets/cac-topo-navy.webp",
     "assets/fonts/Figtree-Variable.ttf",
     "assets/fonts/RobotoSlab-Variable.ttf",
@@ -1419,15 +1421,34 @@ def main() -> int:
         errors.append("Renewal Outreach page is required")
     else:
         outreach_html = outreach_page.read_text()
-        for required in ('<title>Renewal Outreach by Movo', 'class="outreach-title-logo"', 'src="assets/movo-logo.svg"', 'alt="Movo"'):
+        for required in ('<title>Renewal Outreach by Movo', 'class="outreach-title-logo"', 'src="assets/movo-logo-white.svg"', 'alt="Movo"'):
             if required not in outreach_html:
                 errors.append(f"Renewal Outreach by Movo must preserve the full accessible logo heading: {required}")
+        for required in ('id="outreachPopulationTitle"', 'Movo outreach population only', 'do not represent all Capitol Area Council members due to renew', 'before that month’s outreach campaign begins', 'inclusion in this extract alone does not establish contact', 'Members due (Movo)', 'Renewal rate (Movo)'):
+            if required not in outreach_html:
+                errors.append(f"Movo population scope disclosure is missing: {required}")
+        if outreach_html.find('id="outreachPopulationTitle"') > outreach_html.find('id="outreachCohort"'):
+            errors.append('Movo population scope must appear before filters and metrics')
         for required in ("outreachCohort", "outreachDistrict", "outreachFreshness", "outreachHistory", "outreachExport", "both cohorts", "source does not supply a separate"):
             if required not in outreach_html:
                 errors.append(f"Renewal Outreach is missing {required}")
-        for required in ("renewal-outreach.js?v=20261031-1", "renewal-outreach.css?v=20261031-2", "data/renewal-outreach-latest.js?v=20261031-1"):
+        for required in ("renewal-outreach.js?v=20261031-scope-1", "renewal-outreach.css?v=20261031-scope-1", "data/renewal-outreach-latest.js?v=20261031-1"):
             if required not in outreach_html:
                 errors.append(f"Renewal Outreach is missing {required}")
+    try:
+        original_logo = ET.fromstring((root / 'assets/movo-logo.svg').read_text())
+        white_logo = ET.fromstring((root / 'assets/movo-logo-white.svg').read_text())
+        original_paths = [node.attrib.get('d') for node in original_logo.iter() if node.tag.endswith('}path')]
+        white_paths = [node.attrib.get('d') for node in white_logo.iter() if node.tag.endswith('}path')]
+        if not original_paths or original_paths != white_paths or original_logo.attrib.get('viewBox') != white_logo.attrib.get('viewBox'):
+            errors.append('White Movo logo must preserve original full-logo geometry')
+        if any(node.tag.endswith('}rect') or node.attrib.get('fill') not in (None, 'none', '#FFFFFF', '#ffffff', '#fff', 'white') for node in white_logo.iter()):
+            errors.append('Movo heading logo must have white artwork and no background rectangle')
+        if 'background:transparent' not in (root / 'renewal-outreach.css').read_text():
+            errors.append('Movo heading logo background must stay transparent')
+    except (OSError, ET.ParseError) as error:
+        errors.append(f'Movo full-logo validation failed: {error}')
+
     for name in ("renewal-outreach.js", "renewal-outreach.css", "tools/build_renewal_outreach.py", "tools/test_renewal_outreach.py", "tools/test_renewal_outreach_page.js"):
         if not (root / name).is_file():
             errors.append(f"Missing Renewal Outreach asset: {name}")

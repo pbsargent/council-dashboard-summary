@@ -38,9 +38,9 @@
     const rows = selected(), due = sum(rows,'due'), renewed = sum(rows,'renewed');
     const cohortLabel = $('outreachCohort').value || cohorts.join(' + ');
     const districtLabel = $('outreachDistrict').value || 'All districts';
-    $('outreachScope').textContent = `${districtLabel} · ${cohortLabel} · due ${[...new Set(rows.map(r => r.due_date))].sort().map(dateOnly).join(' / ') || 'date unavailable'}`;
+    $('outreachScope').textContent = `${districtLabel} · Movo outreach extract · ${cohortLabel} · due ${[...new Set(rows.map(r => r.due_date))].sort().map(dateOnly).join(' / ') || 'date unavailable'}`;
     $('outreachEmpty').hidden = rows.length > 0;
-    $('outreachKpis').innerHTML = [['Members due',number(due)],['Renewed',number(renewed)],['Renewal rate',rate(renewed,due)],['Outstanding',number(due == null ? null : due-renewed)]].map(([label,value])=>`<article class="kpi">${metric(label,value)}</article>`).join('');
+    $('outreachKpis').innerHTML = [['Members due in Movo extract',number(due)],['Renewed in Movo extract',number(renewed)],['Renewal rate (Movo)',rate(renewed,due)],['Outstanding (Movo)',number(due == null ? null : due-renewed)]].map(([label,value])=>`<article class="kpi">${metric(label,value)}</article>`).join('');
     const grouped = [...new Set(rows.map(r=>r.district))].map(district=>{
       const matches=rows.filter(r=>r.district===district);
       return {district,due:sum(matches,'due'),renewed:sum(matches,'renewed')};
@@ -62,7 +62,7 @@
     $('outreachReasonsStatus').textContent = reasonCohorts.length ? `Reported reason coverage: ${reasonCohorts.join(' + ')}. Other cohorts have no supplied breakdown.` : 'No decline-reason breakdown is supplied for this selection.';
     const reasonsDue=sum(reasons,'said_no');
     $('outreachReasons').innerHTML = reasons.length ? Object.entries({cost:'Cost',lost_interest:'Lost interest',aged_out:'Aged out (reported)',moved:'Moved (reported)',unit_problem:'Unit problem',other:'Other',no_reason:'No reason given'}).map(([key,label])=>bar(label,sum(reasons,key),reasonsDue,number(sum(reasons,key)))).join('') : '';
-    $('outreachHistoryNote').textContent = data.snapshots.length===1 ? 'History begins with this validated source snapshot. No earlier daily comparison is available.' : 'Latest validated update per source day, up to 90 days. Cohort populations may change between updates; gaps are not interpolated.';
+    $('outreachHistoryNote').textContent = data.snapshots.length===1 ? 'Movo extract history begins with this validated source snapshot. No earlier daily comparison is available.' : 'Movo extract only. Latest validated update per source day, up to 90 days. Outreach coverage and cohort populations may change; gaps are not interpolated.';
     $('outreachHistory').innerHTML = [...data.snapshots].reverse().map(s=>{
       const rs=selected(s), d=sum(rs,'due'), n=sum(rs,'renewed');
       return `<tr><th scope="row">${escape(stamp(s.source_updated_at))}</th><td>${number(d)}</td><td>${number(n)}</td><td>${rate(n,d)}</td></tr>`;
@@ -77,8 +77,8 @@
       const safe=typeof v==='string' && /^[=+\-@\t\r]/.test(text) ? "'"+text : text;
       return '"'+safe.replace(/"/g,'""')+'"';
     };
-    const header=['Source updated','District','Cohort','Due date','Members due','Adults due','Youth due','Renewed','Renewal rate (%)','Outstanding','Undecided','Not reached','Said no'];
-    const rows=selected().map(r=>[snapshot.source_updated_at,r.district,r.cohort,r.due_date,r.due,r.adults_due,r.youth_due,r.renewed,r.due>0?100*r.renewed/r.due:null,r.due-r.renewed,r.undecided,r.not_reached,r.said_no]);
+    const header=['Population scope','Source updated','District','Cohort','Due date','Members due (Movo extract)','Adults due (Movo extract)','Youth due (Movo extract)','Renewed (Movo extract)','Renewal rate in Movo extract (%)','Outstanding (Movo extract)','Undecided','Not reached','Said no'];
+    const rows=selected().map(r=>['Movo outreach extract; not the full council renewal population',snapshot.source_updated_at,r.district,r.cohort,r.due_date,r.due,r.adults_due,r.youth_due,r.renewed,r.due>0?100*r.renewed/r.due:null,r.due-r.renewed,r.undecided,r.not_reached,r.said_no]);
     const blob=new Blob([[header,...rows].map(row=>row.map(quote).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
     const url=URL.createObjectURL(blob), link=document.createElement('a');link.href=url;link.download='renewal-outreach.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   });

@@ -14,7 +14,10 @@ const row=(district,cohort,due,renewed)=>({district,cohort,due_date:`${cohort}-$
 const snapshot={source_updated_at:'2026-10-30T12:00:00Z',rows:[row('A','2026-11',10,2),row('B','2026-11',20,10),row('A','2026-12',4,0)],outreach:[{district:'A',due:14,messaged:12,not_messaged:2,replied:3,renewed:2,after_message:1,before_message:1},{district:'B',due:20,messaged:20,not_messaged:0,replied:4,renewed:10,after_message:5,before_message:5}],reasons:[{district:'A',cohort:'2026-11',said_no:0,cost:0,lost_interest:0,aged_out:0,moved:0,unit_problem:0,other:0,no_reason:0}]};
 const data={version:1,source_name:'Synthetic source',snapshots:[snapshot]};
 const {nodes,csv}=run(data);
-assert.match(nodes.outreachKpis.innerHTML,/35\.3%/); // 12 / 34, never average district rates
+assert.match(nodes.outreachKpis.innerHTML,/35\.3%/); // 12 / 34: includes source Not yet messaged, never silently switch denominator
+assert.match(nodes.outreachKpis.innerHTML,/Members due in Movo extract/);
+assert.match(nodes.outreachKpis.innerHTML,/Renewal rate \(Movo\)/);
+assert.match(nodes.outreachScope.textContent,/Movo outreach extract/);
 assert.match(nodes.outreachAges.innerHTML,/Unavailable/);
 assert.equal(nodes.outreachFreshness.hidden,false);
 nodes.outreachCohort.value='2026-12';nodes.outreachCohort.handlers.change();
@@ -26,7 +29,7 @@ assert.match(nodes.outreachReasonsStatus.textContent,/No decline-reason breakdow
 nodes.outreachDistrict.value='A';nodes.outreachDistrict.handlers.change();
 assert.doesNotMatch(nodes.outreachCoverageRows.innerHTML,/>B</);
 nodes.outreachExport.handlers.click();
-assert.match(csv(),/2026-12/);assert.doesNotMatch(csv(),/2026-11/);assert.doesNotMatch(csv(),/"B"/);
+assert.match(csv(),/Population scope/);assert.match(csv(),/Movo outreach extract; not the full council renewal population/);assert.match(csv(),/Members due \(Movo extract\)/);assert.match(csv(),/2026-12/);assert.doesNotMatch(csv(),/2026-11/);assert.doesNotMatch(csv(),/"B"/);
 nodes.outreachDistrict.value='B';nodes.outreachDistrict.handlers.change();
 assert.equal(nodes.outreachEmpty.hidden,false);
 assert.match(nodes.outreachKpis.innerHTML,/Unavailable/);
@@ -38,7 +41,7 @@ const missing=run(null).nodes;
 assert.equal(missing.outreachExport.disabled,true);
 assert.match(missing.outreachStatus.textContent,/unavailable/);
 const zero=run({...data,snapshots:[{...snapshot,rows:[row('Zero','2026-11',0,0)],outreach:[],reasons:[]}]}).nodes;
-assert.match(zero.outreachKpis.innerHTML,/Renewal rate<\/span><strong>Unavailable/);
+assert.match(zero.outreachKpis.innerHTML,/Renewal rate \(Movo\)<\/span><strong>Unavailable/);
 const injection=run({...data,snapshots:[{...snapshot,rows:[row('<img onerror=bad>','2026-11',10,2)]}]}).nodes;
 assert.doesNotMatch(injection.outreachRows.innerHTML,/<img/);
 assert.match(injection.outreachRows.innerHTML,/&lt;img/);

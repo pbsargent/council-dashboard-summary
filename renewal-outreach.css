@@ -2,4 +2,6 @@
 
 #outreachFollowup>div{display:flex;justify-content:space-between;gap:1rem;padding:.45rem 0;border-bottom:1px solid #456080}#outreachFollowup{margin-top:.5rem}.outreach-page [aria-label="Daily renewal progress"] table{min-width:26rem}.outreach-page [aria-label="Daily renewal progress"] th{white-space:normal}.outreach-page .detail-toolbar button{background:#16385e;color:#fff;border:1px solid #6680a3;border-radius:.35rem;padding:.7rem 1rem}.outreach-page .detail-toolbar button:focus-visible{outline:3px solid #f5c65c;outline-offset:2px}
 
-.outreach-page .outreach-title{display:flex;flex-wrap:wrap;align-items:center;gap:.2em .3em}.outreach-byline{display:inline-flex;align-items:center;gap:.3em;white-space:nowrap}.outreach-title-logo{display:inline-block;width:3.72em;height:1em;box-sizing:content-box;object-fit:contain;background:#f7f4ee;padding:.15em .25em;border-radius:.12em;vertical-align:middle}
+.outreach-page .outreach-title{display:flex;flex-wrap:wrap;align-items:center;gap:.2em .3em}.outreach-byline{display:inline-flex;align-items:center;gap:.3em;white-space:nowrap}.outreach-title-logo{display:inline-block;width:3.72em;height:1em;box-sizing:content-box;object-fit:contain;background:transparent;padding:0;vertical-align:middle}
+
+.outreach-population{border-left:5px solid #f6b227}.outreach-population h2{margin-bottom:.5rem}.outreach-population p{max-width:80ch;line-height:1.5}.outreach-population p:last-child{margin-bottom:0}
