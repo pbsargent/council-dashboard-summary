@@ -967,6 +967,9 @@ def build_doc():
     add_reference_bullet(doc, "`work/renewal_recreation/build_renewal_board_data.py` documents the Renewal Status data build.")
     add_reference_bullet(doc, "`work/commissioner_site/build_site.py` documents the source workbook parsing and `latest.json` formulas.")
 
+    from renewal_outreach_guide import append_renewal_outreach
+    append_renewal_outreach(doc)
+
     OUT_DIR.mkdir(exist_ok=True)
     doc.save(OUT_FILE)
     return OUT_FILE

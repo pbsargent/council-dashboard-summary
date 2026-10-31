@@ -57,7 +57,7 @@ GENERATED_CHANGES="$({
   git_repo diff --name-only
   git_repo diff --cached --name-only
   git_repo ls-files --others --exclude-standard
-} | /usr/bin/sort -u | /usr/bin/grep -E '^(data/(latest\.json|monday-latest\.json|fall-recruitment-latest\.js|unit-level-latest\.(json|js)|[0-9]{4}-[0-9]{2}-[0-9]{2}\.json)|renewal-board/data\.js)$' || true)"
+} | /usr/bin/sort -u | /usr/bin/grep -E '^(data/(latest\.json|monday-latest\.json|fall-recruitment-latest\.js|renewal-outreach-latest\.js|unit-level-latest\.(json|js)|[0-9]{4}-[0-9]{2}-[0-9]{2}\.json)|renewal-board/data\.js)$' || true)"
 if [[ -n "$GENERATED_CHANGES" ]]; then
   print -u2 -r -- "Generated dashboard data must be deployed by update_daily.zsh, not committed:"
   print -u2 -r -- "$GENERATED_CHANGES"

@@ -181,6 +181,10 @@ log "Validating required dashboard pages, routes, and branded assets"
 LAST_STEP="validate joins workbook and page contracts"
 "$PYTHON" "${SUMMARY_REPO}/tools/test_join_dashboards.py"
 "$NODE" "${SUMMARY_REPO}/tools/test_joins_page.js"
+LAST_STEP="validate daily Movo renewal outreach contracts"
+"$PYTHON" "${SUMMARY_REPO}/tools/test_renewal_outreach.py"
+"$NODE" "${SUMMARY_REPO}/tools/test_renewal_outreach_page.js"
+
 LAST_STEP="validate current campaign popcorn sales contract"
 "$PYTHON" "${SUMMARY_REPO}/tools/test_popcorn_sales.py"
 "$NODE" "${SUMMARY_REPO}/tools/test_popcorn_sales_render.mjs"
@@ -197,9 +201,17 @@ if [[ -z "${CAC_JOINS_STAGE_RECEIPT:-}" ]]; then
 fi
 "$PYTHON" "$JOINS_BUILDER" --verify-stage "$CAC_JOINS_STAGE_RECEIPT"
 
+LAST_STEP="capture and validate daily Movo source"
+MOVO_SOURCE_STAGE="${ROOT}/outputs/movo-renewal-outreach/source.json"
+MOVO_HISTORY="${ROOT}/outputs/movo-renewal-outreach/history"
+"$PYTHON" "${ROOT}/tools/refresh_movo_source.py" --output "$MOVO_SOURCE_STAGE"
+"$PYTHON" "${SUMMARY_REPO}/tools/build_renewal_outreach.py" --source "$MOVO_SOURCE_STAGE" --history-dir "$MOVO_HISTORY" --output "${ROOT}/outputs/movo-renewal-outreach/renewal-outreach-latest.js"
+
 LAST_STEP="stage source-only GitHub Pages site"
 log "Preparing isolated GitHub Pages staging tree"
 "$SITE_STAGER" "$SUMMARY_REPO" "$SITE_STAGE" >/dev/null
+
+copy_file "${ROOT}/outputs/movo-renewal-outreach/renewal-outreach-latest.js" "${SITE_STAGE}/data/renewal-outreach-latest.js"
 
 LAST_STEP="build council and CST data snapshot"
 log "Building fresh council and CST data snapshot"

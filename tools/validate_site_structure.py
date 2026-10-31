@@ -76,6 +76,7 @@ DETAIL_PAGES = {
     "monday.html": "monday",
     "cubs-joins.html": "cubs",
     "scouts-bsa-joins.html": "scouts-bsa",
+    "renewal-outreach.html": "renewal-outreach",
     "popcorn.html": "popcorn",
     "unit-metrics.html": "unit-metrics",
     "camping-readiness.html": "camping-readiness",
@@ -98,6 +99,7 @@ NAVIGATION_ROUTES = {
     "comparison": "comparison.html",
     "districts": "districts.html",
     "pin-status": "pin-status.html",
+    "renewal-outreach": "renewal-outreach.html",
     "membership": "membership.html",
     "monday": "monday.html",
     "cubs": "cubs-joins.html",
@@ -120,7 +122,7 @@ NAVIGATION_ROUTES = {
 
 NAVIGATION_HIERARCHY = {
     "overview": ("commissioner-portal", "comparison", "school-atlas"),
-    "districts": ("pin-status", "popcorn"),
+    "districts": ("pin-status", "renewal-outreach", "popcorn"),
     "membership": ("monday", "cubs", "scouts-bsa"),
     "unit-health": ("unit-metrics", "unit-level", "membership-followup", "key3-status", "renewal"),
     # Persistent user-approved placement: both camping readiness pages belong
@@ -551,6 +553,13 @@ def main() -> int:
 
     if "--require-data" in sys.argv:
         try:
+            from build_renewal_outreach import validate_bundle, timestamp
+            movo = validate_bundle((root / "data/renewal-outreach-latest.js").read_text())
+            if timestamp(movo['snapshots'][-1]['source_updated_at']).astimezone(ZoneInfo('America/Chicago')).date() != datetime.now(ZoneInfo('America/Chicago')).date():
+                raise ValueError('Movo source is stale; prior publication must be preserved')
+        except (OSError, ValueError, TypeError, KeyError) as error:
+            errors.append(f"Renewal Outreach data: {error}")
+        try:
             from build_join_dashboards import validate_public_bundle, service_area_mapping
             joins = validate_public_bundle(root / 'data/joins-latest.js')
             mapping = service_area_mapping(root / 'data/latest.json', joins, date.fromisoformat(joins['cubs']['report_date']))
@@ -627,7 +636,7 @@ def main() -> int:
                 errors.append(f"{relative}: missing required heading {heading!r}")
         if not any("cac-theme.css?v=20260812-discrete-pages-1" in href for href in parsed.stylesheets):
             errors.append(f"{relative}: missing discrete-page CAC theme reference")
-        if not any("site-navigation.js?v=20261026-joins-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20261031-renewal-outreach-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
 
     help_page_path = root / "help.html"
@@ -1018,7 +1027,7 @@ def main() -> int:
         parsed = parse_page(path)
         if parsed.body_page != page_key:
             errors.append(f"{relative}: expected data-page={page_key!r}, found {parsed.body_page!r}")
-        if not any("site-navigation.js?v=20261026-joins-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20261031-renewal-outreach-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
         if relative in REQUIRED_PARENT_LINKS:
             expected_href, expected_label = REQUIRED_PARENT_LINKS[relative]
@@ -1403,6 +1412,23 @@ def main() -> int:
                 errors.append(f"Membership Follow-up renderer is missing {text}")
         if "Membership Follow-up" not in (root / "help.html").read_text(encoding="utf-8"):
             errors.append("Dashboard Guide must document Membership Follow-up")
+
+    outreach_page = root / "renewal-outreach.html"
+    if not outreach_page.is_file():
+        errors.append("Renewal Outreach page is required")
+    else:
+        outreach_html = outreach_page.read_text()
+        for required in ("outreachCohort", "outreachDistrict", "outreachFreshness", "outreachHistory", "outreachExport", "both cohorts", "source does not supply a separate"):
+            if required not in outreach_html:
+                errors.append(f"Renewal Outreach is missing {required}")
+        for required in ("renewal-outreach.js?v=20261031-1", "renewal-outreach.css?v=20261031-1", "data/renewal-outreach-latest.js?v=20261031-1"):
+            if required not in outreach_html:
+                errors.append(f"Renewal Outreach is missing {required}")
+    for name in ("renewal-outreach.js", "renewal-outreach.css", "tools/build_renewal_outreach.py", "tools/test_renewal_outreach.py", "tools/test_renewal_outreach_page.js"):
+        if not (root / name).is_file():
+            errors.append(f"Missing Renewal Outreach asset: {name}")
+    if 'renewal-outreach.html' not in (root / 'index.html').read_text() or 'renewalOutreachGuide' not in (root / 'help.html').read_text():
+        errors.append("Renewal Outreach needs Overview and Dashboard Guide links")
 
     if errors:
         print("Dashboard structure validation FAILED:", file=sys.stderr)

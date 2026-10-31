@@ -3,3 +3,5 @@ update_daily*.log
 .DS_Store
 
 work/
+
+data/renewal-outreach-latest.js
