@@ -203,7 +203,7 @@ fi
 
 LAST_STEP="capture and validate daily Movo source"
 MOVO_SOURCE_STAGE="${ROOT}/outputs/movo-renewal-outreach/source.json"
-MOVO_HISTORY="${ROOT}/outputs/movo-renewal-outreach/history"
+MOVO_HISTORY="${CAC_MOVO_HISTORY_DIR:-/Volumes/MacProData/Patrol/Scout/CAC-Dashboard-Platform/Evidence/movo-daily-snapshots}"
 "$PYTHON" "${ROOT}/tools/refresh_movo_source.py" --output "$MOVO_SOURCE_STAGE"
 "$PYTHON" "${SUMMARY_REPO}/tools/build_renewal_outreach.py" --source "$MOVO_SOURCE_STAGE" --history-dir "$MOVO_HISTORY" --output "${ROOT}/outputs/movo-renewal-outreach/renewal-outreach-latest.js"
 
