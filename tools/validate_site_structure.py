@@ -136,6 +136,7 @@ REQUIRED_ASSETS = (
     "site-navigation.js",
     "outdoor-readiness.js",
     "assets/cac-logo-horizontal.png",
+    "assets/movo-logo.svg",
     "assets/cac-topo-navy.webp",
     "assets/fonts/Figtree-Variable.ttf",
     "assets/fonts/RobotoSlab-Variable.ttf",
@@ -1418,6 +1419,9 @@ def main() -> int:
         errors.append("Renewal Outreach page is required")
     else:
         outreach_html = outreach_page.read_text()
+        for required in ('<title>Renewal Outreach by Movo', 'class="outreach-title-logo"', 'src="assets/movo-logo.svg"', 'alt="Movo"'):
+            if required not in outreach_html:
+                errors.append(f"Renewal Outreach by Movo must preserve the full accessible logo heading: {required}")
         for required in ("outreachCohort", "outreachDistrict", "outreachFreshness", "outreachHistory", "outreachExport", "both cohorts", "source does not supply a separate"):
             if required not in outreach_html:
                 errors.append(f"Renewal Outreach is missing {required}")
