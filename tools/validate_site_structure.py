@@ -1421,7 +1421,7 @@ def main() -> int:
         for required in ("outreachCohort", "outreachDistrict", "outreachFreshness", "outreachHistory", "outreachExport", "both cohorts", "source does not supply a separate"):
             if required not in outreach_html:
                 errors.append(f"Renewal Outreach is missing {required}")
-        for required in ("renewal-outreach.js?v=20261031-1", "renewal-outreach.css?v=20261031-1", "data/renewal-outreach-latest.js?v=20261031-1"):
+        for required in ("renewal-outreach.js?v=20261031-1", "renewal-outreach.css?v=20261031-2", "data/renewal-outreach-latest.js?v=20261031-1"):
             if required not in outreach_html:
                 errors.append(f"Renewal Outreach is missing {required}")
     for name in ("renewal-outreach.js", "renewal-outreach.css", "tools/build_renewal_outreach.py", "tools/test_renewal_outreach.py", "tools/test_renewal_outreach_page.js"):
