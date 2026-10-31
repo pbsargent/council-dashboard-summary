@@ -636,7 +636,7 @@ def main() -> int:
                 errors.append(f"{relative}: missing required heading {heading!r}")
         if not any("cac-theme.css?v=20260812-discrete-pages-1" in href for href in parsed.stylesheets):
             errors.append(f"{relative}: missing discrete-page CAC theme reference")
-        if not any("site-navigation.js?v=20261031-renewal-outreach-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20261031-renewal-outreach-2" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
 
     help_page_path = root / "help.html"
@@ -1027,7 +1027,7 @@ def main() -> int:
         parsed = parse_page(path)
         if parsed.body_page != page_key:
             errors.append(f"{relative}: expected data-page={page_key!r}, found {parsed.body_page!r}")
-        if not any("site-navigation.js?v=20261031-renewal-outreach-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20261031-renewal-outreach-2" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
         if relative in REQUIRED_PARENT_LINKS:
             expected_href, expected_label = REQUIRED_PARENT_LINKS[relative]

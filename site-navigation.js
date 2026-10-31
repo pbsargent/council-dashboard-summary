@@ -21,7 +21,7 @@
       path: "districts.html",
       items: [
         { key: "pin-status", label: "PIN Status & Completeness", path: "pin-status.html" },
-        { key: "renewal-outreach", label: "Renewal Outreach", path: "renewal-outreach.html" },
+        { key: "renewal-outreach", label: "Renewal Outreach by Movo", path: "renewal-outreach.html" },
         { key: "popcorn", label: "Popcorn", path: "popcorn.html" },
       ],
     },
