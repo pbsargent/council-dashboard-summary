@@ -53,10 +53,22 @@
     $('outreachFollowup').innerHTML = ['undecided','not_reached','said_no'].map(key=>metric(({undecided:'Undecided',not_reached:'Not reached',said_no:'Said no'})[key],number(sum(rows,key)))).join('');
     $('outreachRows').innerHTML = [...rows].sort((a,b)=>(b.due-b.renewed)-(a.due-a.renewed)||a.district.localeCompare(b.district)||a.cohort.localeCompare(b.cohort)).map(r=>`<tr><th scope="row">${escape(r.district)}</th><td>${escape(dateOnly(r.due_date))}</td><td>${number(r.due)}</td><td>${number(r.renewed)}</td><td>${rate(r.renewed,r.due)}</td><td>${number(r.due-r.renewed)}</td><td>${number(r.undecided)}</td><td>${number(r.not_reached)}</td><td>${number(r.said_no)}</td></tr>`).join('');
     $('outreachCount').textContent = `${rows.length} district/cohort rows`;
-    const outreach=snapshot.outreach.filter(r=>!$('outreachDistrict').value||r.district===$('outreachDistrict').value);
-    $('outreachCombinedScope').textContent = `${districtLabel} · ${cohorts.join(' + ')} combined. This section follows District only; cohort-specific message timing is not supplied.`;
-    $('outreachCoverage').innerHTML = [['Messaged',number(sum(outreach,'messaged'))],['Not yet messaged',number(sum(outreach,'not_messaged'))],['Replied',number(sum(outreach,'replied'))],['Reply rate',rate(sum(outreach,'replied'),sum(outreach,'messaged'))]].map(([l,v])=>metric(l,v)).join('');
-    $('outreachCoverageRows').innerHTML=outreach.map(r=>`<tr><th scope="row">${escape(r.district)}</th>${['due','messaged','not_messaged','replied'].map(k=>`<td>${number(r[k])}</td>`).join('')}<td>${rate(r.replied,r.messaged)}</td><td>${number(r.after_message)}</td><td>${number(r.before_message)}</td></tr>`).join('');
+    const cohort = $('outreachCohort').value;
+    const notMessaged = r => Number.isInteger(r.due) && Number.isInteger(r.messaged) ? r.due-r.messaged : null;
+    const outreach = cohort
+      ? rows.map(r=>({...r,not_messaged:notMessaged(r),after_message:null,before_message:null}))
+      : snapshot.outreach.filter(r=>!$('outreachDistrict').value||r.district===$('outreachDistrict').value);
+    // Source cohort totals are available even when district messaging columns
+    // are absent. Never distribute those totals across districts or apportion
+    // the combined before/after timing counts.
+    const council = cohort && !$('outreachDistrict').value ? snapshot.council?.[cohort] : null;
+    const summary = council ? [{...council,not_messaged:notMessaged(council)}] : outreach;
+    $('outreachCoverageTitle').textContent = `Movo outreach — ${cohort || 'both cohorts'}`;
+    $('outreachCombinedScope').textContent = cohort
+      ? `${districtLabel} · ${cohort}. Cohort and District apply to this panel. ${council ? 'Cards use the source cohort total; district values appear only where supplied. ' : 'Missing district/cohort message and reply counts are unavailable. '}Before/after message timing is unavailable for a single cohort because the source only supplies combined timing.`
+      : `${districtLabel} · ${cohorts.join(' + ')} combined. Cohort and District apply to this panel; both-cohort timing is shown as supplied.`;
+    $('outreachCoverage').innerHTML = [['Messaged',number(sum(summary,'messaged'))],['Not yet messaged',number(sum(summary,'not_messaged'))],['Replied',number(sum(summary,'replied'))],['Reply rate',rate(sum(summary,'replied'),sum(summary,'messaged'))]].map(([l,v])=>metric(l,v)).join('');
+    $('outreachCoverageRows').innerHTML=outreach.map(r=>`<tr><th scope="row">${escape(r.district)}</th>${['due','messaged','not_messaged','replied'].map(k=>`<td>${number(r[k])}</td>`).join('')}<td>${rate(r.replied,r.messaged)}</td><td>${number(r.after_message)}</td><td>${number(r.before_message)}</td></tr>`).join('') || '<tr><td colspan="8">No Movo outreach rows match this cohort and district.</td></tr>';
     const reasons=snapshot.reasons.filter(r=>(!$('outreachCohort').value||r.cohort===$('outreachCohort').value)&&(!$('outreachDistrict').value||r.district===$('outreachDistrict').value));
     const reasonCohorts=[...new Set(reasons.map(r=>r.cohort))];
     $('outreachReasonsStatus').textContent = reasonCohorts.length ? `Reported reason coverage: ${reasonCohorts.join(' + ')}. Other cohorts have no supplied breakdown.` : 'No decline-reason breakdown is supplied for this selection.';

@@ -1429,10 +1429,10 @@ def main() -> int:
                 errors.append(f"Movo population scope disclosure is missing: {required}")
         if outreach_html.find('id="outreachPopulationTitle"') > outreach_html.find('id="outreachCohort"'):
             errors.append('Movo population scope must appear before filters and metrics')
-        for required in ("outreachCohort", "outreachDistrict", "outreachFreshness", "outreachHistory", "outreachExport", "both cohorts", "source does not supply a separate"):
+        for required in ("outreachCoverageTitle", "Cohort and District apply to every data panel", "outreachCohort", "outreachDistrict", "outreachFreshness", "outreachHistory", "outreachExport", "both cohorts", "source does not supply a separate"):
             if required not in outreach_html:
                 errors.append(f"Renewal Outreach is missing {required}")
-        for required in ("renewal-outreach.js?v=20261031-scope-1", "renewal-outreach.css?v=20261031-scope-1", "data/renewal-outreach-latest.js?v=20261031-1"):
+        for required in ("renewal-outreach.js?v=20261031-cohort-1", "renewal-outreach.css?v=20261031-scope-1", "data/renewal-outreach-latest.js?v=20261031-1"):
             if required not in outreach_html:
                 errors.append(f"Renewal Outreach is missing {required}")
     try:

@@ -356,3 +356,10 @@ Preserve the prominent scope disclosure before filters/KPIs, explicitly scoped K
 
 
 Logo treatment update, October 31, 2026: Peter requested white artwork with a transparent background. The heading uses `assets/movo-logo-white.svg`, preserving the full logomark plus wordmark, original proportions and accessible alt text. Keep `assets/movo-logo.svg` as the original source. This supersedes the earlier original-color/light-background treatment. Daily refresh must preserve the transparent white variant.
+
+
+## Cohort filtering for all Movo data panels — October 31, 2026
+
+Peter requested Cohort filtering for every data panel. This supersedes the earlier rule that outreach remains fixed to both cohorts. Cohort and District now apply to outreach messaging cards and district rows as well as renewal progress, reasons, history and CSV. For a selected cohort with All districts, messaging cards use the source’s cohort total; never distribute that total across districts. Show district/cohort messaging counts only where explicitly supplied. Not yet messaged is due minus messaged within that same scope when both counts exist.
+
+The source’s before/after message timing has no cohort breakdown. For a single cohort show Unavailable, never leave combined timing visible, apportion it, or infer campaign activation. Both cohorts restores original combined outreach/timing values. Missing messaging/reply breakdowns and empty selections stay unavailable rather than being replaced with combined or partial totals. Preserve the Movo-extract population disclosure, unchanged source counts, transparent white full logo, filters and privacy. Retain the focused all-panel cohort/empty/missing/CSV render tests, structural validator, browser asset cache version, help, generated guide and scoped release parity in the daily refresh.
