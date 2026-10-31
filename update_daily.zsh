@@ -204,6 +204,10 @@ fi
 LAST_STEP="capture and validate daily Movo source"
 MOVO_SOURCE_STAGE="${ROOT}/outputs/movo-renewal-outreach/source.json"
 MOVO_HISTORY="${CAC_MOVO_HISTORY_DIR:-/Volumes/MacProData/Patrol/Scout/CAC-Dashboard-Platform/Evidence/movo-daily-snapshots}"
+if [[ -z "${CAC_MOVO_HISTORY_DIR:-}" ]]; then
+  "$PYTHON" -c 'import os; import sys; sys.exit(0 if os.path.ismount("/Volumes/MacProData") else "Canonical Scout storage is unavailable; Movo refresh blocked")'
+fi
+require_dir "${MOVO_HISTORY:h}"
 "$PYTHON" "${ROOT}/tools/refresh_movo_source.py" --output "$MOVO_SOURCE_STAGE"
 "$PYTHON" "${SUMMARY_REPO}/tools/build_renewal_outreach.py" --source "$MOVO_SOURCE_STAGE" --history-dir "$MOVO_HISTORY" --output "${ROOT}/outputs/movo-renewal-outreach/renewal-outreach-latest.js"
 
