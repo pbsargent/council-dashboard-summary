@@ -271,7 +271,8 @@ def validate_bundle(script):
         require(isinstance(verification, dict) and set(verification) == {'verified_at', 'data_through'}, 'Invalid public verification fields')
         verified = timestamp(verification['verified_at'])
         require(verified <= timestamp(payload['captured_at']), 'Verification follows capture')
-        require(date.fromisoformat(verification['data_through']) <= verified.astimezone(CENTRAL).date(), 'Data-through date follows verification')
+        if verification['data_through'] is not None:
+            require(date.fromisoformat(verification['data_through']) <= verified.astimezone(CENTRAL).date(), 'Data-through date follows verification')
     require(isinstance(payload['snapshots'], list) and 0 < len(payload['snapshots']) <= 90, 'Missing snapshot history')
     seen = set()
     previous = None

@@ -73,8 +73,9 @@ def verify_receipt(path, source, today=None, now=None):
     observed, verified = stamp(receipt['observed_at']), stamp(receipt['verified_at'])
     require(observed.astimezone(CENTRAL).date() == today and verified.astimezone(CENTRAL).date() == today, 'Movo verification is not from today')
     require(observed <= verified <= now and verified <= stamp(source['captured_at']), 'Invalid Movo verification chronology')
-    through = date.fromisoformat(receipt['data_through'])
-    require(through.isoformat() == receipt['data_through'] and through <= observed.astimezone(CENTRAL).date(), 'Invalid Movo data-through date')
+    if receipt['data_through'] is not None:
+        through = date.fromisoformat(receipt['data_through'])
+        require(through.isoformat() == receipt['data_through'] and through <= observed.astimezone(CENTRAL).date(), 'Invalid Movo data-through date')
     evidence = receipt['evidence']
     require(isinstance(evidence, dict) and set(evidence) == {'observation', 'raw', 'sheet'}, 'Incomplete Movo evidence')
     require(len({r['name'] for r in evidence.values()}) == 3, 'Evidence files must be distinct')

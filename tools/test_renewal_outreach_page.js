@@ -21,6 +21,7 @@ assert.equal(verifiedRun.nodes.outreachFreshness.hidden,true);
 assert.match(verifiedRun.nodes.outreachStatus.textContent,/Movo checked/);
 assert.match(verifiedRun.nodes.outreachStatus.textContent,/Data through Oct 30, 2026/);
 assert.match(verifiedRun.nodes.outreachStatus.textContent,/Sheet updated/);
+assert.match(run({...data,verification:{verified_at:new Date().toISOString(),data_through:null}}).nodes.outreachStatus.textContent,/Data through not supplied/);
 const staleVerification=run({...data,verification:{verified_at:'2026-10-29T12:00:00Z',data_through:'2026-10-28'}});
 assert.equal(staleVerification.nodes.outreachFreshness.hidden,false);
 assert.match(staleVerification.nodes.outreachFreshness.textContent,/Daily Movo check is stale/);

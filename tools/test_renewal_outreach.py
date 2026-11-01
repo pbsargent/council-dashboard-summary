@@ -77,6 +77,16 @@ class MovoTests(unittest.TestCase):
         del other['Council totals']
         with self.assertRaisesRegex(ValueError,'five tables'):table_hashes(other)
 
+    def test_missing_data_through_stays_explicitly_unavailable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);source,receipt=self.receipt_fixture(root)
+            observation=json.loads((root/'observation.json').read_text());observation['data_through']=None
+            (root/'observation.json').write_text(json.dumps(observation))
+            create_receipt(root/'observation.json',root/'raw.txt',root/'sheet.json',receipt)
+            source['captured_at']=datetime.now(CENTRAL).isoformat();(root/'source.json').write_text(json.dumps(source))
+            bundle=build(root/'source.json',root/'public.js',root/'history',verification_receipt=receipt)
+            self.assertIsNone(bundle['verification']['data_through'])
+
     def test_reconciles_source_without_inventing_optional_counts(self):
         parsed = parse_source(source_fixture())
         self.assertEqual(sum(r['due'] for r in parsed['rows']),15)
