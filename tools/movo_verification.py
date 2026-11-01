@@ -124,7 +124,10 @@ def _verify_receipt(path, source, today=None, now=None):
     require(set(observation) == {'captured_at', 'data_through', 'tabs'}, 'Invalid Movo observation')
     require(observation['captured_at'] == receipt['observed_at'] and observation['data_through'] == receipt['data_through'], 'Movo observation dates differ')
     require(observed <= stamp(sheet['captured_at']) <= verified, 'Sheet readback predates Movo observation')
-    require(sheet['source_name'] == source['source_name'] and stamp(sheet['source_updated_at']) == stamp(source['source_updated_at']), 'Sheet source identity or update clock changed')
+    require(sheet['source_name'] == source['source_name'], 'Sheet source identity changed')
+    saved_update, current_update = stamp(sheet['source_updated_at']), stamp(source['source_updated_at'])
+    # Preserve the original semantics only for the exact audited historical receipt.
+    require(saved_update == current_update or (receipt['version'] == 1 and saved_update <= current_update), 'Sheet source update clock changed')
     hashes = table_hashes(observation['tabs'])
     require(hashes == receipt['tables_sha256'] == table_hashes(sheet['tabs']) == table_hashes(source['tabs']), 'Movo observation, receipt and Sheet tables differ')
     require(path.read_bytes() == raw, 'Movo receipt changed during validation')

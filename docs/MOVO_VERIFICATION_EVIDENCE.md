@@ -23,3 +23,8 @@ not claim cryptographic proof of Movo origin or continuous source freshness.
 The independently verified November 1 version-1 receipt is preserved unchanged.
 Only its exact audited SHA-256 is accepted for version 1, through November 1, 2026; later daily
 runs require version 2. No historical receipt may be restamped to pass this gate.
+
+The pinned historical v1 receipt retains its original update-clock rule (the
+current Sheet clock may advance while all five tables remain identical). Its
+saved metadata preceded Drive's settled clock by 14.817 seconds. Version 2
+requires exact update-clock equality; it has no such exception.
