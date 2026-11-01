@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 from build_renewal_outreach import BASE, CENTRAL, build, parse_source, validate_bundle
+from movo_verification import create_receipt, table_hashes, verify_receipt
 
 
 def source_fixture():
@@ -26,6 +27,56 @@ def source_fixture():
 
 
 class MovoTests(unittest.TestCase):
+    def receipt_fixture(self, root):
+        source = source_fixture()
+        source['source_updated_at'] = (datetime.now(CENTRAL)-timedelta(days=1)).isoformat()
+        observed = (datetime.now(CENTRAL)-timedelta(seconds=3)).isoformat()
+        sheet = dict(source, captured_at=(datetime.now(CENTRAL)-timedelta(seconds=2)).isoformat())
+        (root/'observation.json').write_text(json.dumps(dict(captured_at=observed, data_through='2026-10-30', tabs=source['tabs'])))
+        (root/'raw.txt').write_text('Synthetic complete five-table Movo response')
+        (root/'sheet.json').write_text(json.dumps(sheet))
+        receipt = root/'receipt.json'
+        create_receipt(root/'observation.json',root/'raw.txt',root/'sheet.json',receipt)
+        source['captured_at'] = datetime.now(CENTRAL).isoformat()
+        (root/'source.json').write_text(json.dumps(source))
+        return source, receipt
+
+    def test_same_day_verified_no_change_with_old_sheet(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); source,receipt=self.receipt_fixture(root)
+            result=build(root/'source.json',root/'public.js',root/'history',verification_receipt=receipt)
+            self.assertEqual(result['snapshots'][-1]['source_updated_at'],source['source_updated_at'])
+            self.assertEqual(result['verification']['data_through'],'2026-10-30')
+            self.assertNotIn('evidence',(root/'public.js').read_text())
+            self.assertNotIn('sha256',(root/'public.js').read_text())
+            original=(root/'public.js').read_bytes()
+            with self.assertRaises(FileNotFoundError):
+                build(root/'source.json',root/'public.js',root/'history',verification_receipt=root/'missing.json')
+            self.assertEqual((root/'public.js').read_bytes(),original)
+
+    def test_receipt_rejects_stale_future_identity_and_tampered_evidence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);source,path=self.receipt_fixture(root)
+            original=path.read_bytes();receipt=json.loads(original)
+            for key,value in [('verified_at',(datetime.now(CENTRAL)-timedelta(days=1)).isoformat()),
+                              ('observed_at',(datetime.now(CENTRAL)+timedelta(days=1)).isoformat()),
+                              ('sheet_id','wrong'),('parent_id','wrong'),('data_through','2099-01-01')]:
+                changed=deepcopy(receipt);changed[key]=value;path.write_text(json.dumps(changed))
+                with self.subTest(key=key),self.assertRaises(ValueError):verify_receipt(path,source)
+            path.write_bytes(original)
+            source['tabs']['Nov by district'][1][3]=11
+            with self.assertRaisesRegex(ValueError,'tables differ'):verify_receipt(path,source)
+            source,_=self.receipt_fixture(root)
+            receipt=json.loads(path.read_text());raw=root/receipt['evidence']['raw']['name'];raw.write_text('changed')
+            with self.assertRaisesRegex(ValueError,'hash mismatch'):verify_receipt(path,source)
+
+    def test_numeric_format_normalization_and_incomplete_tables(self):
+        s=source_fixture()['tabs'];other=deepcopy(s)
+        other['Nov by district'][1][3]='10.0';other['Nov by district'][1].append(None)
+        self.assertEqual(table_hashes(s),table_hashes(other))
+        del other['Council totals']
+        with self.assertRaisesRegex(ValueError,'five tables'):table_hashes(other)
+
     def test_reconciles_source_without_inventing_optional_counts(self):
         parsed = parse_source(source_fixture())
         self.assertEqual(sum(r['due'] for r in parsed['rows']),15)

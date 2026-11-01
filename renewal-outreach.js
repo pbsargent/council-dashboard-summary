@@ -22,11 +22,16 @@
   const districts = [...new Set(snapshot.rows.map(r => r.district))].sort();
   $('outreachCohort').innerHTML = '<option value="">Both cohorts</option>' + cohorts.map(c => `<option value="${escape(c)}">${escape(c)}</option>`).join('');
   $('outreachDistrict').innerHTML = '<option value="">All districts</option>' + districts.map(d => `<option value="${escape(d)}">${escape(d)}</option>`).join('');
-  $('outreachStatus').textContent = `Source updated ${stamp(snapshot.source_updated_at)}`;
+  const verification = data.verification;
+  $('outreachStatus').textContent = verification
+    ? `Movo checked ${stamp(verification.verified_at)} · Data through ${dateOnly(verification.data_through)} · Sheet updated ${stamp(snapshot.source_updated_at)}`
+    : `Source updated ${stamp(snapshot.source_updated_at)}`;
   $('outreachSource').textContent = data.source_name;
-  const stale = centralDay(snapshot.source_updated_at) !== centralDay(new Date());
+  const stale = centralDay(verification ? verification.verified_at : snapshot.source_updated_at) !== centralDay(new Date());
   $('outreachFreshness').hidden = !stale;
-  $('outreachFreshness').textContent = `Daily Movo source is stale. Last source update: ${stamp(snapshot.source_updated_at)}. These are the last validated counts.`;
+  $('outreachFreshness').textContent = verification
+    ? `Daily Movo check is stale. Last verified check: ${stamp(verification.verified_at)}. Data through ${dateOnly(verification.data_through)}. These are the last validated counts.`
+    : `Daily Movo source is stale. Last source update: ${stamp(snapshot.source_updated_at)}. These are the last validated counts.`;
   function selected(s = snapshot) {
     return s.rows.filter(r => (!$('outreachCohort').value || r.cohort === $('outreachCohort').value) && (!$('outreachDistrict').value || r.district === $('outreachDistrict').value));
   }

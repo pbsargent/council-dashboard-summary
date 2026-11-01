@@ -209,12 +209,19 @@ def atomic_write(path, text):
             candidate.unlink(missing_ok=True)
 
 
-def build(source_path, output, history_dir, today=None):
+def build(source_path, output, history_dir, today=None, verification_receipt=None):
     today = today or datetime.now(CENTRAL).date()
     raw = Path(source_path).read_bytes()
     source = json.loads(raw)
     current = parse_source(source)
-    require(timestamp(source['source_updated_at']).astimezone(CENTRAL).date() == today, 'Movo source was not updated today; prior publication preserved')
+    verification = None
+    receipt_bytes = None
+    if verification_receipt is not None:
+        from movo_verification import verify_receipt
+        receipt_bytes = Path(verification_receipt).read_bytes()
+        verification = verify_receipt(verification_receipt, source, today=today)
+    else:
+        require(timestamp(source['source_updated_at']).astimezone(CENTRAL).date() == today, 'Movo source was not updated today; prior publication preserved')
     require(timestamp(source['captured_at']).astimezone(CENTRAL).date() == today, 'Movo source was not captured today')
     require(timestamp(source['captured_at']) <= datetime.now(CENTRAL), 'Capture timestamp is in the future')
     history_dir = Path(history_dir)
@@ -230,7 +237,12 @@ def build(source_path, output, history_dir, today=None):
         daily[timestamp(snapshot['source_updated_at']).astimezone(CENTRAL).date().isoformat()] = snapshot
     bundle = {'version': 1, 'source_name': source['source_name'], 'captured_at': source['captured_at'],
               'snapshots': list(daily.values())[-90:]}
+    if verification is not None:
+        bundle['verification'] = verification
     require(Path(source_path).read_bytes() == raw, 'Source changed during build')
+    if verification_receipt is not None:
+        require(Path(verification_receipt).read_bytes() == receipt_bytes, 'Movo receipt changed during build')
+        require(verify_receipt(verification_receipt, source, today=today) == verification, 'Movo evidence changed during build')
     # Immutable, private source snapshots; validated data is the only public output.
     history_dir.mkdir(parents=True, exist_ok=True)
     os.chmod(history_dir, 0o700)
@@ -241,6 +253,10 @@ def build(source_path, output, history_dir, today=None):
         os.chmod(archive, 0o600)
     script = PREFIX + json.dumps(bundle, ensure_ascii=True, separators=(',', ':')) + ';\n'
     validate_bundle(script)
+    require(Path(source_path).read_bytes() == raw, 'Source changed before publication')
+    if verification_receipt is not None:
+        require(Path(verification_receipt).read_bytes() == receipt_bytes, 'Movo receipt changed before publication')
+        require(verify_receipt(verification_receipt, source, today=today) == verification, 'Movo evidence changed before publication')
     atomic_write(output, script)
     return bundle
 
@@ -248,8 +264,14 @@ def build(source_path, output, history_dir, today=None):
 def validate_bundle(script):
     require(script.startswith(PREFIX) and script.endswith(';\n'), 'Invalid browser bundle')
     payload = json.loads(script[len(PREFIX):-2])
-    require(set(payload) == {'version', 'source_name', 'captured_at', 'snapshots'} and payload['version'] == 1, 'Invalid public bundle schema')
+    require(set(payload) in ({'version', 'source_name', 'captured_at', 'snapshots'}, {'version', 'source_name', 'captured_at', 'snapshots', 'verification'}) and payload['version'] == 1, 'Invalid public bundle schema')
     timestamp(payload['captured_at'])
+    if 'verification' in payload:
+        verification = payload['verification']
+        require(isinstance(verification, dict) and set(verification) == {'verified_at', 'data_through'}, 'Invalid public verification fields')
+        verified = timestamp(verification['verified_at'])
+        require(verified <= timestamp(payload['captured_at']), 'Verification follows capture')
+        require(date.fromisoformat(verification['data_through']) <= verified.astimezone(CENTRAL).date(), 'Data-through date follows verification')
     require(isinstance(payload['snapshots'], list) and 0 < len(payload['snapshots']) <= 90, 'Missing snapshot history')
     seen = set()
     previous = None
@@ -314,10 +336,11 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path)
     parser.add_argument('--history-dir', type=Path)
     parser.add_argument('--check', type=Path)
+    parser.add_argument('--verification-receipt', type=Path)
     args = parser.parse_args()
     if args.check:
         validate_bundle(args.check.read_text())
     else:
         require(all((args.source, args.output, args.history_dir)), 'Source, output and history are required')
-        build(args.source, args.output, args.history_dir)
+        build(args.source, args.output, args.history_dir, verification_receipt=args.verification_receipt)
     print('Renewal Outreach: validated aggregate-only Movo cohorts, totals, rates, outreach and reason coverage.')

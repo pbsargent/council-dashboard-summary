@@ -16,6 +16,14 @@ snapshot.rows[2].messaged=4;snapshot.rows[2].replied=1;
 snapshot.council={'2026-11':{due:30,messaged:28,replied:6},'2026-12':{due:4,messaged:4,replied:1}};
 const data={version:1,source_name:'Synthetic source',snapshots:[snapshot]};
 const {nodes,csv}=run(data);
+const verifiedRun=run({...data,verification:{verified_at:new Date().toISOString(),data_through:'2026-10-30'}});
+assert.equal(verifiedRun.nodes.outreachFreshness.hidden,true);
+assert.match(verifiedRun.nodes.outreachStatus.textContent,/Movo checked/);
+assert.match(verifiedRun.nodes.outreachStatus.textContent,/Data through Oct 30, 2026/);
+assert.match(verifiedRun.nodes.outreachStatus.textContent,/Sheet updated/);
+const staleVerification=run({...data,verification:{verified_at:'2026-10-29T12:00:00Z',data_through:'2026-10-28'}});
+assert.equal(staleVerification.nodes.outreachFreshness.hidden,false);
+assert.match(staleVerification.nodes.outreachFreshness.textContent,/Daily Movo check is stale/);
 assert.match(nodes.outreachKpis.innerHTML,/35\.3%/); // 12 / 34: includes source Not yet messaged, never silently switch denominator
 assert.match(nodes.outreachKpis.innerHTML,/Members due in Movo extract/);
 assert.match(nodes.outreachKpis.innerHTML,/Renewal rate \(Movo\)/);

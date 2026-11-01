@@ -209,7 +209,9 @@ if [[ -z "${CAC_MOVO_HISTORY_DIR:-}" ]]; then
 fi
 require_dir "${MOVO_HISTORY:h}"
 "$PYTHON" "${ROOT}/tools/refresh_movo_source.py" --output "$MOVO_SOURCE_STAGE"
-"$PYTHON" "${SUMMARY_REPO}/tools/build_renewal_outreach.py" --source "$MOVO_SOURCE_STAGE" --history-dir "$MOVO_HISTORY" --output "${ROOT}/outputs/movo-renewal-outreach/renewal-outreach-latest.js"
+MOVO_CHECK_DATE="$(TZ=America/Chicago /bin/date '+%Y-%m-%d')"
+MOVO_RECEIPT="${CAC_MOVO_VERIFICATION_RECEIPT:-/Volumes/MacProData/Patrol/Tracker/Movo/Evidence/${MOVO_CHECK_DATE}/verification-receipt.json}"
+"$PYTHON" "${SUMMARY_REPO}/tools/build_renewal_outreach.py" --source "$MOVO_SOURCE_STAGE" --history-dir "$MOVO_HISTORY" --verification-receipt "$MOVO_RECEIPT" --output "${ROOT}/outputs/movo-renewal-outreach/renewal-outreach-latest.js"
 
 LAST_STEP="stage source-only GitHub Pages site"
 log "Preparing isolated GitHub Pages staging tree"
