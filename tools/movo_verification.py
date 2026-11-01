@@ -82,6 +82,7 @@ def verify_receipt(path, source, today=None, now=None):
     observation = json.loads(read_evidence(path.parent, evidence['observation']))
     read_evidence(path.parent, evidence['raw'])
     sheet = json.loads(read_evidence(path.parent, evidence['sheet']))
+    require(sheet.get('sheet_id') == SHEET_ID and sheet.get('parent_id') == PARENT_ID, 'Wrong Sheet evidence identity')
     require(set(observation) == {'captured_at', 'data_through', 'tabs'}, 'Invalid Movo observation')
     require(observation['captured_at'] == receipt['observed_at'] and observation['data_through'] == receipt['data_through'], 'Movo observation dates differ')
     require(observed <= stamp(sheet['captured_at']) <= verified, 'Sheet readback predates Movo observation')
@@ -100,8 +101,10 @@ def create_receipt(observation_path, raw_path, sheet_path, output):
     sheet = json.loads(Path(sheet_path).read_text())
     # The same reconciliation as publication also rejects malformed counts/tables.
     from build_renewal_outreach import parse_source
-    parse_source(sheet)
-    parse_source(dict(sheet, tabs=observation['tabs']))
+    require(sheet.get('sheet_id') == SHEET_ID and sheet.get('parent_id') == PARENT_ID, 'Wrong Sheet evidence identity')
+    source = {key: sheet[key] for key in ('source_name', 'source_updated_at', 'captured_at', 'tabs')}
+    parse_source(source)
+    parse_source(dict(source, tabs=observation['tabs']))
     receipt = dict(version=1, producer='Tracker Movo daily refresh', sheet_id=SHEET_ID,
                    parent_id=PARENT_ID, observed_at=observation['captured_at'],
                    verified_at=now.isoformat(), data_through=observation['data_through'],

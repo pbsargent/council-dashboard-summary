@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 from build_renewal_outreach import BASE, CENTRAL, build, parse_source, validate_bundle
-from movo_verification import create_receipt, table_hashes, verify_receipt
+from movo_verification import SHEET_ID, PARENT_ID, create_receipt, table_hashes, verify_receipt
 
 
 def source_fixture():
@@ -31,7 +31,7 @@ class MovoTests(unittest.TestCase):
         source = source_fixture()
         source['source_updated_at'] = (datetime.now(CENTRAL)-timedelta(days=1)).isoformat()
         observed = (datetime.now(CENTRAL)-timedelta(seconds=3)).isoformat()
-        sheet = dict(source, captured_at=(datetime.now(CENTRAL)-timedelta(seconds=2)).isoformat())
+        sheet = dict(source, captured_at=(datetime.now(CENTRAL)-timedelta(seconds=2)).isoformat(), sheet_id=SHEET_ID, parent_id=PARENT_ID)
         (root/'observation.json').write_text(json.dumps(dict(captured_at=observed, data_through='2026-10-30', tabs=source['tabs'])))
         (root/'raw.txt').write_text('Synthetic complete five-table Movo response')
         (root/'sheet.json').write_text(json.dumps(sheet))
