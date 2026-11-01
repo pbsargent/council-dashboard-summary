@@ -33,7 +33,7 @@ class MovoTests(unittest.TestCase):
         observed = (datetime.now(CENTRAL)-timedelta(seconds=3)).isoformat()
         sheet = dict(source, captured_at=(datetime.now(CENTRAL)-timedelta(seconds=2)).isoformat(), sheet_id=SHEET_ID, parent_id=PARENT_ID)
         (root/'observation.json').write_text(json.dumps(dict(captured_at=observed, data_through='2026-10-30', tabs=source['tabs'])))
-        (root/'raw.txt').write_text('Synthetic complete five-table Movo response')
+        (root/'raw.txt').write_text(json.dumps(dict(source_url='https://app.trymovo.ai', captured_at=observed, data_through='2026-10-30', tabs=source['tabs'])))
         (root/'sheet.json').write_text(json.dumps(sheet))
         receipt = root/'receipt.json'
         create_receipt(root/'observation.json',root/'raw.txt',root/'sheet.json',receipt)
@@ -81,11 +81,40 @@ class MovoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);source,receipt=self.receipt_fixture(root)
             observation=json.loads((root/'observation.json').read_text());observation['data_through']=None
+            raw=json.loads((root/'raw.txt').read_text());raw['data_through']=None
+            (root/'raw.txt').write_text(json.dumps(raw))
             (root/'observation.json').write_text(json.dumps(observation))
             create_receipt(root/'observation.json',root/'raw.txt',root/'sheet.json',receipt)
             source['captured_at']=datetime.now(CENTRAL).isoformat();(root/'source.json').write_text(json.dumps(source))
             bundle=build(root/'source.json',root/'public.js',root/'history',verification_receipt=receipt)
             self.assertIsNone(bundle['verification']['data_through'])
+
+    def test_raw_binding_identity_and_writer_lock(self):
+        from movo_verification import receipt_lock
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);source,path=self.receipt_fixture(root)
+            original=path.read_bytes()
+            for key in ('source_name', 'source_updated_at'):
+                changed=deepcopy(source);changed[key]='wrong' if key=='source_name' else datetime.now(CENTRAL).isoformat()
+                with self.subTest(key=key),self.assertRaises(ValueError):verify_receipt(path,changed)
+            with receipt_lock(root, exclusive=True):
+                with self.assertRaisesRegex(ValueError,'writer is active'):verify_receipt(path,source)
+                with self.assertRaisesRegex(ValueError,'writer is active'):create_receipt(root/'observation.json',root/'raw.txt',root/'sheet.json',path)
+            old=json.loads(original);old['version']=1;path.write_text(json.dumps(old))
+            with self.assertRaisesRegex(ValueError,'Unrecognized historical'):
+                verify_receipt(path,source)
+            with self.assertRaisesRegex(ValueError,'historical only'):
+                verify_receipt(path,source,today=datetime(2026,11,2).date(),now=datetime(2026,11,2,tzinfo=CENTRAL))
+            path.write_bytes(original)
+            raw_tables=json.loads((root/'raw.txt').read_text());raw_tables['tabs']['Nov by district'][1][3]=999
+            (root/'raw.txt').write_text(json.dumps(raw_tables))
+            with self.assertRaisesRegex(ValueError,'Raw response tables differ'):
+                create_receipt(root/'observation.json',root/'raw.txt',root/'sheet.json',path)
+            self.assertEqual(path.read_bytes(),original)
+            for raw in ('unrelated text', json.dumps(source), json.dumps(dict(source_url='https://app.trymovo.ai',captured_at=source['captured_at'],data_through=None,tabs=source['tabs']))):
+                (root/'raw.txt').write_text(raw)
+                with self.subTest(raw=raw[:30]),self.assertRaises(ValueError):create_receipt(root/'observation.json',root/'raw.txt',root/'sheet.json',path)
+                self.assertEqual(path.read_bytes(),original)
 
     def test_reconciles_source_without_inventing_optional_counts(self):
         parsed = parse_source(source_fixture())
