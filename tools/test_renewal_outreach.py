@@ -121,6 +121,37 @@ class MovoTests(unittest.TestCase):
                 with self.subTest(raw=raw[:30]),self.assertRaises(ValueError):create_receipt(root/'observation.json',root/'raw.txt',root/'sheet.json',path)
                 self.assertEqual(path.read_bytes(),original)
 
+    def test_final_sheet_clock_requires_new_readback_receipt(self):
+        # Identical tables do not authorize silently accepting different metadata.
+        # A separate receipt may bind a real fresh readback to the same actual
+        # same-day observation; neither that observation nor the old receipt is restamped.
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);source,receipt=self.receipt_fixture(root)
+            original=receipt.read_bytes();old=json.loads(original)
+            raw=root/old['evidence']['raw']['name']
+            observation=root/old['evidence']['observation']['name']
+            original_raw=raw.read_bytes();original_observation=observation.read_bytes()
+            current=deepcopy(source)
+            current['source_updated_at']=(datetime.now(CENTRAL)-timedelta(hours=1)).isoformat()
+            current['captured_at']=datetime.now(CENTRAL).isoformat()
+            with self.assertRaisesRegex(ValueError,'Sheet source update clock changed'):
+                verify_receipt(receipt,current)
+            self.assertEqual(receipt.read_bytes(),original)
+            sheet=dict(current,sheet_id=SHEET_ID,parent_id=PARENT_ID)
+            readback=root/'final-sheet-readback.json';readback.write_text(json.dumps(sheet))
+            replacement=root/'reconciled-receipt.json'
+            create_receipt(observation,raw,readback,replacement)
+            current['captured_at']=datetime.now(CENTRAL).isoformat()
+            verify_receipt(replacement,current)
+            self.assertEqual(json.loads(replacement.read_text())['observed_at'],old['observed_at'])
+            self.assertEqual(receipt.read_bytes(),original)
+            self.assertEqual(raw.read_bytes(),original_raw)
+            self.assertEqual(observation.read_bytes(),original_observation)
+            changed=deepcopy(sheet);changed['tabs']['Nov by district'][1][3]=999
+            readback.write_text(json.dumps(changed));saved=replacement.read_bytes()
+            with self.assertRaises(ValueError):create_receipt(observation,raw,readback,replacement)
+            self.assertEqual(replacement.read_bytes(),saved)
+
     def test_reconciles_source_without_inventing_optional_counts(self):
         parsed = parse_source(source_fixture())
         self.assertEqual(sum(r['due'] for r in parsed['rows']),15)

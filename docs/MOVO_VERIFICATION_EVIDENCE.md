@@ -28,3 +28,9 @@ The pinned historical v1 receipt retains its original update-clock rule (the
 current Sheet clock may advance while all five tables remain identical). Its
 saved metadata preceded Drive's settled clock by 14.817 seconds. Version 2
 requires exact update-clock equality; it has no such exception.
+
+## Final Sheet readback and receipt ordering (November 2, 2026)
+
+Daily tables may vary in both values and row count. Preserve the actual Movo raw response and observation; compare complete normalized tables. Complete any necessary in-place Sheet update and settle all writes before collecting final metadata-before, all five tabs, and metadata-after. Both metadata reads must agree. Record the real final source identity/name/update timestamp and readback completion in the helper input; do not reuse a write response or pre-write metadata. Only then create and independently validate the v2 receipt. If metadata changes, one bounded complete fresh readback may replace the candidate; ongoing instability or table mismatch stops without rewriting unchanged source data.
+
+Metadata drift with unchanged tables is still rejected by the consumer. Authorized recovery may use the original real same-day raw/observation and a matching fresh stable Sheet readback to produce a separate helper-generated receipt; it is not a new source observation. Preserve original receipts and clocks. Mismatched tables, stale observations, arbitrary legacy receipts and hand-written evidence remain rejected. Synthetic tests cover both sides of the legacy cutoff and final-readback reconciliation without production writes or network calls.
