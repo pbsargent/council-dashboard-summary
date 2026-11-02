@@ -101,10 +101,15 @@ class MovoTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,'writer is active'):verify_receipt(path,source)
                 with self.assertRaisesRegex(ValueError,'writer is active'):create_receipt(root/'observation.json',root/'raw.txt',root/'sheet.json',path)
             old=json.loads(original);old['version']=1;path.write_text(json.dumps(old))
+            # Pin both sides of the legacy cutoff: wall-clock time must not
+            # change which rejection this regression expects.
+            historical_now=datetime(2026,11,1,12,tzinfo=CENTRAL)
             with self.assertRaisesRegex(ValueError,'Unrecognized historical'):
-                verify_receipt(path,source)
-            with self.assertRaisesRegex(ValueError,'historical only'):
-                verify_receipt(path,source,today=datetime(2026,11,2).date(),now=datetime(2026,11,2,tzinfo=CENTRAL))
+                verify_receipt(path,source,today=historical_now.date(),now=historical_now)
+            for rejected_now in (datetime(2026,11,2,12,tzinfo=CENTRAL),
+                                 datetime(2027,1,1,12,tzinfo=CENTRAL)):
+                with self.subTest(legacy_date=rejected_now.date()),self.assertRaisesRegex(ValueError,'historical only'):
+                    verify_receipt(path,source,today=rejected_now.date(),now=rejected_now)
             path.write_bytes(original)
             raw_tables=json.loads((root/'raw.txt').read_text());raw_tables['tabs']['Nov by district'][1][3]=999
             (root/'raw.txt').write_text(json.dumps(raw_tables))
