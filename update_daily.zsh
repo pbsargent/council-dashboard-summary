@@ -5,9 +5,9 @@ ROOT="${CAC_DASHBOARD_ROOT:-/Users/petersargent/CACDashboardPlatform}"
 PYTHON="${AUTOMATION_PYTHON:-${ROOT}/.venv/bin/python}"
 NODE="${AUTOMATION_NODE:-/Users/petersargent/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node}"
 SUMMARY_REPO="${COUNCIL_DASHBOARD_SUMMARY_REPO:-${ROOT}/sites/council-dashboard-summary}"
-SITE_STAGE="${ROOT}/outputs/pages-stage/council-dashboard-summary"
+SITE_STAGE="${CAC_SUMMARY_SITE_STAGE:-${ROOT}/outputs/pages-stage/council-dashboard-summary}"
 PREVIEW_SITE="${ROOT}/outputs/council-commissioner-dashboard-site"
-BUILD_DIR="${ROOT}/outputs/council-dashboard-summary-refresh"
+BUILD_DIR="${CAC_SUMMARY_BUILD_DIR:-${ROOT}/outputs/council-dashboard-summary-refresh}"
 SITE_STAGER="${ROOT}/tools/stage_static_site.zsh"
 PAGES_DEPLOYER="${ROOT}/tools/deploy_github_pages_artifact.zsh"
 BUILDER="${ROOT}/work/commissioner_site/build_site.py"
@@ -159,7 +159,7 @@ require_dir "$UNIT_LEVEL_SOURCE_DIR"
 LAST_STEP="synchronize GitHub Pages repository before refresh"
 log "Synchronizing scheduled dashboard code with origin/${BRANCH}"
 cd /Users/petersargent
-git_repo fetch origin "$BRANCH"
+if [[ -z "${CAC_FROZEN_BUNDLE:-}" ]]; then git_repo fetch origin "$BRANCH"; fi
 if [[ -n "$(git_repo status --porcelain --untracked-files=no)" ]]; then
   print -u2 -r -- "Production checkout has tracked local changes before refresh: $SUMMARY_REPO"
   exit 1
@@ -167,11 +167,11 @@ fi
 
 # The repository now contains source code only. Daily data is generated in an
 # isolated staging tree and deployed as a verified GitHub Pages artifact.
-if [[ "$(git_repo rev-parse HEAD)" != "$(git_repo rev-parse "origin/${BRANCH}")" ]]; then
+if [[ -z "${CAC_FROZEN_BUNDLE:-}" && "$(git_repo rev-parse HEAD)" != "$(git_repo rev-parse "origin/${BRANCH}")" ]]; then
   log "Fast-forwarding production source to origin/${BRANCH}"
   git_repo merge --ff-only "origin/${BRANCH}"
 fi
-BASE_REMOTE_SHA="$(git_repo rev-parse "origin/${BRANCH}")"
+BASE_REMOTE_SHA="$(git_repo rev-parse HEAD)"
 PUBLISHED_COMMIT="$BASE_REMOTE_SHA"
 
 LAST_STEP="validate discrete dashboard page structure"
@@ -202,22 +202,27 @@ fi
 "$PYTHON" "$JOINS_BUILDER" --verify-stage "$CAC_JOINS_STAGE_RECEIPT"
 
 LAST_STEP="capture and validate daily Movo source"
-MOVO_SOURCE_STAGE="${ROOT}/outputs/movo-renewal-outreach/source.json"
+MOVO_SOURCE_STAGE="${CAC_FROZEN_MOVO_SOURCE:-${ROOT}/outputs/movo-renewal-outreach/source.json}"
 MOVO_HISTORY="${CAC_MOVO_HISTORY_DIR:-/Volumes/MacProData/Patrol/Scout/CAC-Dashboard-Platform/Evidence/movo-daily-snapshots}"
 if [[ -z "${CAC_MOVO_HISTORY_DIR:-}" ]]; then
   "$PYTHON" -c 'import os; import sys; sys.exit(0 if os.path.ismount("/Volumes/MacProData") else "Canonical Scout storage is unavailable; Movo refresh blocked")'
 fi
 require_dir "${MOVO_HISTORY:h}"
-"$PYTHON" "${ROOT}/tools/refresh_movo_source.py" --output "$MOVO_SOURCE_STAGE"
+if [[ -n "${CAC_FROZEN_BUNDLE:-}" ]]; then
+  "$PYTHON" "${ROOT}/tools/frozen_daily_bundle.py" verify --bundle "$CAC_FROZEN_BUNDLE"
+else
+  "$PYTHON" "${ROOT}/tools/refresh_movo_source.py" --output "$MOVO_SOURCE_STAGE"
+fi
 MOVO_CHECK_DATE="$(TZ=America/Chicago /bin/date '+%Y-%m-%d')"
 MOVO_RECEIPT="${CAC_MOVO_VERIFICATION_RECEIPT:-/Volumes/MacProData/Patrol/Tracker/Movo/Evidence/${MOVO_CHECK_DATE}/verification-receipt.json}"
-"$PYTHON" "${SUMMARY_REPO}/tools/build_renewal_outreach.py" --source "$MOVO_SOURCE_STAGE" --history-dir "$MOVO_HISTORY" --verification-receipt "$MOVO_RECEIPT" --output "${ROOT}/outputs/movo-renewal-outreach/renewal-outreach-latest.js"
+mkdir -p "$BUILD_DIR"
+"$PYTHON" "${SUMMARY_REPO}/tools/build_renewal_outreach.py" --source "$MOVO_SOURCE_STAGE" --history-dir "$MOVO_HISTORY" --verification-receipt "$MOVO_RECEIPT" --output "${BUILD_DIR}/renewal-outreach-latest.js"
 
 LAST_STEP="stage source-only GitHub Pages site"
 log "Preparing isolated GitHub Pages staging tree"
 "$SITE_STAGER" "$SUMMARY_REPO" "$SITE_STAGE" >/dev/null
 
-copy_file "${ROOT}/outputs/movo-renewal-outreach/renewal-outreach-latest.js" "${SITE_STAGE}/data/renewal-outreach-latest.js"
+copy_file "${BUILD_DIR}/renewal-outreach-latest.js" "${SITE_STAGE}/data/renewal-outreach-latest.js"
 
 LAST_STEP="build council and CST data snapshot"
 log "Building fresh council and CST data snapshot"
@@ -275,7 +280,7 @@ BEASCOUT_COVERAGE="$("$PYTHON" -c 'import json,sys; m=json.load(open(sys.argv[1]
 UNIT_LEVEL_STATUS="updated from ${UNIT_LEVEL_SOURCE:t}; ${BEASCOUT_COVERAGE}"
 log "$BEASCOUT_COVERAGE"
 
-if [[ -d "$PREVIEW_SITE" ]]; then
+if [[ -z "${CAC_FROZEN_BUNDLE:-}" && -d "$PREVIEW_SITE" ]]; then
   LAST_STEP="copy refreshed JSON to local preview"
   log "Updating local preview copy"
   mkdir -p "${PREVIEW_SITE}/data"
@@ -300,7 +305,7 @@ if [[ -d "${SITE_STAGE}/renewal-board" ]]; then
   SERVICE_HIERARCHY_CACHE="$SERVICE_HIERARCHY_SNAPSHOT" \
     "$PYTHON" "$RENEWAL_BUILDER" --output "${SITE_STAGE}/renewal-board/data.js"
   RENEWAL_STATUS="updated renewal-board/data.js"
-  if [[ -d "${PREVIEW_SITE}/renewal-board" ]]; then
+  if [[ -z "${CAC_FROZEN_BUNDLE:-}" && -d "${PREVIEW_SITE}/renewal-board" ]]; then
     copy_file "${SITE_STAGE}/renewal-board/data.js" "${PREVIEW_SITE}/renewal-board/data.js"
     RENEWAL_STATUS="${RENEWAL_STATUS}; preview copy updated"
   fi
@@ -312,17 +317,17 @@ LAST_STEP="apply public person-name privacy format"
 log "Abbreviating public person names as First Name, Last Initial"
 "$PYTHON" "$PERSON_NAME_SANITIZER" "$SITE_STAGE"
 "$PYTHON" "$PERSON_NAME_SANITIZER" "$SITE_STAGE" --check
-if [[ -d "$PREVIEW_SITE" ]]; then
+if [[ -z "${CAC_FROZEN_BUNDLE:-}" && -d "$PREVIEW_SITE" ]]; then
   "$PYTHON" "$PERSON_NAME_SANITIZER" "$PREVIEW_SITE"
   "$PYTHON" "$PERSON_NAME_SANITIZER" "$PREVIEW_SITE" --check
 fi
 
 LAST_STEP="fetch GitHub Pages repository"
 cd /Users/petersargent
-git_repo fetch origin "$BRANCH"
+if [[ -z "${CAC_FROZEN_BUNDLE:-}" ]]; then git_repo fetch origin "$BRANCH"; fi
 
 LAST_STEP="confirm sole-writer GitHub state"
-if [[ "$(git_repo rev-parse "origin/${BRANCH}")" != "$BASE_REMOTE_SHA" ]]; then
+if [[ "$(git_repo rev-parse HEAD)" != "$BASE_REMOTE_SHA" || ( -z "${CAC_FROZEN_BUNDLE:-}" && "$(git_repo rev-parse "origin/${BRANCH}")" != "$BASE_REMOTE_SHA" ) || -n "$(git_repo status --porcelain --untracked-files=no)" ]]; then
   print -u2 -r -- "GitHub changed during the refresh; refusing to combine two writers. Retry the consolidated pipeline."
   exit 1
 fi
@@ -330,6 +335,12 @@ fi
 LAST_STEP="revalidate discrete dashboard page structure before publication"
 log "Revalidating dashboard structure before publication"
 "$PYTHON" "${SITE_STAGE}/tools/validate_site_structure.py" "$SITE_STAGE" --require-data
+
+if [[ -n "${CAC_FROZEN_BUNDLE:-}" ]]; then
+  LAST_STEP="seal validated frozen daily data before web publication"
+  "$PYTHON" "${ROOT}/tools/frozen_daily_bundle.py" seal --bundle "$CAC_FROZEN_BUNDLE" --site "$SITE_STAGE"
+  "$PYTHON" "${SITE_STAGE}/tools/validate_site_structure.py" "$SITE_STAGE" --require-data
+fi
 
 LAST_STEP="deploy verified GitHub Pages artifact"
 log "Deploying verified dashboard artifact for ${SNAPSHOT_DATE}"

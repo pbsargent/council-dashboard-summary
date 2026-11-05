@@ -367,3 +367,18 @@ The source’s before/after message timing has no cohort breakdown. For a single
 
 ## November 1 verified daily Movo no-change checks
 Peter authorized hash-bound same-day Movo observation receipts in place of requiring the Sheet itself to be modified today. Require the dated Tracker receipt and immutable raw observation, five-table JSON and subsequent Sheet readback; exact Sheet/parent identity, reconciled counts, same-day timezone-aware check, data-through date, all matching table/evidence hashes and final unchanged-source checks before atomic publication. Missing/stale/future/tampered/mismatched evidence fails closed. Never rewrite unchanged Sheet contents to fake freshness. Preserve the 7AM upstream routine and all downstream schedules. Public payload exposes only verified_at and data_through, never evidence paths or raw data. Display Movo checked, Data through and Sheet updated separately; a prior-day check is stale. Keep producer, parser, renderer, tests, updater, validator, cache versions, guide and release parity synchronized. This supersedes only the earlier same-day Sheet modification requirement; all other Movo scope/privacy/count safeguards remain.
+
+## November 4 web-first frozen daily publication
+
+The guarded daily platform now supplies CAC_FROZEN_BUNDLE and captured source
+directories. In that mode use the frozen joins/Movo/workbooks and per-run staging,
+retain all parser/renderer/schema/privacy gates and approved live enrichment, and
+seal validated public/derived data before Pages deployment. Do not fetch/advance
+source inside this frozen run or update shared preview data. The same snapshot
+feeds later presentations and the existing full live/PPTX parity checks. Standalone
+normal updater synchronization is unchanged. No raw copies, receipts or private
+bundle paths may enter public payloads. Cleanup is owned by the platform after
+all final checks: exact successful staging only; preserve immutable bundles,
+source/audit evidence, logs, failed runs and user work. Keep the helper/updater/
+consumers/tests and release-parity coverage synchronized. The sole 08:00 platform
+start and separate stable-PDF publisher remain under their existing owners.
