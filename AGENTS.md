@@ -382,3 +382,8 @@ all final checks: exact successful staging only; preserve immutable bundles,
 source/audit evidence, logs, failed runs and user work. Keep the helper/updater/
 consumers/tests and release-parity coverage synchronized. The sole 08:00 platform
 start and separate stable-PDF publisher remain under their existing owners.
+
+
+## November 4 renewal-page visibility
+
+Peter asked to hide the 2026 Renewal Status page while the 2027 Unit Registration Review replacement remains an unpublished local draft. Remove the 2026 navigation item and links from Unit Health, Unit Metrics and Dashboard Guide. Preserve the existing 2026 URL and sources for bookmarks; do not publish the 2027 draft or change other monday.com renewal metrics. Keep cache versions and the structural visibility guard synchronized.

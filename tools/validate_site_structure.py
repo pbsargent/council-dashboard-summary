@@ -113,7 +113,6 @@ NAVIGATION_ROUTES = {
     "unit-level": "unit-level.html",
     "key3-status": "key3-status.html",
     "membership-followup": "membership-followup.html",
-    "renewal": "renewal-board/index.html",
     "people": "people.html",
     "training": "training.html",
     "syt": "syt.html",
@@ -125,7 +124,7 @@ NAVIGATION_HIERARCHY = {
     "overview": ("commissioner-portal", "comparison", "school-atlas"),
     "districts": ("pin-status", "renewal-outreach", "popcorn"),
     "membership": ("monday", "cubs", "scouts-bsa"),
-    "unit-health": ("unit-metrics", "unit-level", "membership-followup", "key3-status", "renewal"),
+    "unit-health": ("unit-metrics", "unit-level", "membership-followup", "key3-status"),
     # Persistent user-approved placement: both camping readiness pages belong
     # under People & Readiness and must survive every scheduled build/publish.
     "people": ("training", "syt", "camping-readiness", "troop-camping-readiness"),
@@ -656,7 +655,7 @@ def main() -> int:
                 errors.append(f"{relative}: missing required heading {heading!r}")
         if not any("cac-theme.css?v=20260812-discrete-pages-1" in href for href in parsed.stylesheets):
             errors.append(f"{relative}: missing discrete-page CAC theme reference")
-        if not any("site-navigation.js?v=20261031-renewal-outreach-2" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20261104-hide-2026-renewal-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
 
     help_page_path = root / "help.html"
@@ -1052,7 +1051,7 @@ def main() -> int:
         parsed = parse_page(path)
         if parsed.body_page != page_key:
             errors.append(f"{relative}: expected data-page={page_key!r}, found {parsed.body_page!r}")
-        if not any("site-navigation.js?v=20261031-renewal-outreach-2" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20261104-hide-2026-renewal-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
         if relative in REQUIRED_PARENT_LINKS:
             expected_href, expected_label = REQUIRED_PARENT_LINKS[relative]
@@ -1262,6 +1261,11 @@ def main() -> int:
     navigation_path = root / "site-navigation.js"
     if navigation_path.is_file():
         navigation = navigation_path.read_text(encoding="utf-8")
+        if 'key: "renewal"' in navigation:
+            errors.append("site-navigation.js: the 2026 renewal page must remain hidden pending the 2027 draft review")
+        for reader_page in ("unit-health.html", "unit-metrics.html", "help.html"):
+            if 'href="renewal-board/index.html"' in (root / reader_page).read_text():
+                errors.append(f"{reader_page}: the 2026 renewal entry point must remain hidden")
         for key, route in NAVIGATION_ROUTES.items():
             route_pattern = rf'key:\s*"{re.escape(key)}"[\s\S]{{0,240}}?path:\s*"{re.escape(route)}"'
             overview_pattern = rf'data-nav-key="{re.escape(key)}"[^\n]*href="\$\{{destination\("{re.escape(route)}"\)\}}"'

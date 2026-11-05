@@ -165,3 +165,8 @@ The source’s before/after message timing has no cohort breakdown. For a single
 
 
 Unit Key 4 Detail adds IH/Executive Officer from the same-day dated council roster, joined by authoritative Unit ID with effective and expiration dates covering the report date. No qualifying record found does not prove an actual vacancy. Key 4 KPIs, Summary by Unit Type, hierarchy totals, completion rates, Status and Focus filters include all four roles. The summary includes Missing IH / Executive Officer, and Status includes Missing 4. IH holder names use First Name, Last Initial; no IH SYT eligibility conclusion is made.
+
+
+## November 4 renewal-page visibility
+
+Peter asked to hide the 2026 Renewal Status page while the 2027 Unit Registration Review replacement remains an unpublished local draft. Remove the 2026 navigation item and links from Unit Health, Unit Metrics and Dashboard Guide. Preserve the existing 2026 URL and sources for bookmarks; do not publish the 2027 draft or change other monday.com renewal metrics. Keep cache versions and the structural visibility guard synchronized.
