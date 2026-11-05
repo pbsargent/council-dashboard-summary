@@ -1135,7 +1135,7 @@ def main() -> int:
         unit_level_script = unit_level_script_path.read_text(encoding="utf-8")
         if "BeAScout listing" not in unit_level_script or (help_page_path.is_file() and "BeAScout listing links" not in help_source):
             errors.append("Unit Profile and Dashboard Guide must describe BeAScout listing links")
-        if "data/unit-level-latest.js?v=20261026-beascout-links-2" not in unit_level_page:
+        if "data/unit-level-latest.js?v=20261105-working-copy-source-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted verified BeAScout data bundle")
         if "unit-level-dashboard.js?v=20261026-beascout-links-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-context script")
