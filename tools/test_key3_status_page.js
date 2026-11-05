@@ -7,6 +7,7 @@ const rows = [
   { service_area: "North", district: "Bee Cave", unit: "Troop 1", unit_type: "Troop", status: "Missing 2", missing_roles: ["Unit Leader", "Committee Chair"] },
   { service_area: "South", district: "Chisholm Trail", unit: "Crew 3", unit_type: "Crew", status: "Complete", missing_roles: [] },
 ];
+for (const row of rows) Object.assign(row, { executive_officers: [{name: "Morgan E.", position: "Executive Officer"}], key4_status: row.status, key4_missing_roles: [...row.missing_roles] });
 
 assert.deepEqual(page.summarize(rows), {
   units: 4,
@@ -15,6 +16,8 @@ assert.deepEqual(page.summarize(rows), {
   missingUnitLeader: 1,
   missingCommitteeChair: 1,
   missingCorCur: 1,
+  missingExecutiveOfficer: 0,
+  unavailable: 0,
 });
 
 assert.deepEqual(page.summarizeByUnitType(rows).map((row) => [row.unitType, row.units, row.complete]), [
@@ -69,8 +72,22 @@ console.log("Unit Key 3 page tests passed.");
 
 const key4 = { ...rows[0], executive_officers: [{ name: "Morgan E.", position: "Executive Officer" }], key4_status: "Complete", key4_missing_roles: [] };
 assert.equal(page.key4Detail(key4).status, "Complete");
-assert.equal(page.key4Detail(rows[0]).status, "Unavailable");
+assert.equal(page.key4Detail({status:"Complete", missing_roles:[]}).status, "Unavailable");
 assert.match(page.renderUnitTable([key4]), /IH \/ Executive Officer/);
 assert.match(page.renderUnitTable([key4]), /Morgan E\./);
 assert.match(page.renderUnitTable([{...key4, executive_officers: [], key4_status: "Missing 1", key4_missing_roles: ["IH / Executive Officer"]}]), /No qualifying record found/);
-assert.match(page.renderUnitTable([rows[0]]), /Unavailable/);
+assert.match(page.renderUnitTable([{status:"Complete", missing_roles:[]}]), /Unavailable/);
+
+const missingIH = {...rows[0], executive_officers: [], key4_missing_roles: ["IH / Executive Officer"], key4_status: "Missing 1"};
+const summary = page.summarize([missingIH, rows[3]]);
+assert.equal(summary.complete, 1);
+assert.equal(summary.missingAny, 1);
+assert.equal(summary.missingExecutiveOfficer, 1);
+assert.equal(page.matchesFocus(missingIH, "executive-officer"), true);
+assert.equal(page.matchesFocus(missingIH, "complete"), false);
+assert.equal(page.matchesStatus(missingIH, "Missing 1"), true);
+assert.equal(page.matchesStatus({...missingIH, key4_status:"Missing 4"}, "Missing 4"), true);
+assert.equal(page.summarizeByUnitType([missingIH])[0].complete, 0);
+assert.equal(page.summarize([{}]).unavailable, 1);
+assert.equal(page.summarize([{}]).missingAny, 0);
+console.log("Unit Key 4 summary, IH focus, four-role status and unavailable-state tests passed.");

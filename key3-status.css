@@ -1,5 +1,5 @@
 .key3-kpi-grid {
-  grid-template-columns: repeat(5, minmax(128px, 1fr));
+  grid-template-columns: repeat(6, minmax(128px, 1fr));
 }
 
 .key3-search-control {
@@ -12,7 +12,7 @@
 }
 
 .key3-summary-table {
-  min-width: 900px;
+  min-width: 1080px;
 }
 
 .key3-detail-wrap {

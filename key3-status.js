@@ -8,7 +8,7 @@
   })[character]);
   const n = (value) => integer.format(Number(value) || 0);
   const p = (numerator, denominator) => denominator ? percent.format(numerator / denominator) : "n/a";
-  const missing = (row, role) => (row?.missing_roles || []).includes(role);
+  const missing = (row, role) => (key4Detail(row).missingRoles || []).includes(role);
 
   function parseDateOnly(value) {
     if (!value) return null;
@@ -39,11 +39,13 @@
   function summarize(rows) {
     return {
       units: rows.length,
-      complete: rows.filter((row) => row.status === "Complete").length,
-      missingAny: rows.filter((row) => row.status !== "Complete").length,
+      complete: rows.filter((row) => key4Detail(row).status === "Complete").length,
+      missingAny: rows.filter((row) => key4Detail(row).status.startsWith("Missing ")).length,
       missingUnitLeader: rows.filter((row) => missing(row, "Unit Leader")).length,
       missingCommitteeChair: rows.filter((row) => missing(row, "Committee Chair")).length,
       missingCorCur: rows.filter((row) => missing(row, "COR / CUR")).length,
+      missingExecutiveOfficer: rows.filter((row) => missing(row, "IH / Executive Officer")).length,
+      unavailable: rows.filter((row) => key4Detail(row).status === "Unavailable").length,
     };
   }
 
@@ -56,11 +58,12 @@
   }
 
   function matchesFocus(row, focus) {
-    if (focus === "missing") return row.status !== "Complete";
-    if (focus === "complete") return row.status === "Complete";
+    if (focus === "missing") return key4Detail(row).status.startsWith("Missing ");
+    if (focus === "complete") return key4Detail(row).status === "Complete";
     if (focus === "unit-leader") return missing(row, "Unit Leader");
     if (focus === "committee-chair") return missing(row, "Committee Chair");
     if (focus === "cor-cur") return missing(row, "COR / CUR");
+    if (focus === "executive-officer") return missing(row, "IH / Executive Officer");
     return true;
   }
 
@@ -73,7 +76,7 @@
   function matchesStatus(row, status, todayValue = new Date()) {
     if (status === "expired-syt") return holderSytStates(row, todayValue).includes("expired");
     if (status === "expiring-syt") return holderSytStates(row, todayValue).includes("expiring-soon");
-    return !status || row.status === status;
+    return !status || key4Detail(row).status === status;
   }
 
   function serviceArea(row) {
@@ -156,11 +159,13 @@
 
   function renderKpis(summary) {
     const tiles = [
-      ["Complete Key 3", n(summary.complete), `${p(summary.complete, summary.units)} of ${n(summary.units)} units`, "good"],
+      ["Complete Key 4", n(summary.complete), `${summary.unavailable ? "n/a" : p(summary.complete, summary.units)} of ${n(summary.units)} units`, "good"],
       ["Missing Any", n(summary.missingAny), `${p(summary.missingAny, summary.units)} of selected units`, "danger"],
       ["Missing Unit Leader", n(summary.missingUnitLeader), "Program-specific unit leader", "warning"],
       ["Missing Committee Chair", n(summary.missingCommitteeChair), "Current registration required", "warning"],
       ["Missing COR / CUR", n(summary.missingCorCur), "Either current position satisfies coverage", "warning"],
+      ["Missing IH / Executive Officer", n(summary.missingExecutiveOfficer), "No qualifying roster record found", "warning"],
+      ...(summary.unavailable ? [["Coverage unavailable", n(summary.unavailable), "Four-position source coverage unavailable", "warning"]] : []),
     ];
     document.getElementById("key3Kpis").innerHTML = tiles.map(([label, value, note, tone]) => `
       <article class="kpi ${tone}"><div><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div></div><div class="kpi-sub">${note}</div></article>
@@ -170,8 +175,8 @@
   function renderUnitTypeSummary(rows) {
     const summaries = summarizeByUnitType(rows);
     document.getElementById("unitTypeRows").innerHTML = summaries.length ? summaries.map((row) => `
-      <tr><td><strong>${esc(row.unitType)}</strong></td><td class="num">${n(row.units)}</td><td class="num">${n(row.complete)}</td><td class="num">${n(row.missingAny)}</td><td class="num">${n(row.missingUnitLeader)}</td><td class="num">${n(row.missingCommitteeChair)}</td><td class="num">${n(row.missingCorCur)}</td><td class="num"><strong>${p(row.complete, row.units)}</strong></td></tr>
-    `).join("") : '<tr><td colspan="8">No unit types match the selected filters.</td></tr>';
+      <tr><td><strong>${esc(row.unitType)}</strong></td><td class="num">${n(row.units)}</td><td class="num">${n(row.complete)}</td><td class="num">${n(row.missingAny)}</td><td class="num">${n(row.missingUnitLeader)}</td><td class="num">${n(row.missingCommitteeChair)}</td><td class="num">${n(row.missingCorCur)}</td><td class="num">${n(row.missingExecutiveOfficer)}</td><td class="num"><strong>${row.unavailable ? "n/a" : p(row.complete, row.units)}</strong></td></tr>
+    `).join("") : '<tr><td colspan="9">No unit types match the selected filters.</td></tr>';
   }
 
   function renderHolders(holders, missingLabel) {
@@ -209,7 +214,7 @@
 
   function coverageSummary(rows) {
     const summary = summarize(rows);
-    return `${n(summary.units)} units · ${n(summary.complete)} complete · ${n(summary.missingAny)} missing`;
+    return `${n(summary.units)} units · ${n(summary.complete)} complete · ${n(summary.missingAny)} missing${summary.unavailable ? ` · ${n(summary.unavailable)} unavailable` : ""}`;
   }
 
   function renderUnits(rows) {
@@ -226,7 +231,7 @@
         <button class="key3-area-toggle" type="button" data-area="${esc(area.area)}" aria-expanded="${areaExpanded}" aria-controls="${areaId}">
           <span class="disclosure" aria-hidden="true">${areaExpanded ? "−" : "+"}</span>
           <span class="key3-group-label"><strong>${esc(area.area)}</strong><span>${coverageSummary(area.rows)} · ${n(area.districts.length)} districts</span></span>
-          <span class="key3-group-rate">${p(summarize(area.rows).complete, area.rows.length)}</span>
+          <span class="key3-group-rate">${summarize(area.rows).unavailable ? "n/a" : p(summarize(area.rows).complete, area.rows.length)}</span>
         </button>
         <div class="key3-area-content" id="${areaId}"${areaExpanded ? "" : " hidden"}>
           ${area.districts.map((district, districtIndex) => {
@@ -296,7 +301,7 @@
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response.json();
       });
-      if (!Array.isArray(state.data?.dashboard?.unit_key3_statuses)) throw new Error("Unit Key 3 data is missing from this snapshot");
+      if (!Array.isArray(state.data?.dashboard?.unit_key3_statuses)) throw new Error("Unit Key 4 data is missing from this snapshot");
       const date = state.data.generated_date || state.data.dashboard.report_date || "";
       document.getElementById("generatedDate").textContent = date ? `Data through ${date}` : "Current data";
       document.getElementById("titleDataDate").textContent = date ? `· ${date}` : "";
@@ -304,9 +309,9 @@
       bind();
       render();
     } catch (error) {
-      document.getElementById("key3Kpis").innerHTML = `<article class="kpi danger"><div><div class="kpi-label">Unit Key 3 data unavailable</div><div class="kpi-value">Unable to load</div></div><div class="kpi-sub">${esc(error.message)}</div></article>`;
-      document.getElementById("unitTypeRows").innerHTML = '<tr><td colspan="8">Unit Key 3 data is unavailable.</td></tr>';
-      document.getElementById("unitHierarchy").innerHTML = '<p class="subtle key3-empty">Unit Key 3 data is unavailable.</p>';
+      document.getElementById("key3Kpis").innerHTML = `<article class="kpi danger"><div><div class="kpi-label">Unit Key 4 data unavailable</div><div class="kpi-value">Unable to load</div></div><div class="kpi-sub">${esc(error.message)}</div></article>`;
+      document.getElementById("unitTypeRows").innerHTML = '<tr><td colspan="9">Unit Key 4 data is unavailable.</td></tr>';
+      document.getElementById("unitHierarchy").innerHTML = '<p class="subtle key3-empty">Unit Key 4 data is unavailable.</p>';
     }
   }
 
