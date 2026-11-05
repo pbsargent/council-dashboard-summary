@@ -164,7 +164,7 @@
       ["Missing Unit Leader", n(summary.missingUnitLeader), "Program-specific unit leader", "warning"],
       ["Missing Committee Chair", n(summary.missingCommitteeChair), "Current registration required", "warning"],
       ["Missing COR / CUR", n(summary.missingCorCur), "Either current position satisfies coverage", "warning"],
-      ["Missing IH / Executive Officer", n(summary.missingExecutiveOfficer), "No qualifying roster record found", "warning"],
+      ["Missing IH / Executive Officer", n(summary.missingExecutiveOfficer), "Current registration required", "warning"],
       ...(summary.unavailable ? [["Coverage unavailable", n(summary.unavailable), "Four-position source coverage unavailable", "warning"]] : []),
     ];
     document.getElementById("key3Kpis").innerHTML = tiles.map(([label, value, note, tone]) => `
@@ -194,7 +194,7 @@
 
   function renderExecutives(row) {
     if (!Array.isArray(row.executive_officers)) return '<span class="subtle">Unavailable</span>';
-    if (!row.executive_officers.length) return '<span class="key3-missing">No qualifying record found</span>';
+    if (!row.executive_officers.length) return '<span class="key3-missing">MISSING</span>';
     return row.executive_officers.map((holder) => `<div class="key3-person"><strong>${esc(holder.name)}</strong><span>Recorded as filled</span></div>`).join("");
   }
 

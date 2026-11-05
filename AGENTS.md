@@ -392,3 +392,8 @@ Peter asked to hide the 2026 Renewal Status page while the 2027 Unit Registratio
 ## November 5 Unit Key 4 page name
 
 Use **Unit Key 4 Coverage** for the page title, heading, navigation, entry links and Dashboard Guide. Keep existing `key3-status.html`, CSS/JavaScript filenames and `dashboard.unit_key3_statuses` identifiers for compatibility. The workbook's distinct `Missing Key3` queue and imported Key 3 terminology remain unchanged. Retain the hidden 2026 navigation and unpublished 2027 draft contract.
+
+
+## November 5 consistent missing-position label
+
+On Unit Key 4 Coverage, display **MISSING** for every position without a qualifying holder, including IH/Executive Officer. Keep unavailable source coverage distinct as **Unavailable**. Missing source evidence alone does not prove a vacancy. Preserve calculations, source fields, qualifying rules, the hidden 2026 page and the unpublished 2027 draft.

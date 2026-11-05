@@ -75,7 +75,7 @@ assert.equal(page.key4Detail(key4).status, "Complete");
 assert.equal(page.key4Detail({status:"Complete", missing_roles:[]}).status, "Unavailable");
 assert.match(page.renderUnitTable([key4]), /IH \/ Executive Officer/);
 assert.match(page.renderUnitTable([key4]), /Morgan E\./);
-assert.match(page.renderUnitTable([{...key4, executive_officers: [], key4_status: "Missing 1", key4_missing_roles: ["IH / Executive Officer"]}]), /No qualifying record found/);
+assert.match(page.renderUnitTable([{...key4, executive_officers: [], key4_status: "Missing 1", key4_missing_roles: ["IH / Executive Officer"]}]), /class="key3-missing">MISSING<\/span>/);
 assert.match(page.renderUnitTable([{status:"Complete", missing_roles:[]}]), /Unavailable/);
 
 const missingIH = {...rows[0], executive_officers: [], key4_missing_roles: ["IH / Executive Officer"], key4_status: "Missing 1"};
@@ -91,3 +91,7 @@ assert.equal(page.summarizeByUnitType([missingIH])[0].complete, 0);
 assert.equal(page.summarize([{}]).unavailable, 1);
 assert.equal(page.summarize([{}]).missingAny, 0);
 console.log("Unit Key 4 summary, IH focus, four-role status and unavailable-state tests passed.");
+
+const allMissing = page.renderUnitTable([{ unit: "Pack 1", unit_type: "Pack", unit_id: "1", unit_leaders: [], committee_chairs: [], cor_cur_holders: [], executive_officers: [], key4_status: "Missing 4", key4_missing_roles: ["Unit Leader", "Committee Chair", "COR / CUR", "IH / Executive Officer"] }]);
+assert.equal((allMissing.match(/class="key3-missing">MISSING<\/span>/g) || []).length, 4);
+assert.doesNotMatch(allMissing, /No qualifying record found/);

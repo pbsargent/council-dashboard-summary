@@ -797,7 +797,7 @@ def main() -> int:
             '<option value="Missing 3">Missing 3</option>',
             '<option value="expired-syt">1 or more expired SYTs</option>',
             '<option value="expiring-syt">1 or more SYTs expiring within 90 days</option>',
-            "key3-status.js?v=20261104-key4-summary-1",
+            "key3-status.js?v=20261105-key4-missing-label-1",
             "key3-status.css?v=20261104-key4-summary-1",
         ):
             if required not in key3_page_source:
