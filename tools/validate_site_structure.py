@@ -1136,8 +1136,10 @@ def main() -> int:
         if "BeAScout listing" not in unit_level_script or (help_page_path.is_file() and "BeAScout listing links" not in help_source):
             errors.append("Unit Profile and Dashboard Guide must describe BeAScout listing links")
         source_links = (root / 'sources.html').read_text(encoding='utf-8')
-        if source_links.count('https://docs.google.com/spreadsheets/d/1niYkfoHRSG2gbFm1O67bGzlmrViV2qZ-/edit') != 2:
-            errors.append('sources.html: CAC and Unit-Level links must use the permanent verified workbook')
+        if source_links.count('https://docs.google.com/spreadsheets/d/1X1Ycz9YY1uwtG2fvD63RdAAREXlyexDd/edit') != 2:
+            errors.append('sources.html: CAC and Unit-Level links must use the permanent browser snapshot')
+        if 'https://drive.google.com/uc?export=download&amp;id=1niYkfoHRSG2gbFm1O67bGzlmrViV2qZ-' not in source_links or 'Fixed values' not in source_links:
+            errors.append('sources.html: preserve native Excel download and fixed-value snapshot disclosure')
         if "data/unit-level-latest.js?v=20261105-working-copy-source-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted verified BeAScout data bundle")
         if "unit-level-dashboard.js?v=20261026-beascout-links-1" not in unit_level_page:
