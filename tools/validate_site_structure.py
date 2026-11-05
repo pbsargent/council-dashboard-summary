@@ -655,7 +655,7 @@ def main() -> int:
                 errors.append(f"{relative}: missing required heading {heading!r}")
         if not any("cac-theme.css?v=20260812-discrete-pages-1" in href for href in parsed.stylesheets):
             errors.append(f"{relative}: missing discrete-page CAC theme reference")
-        if not any("site-navigation.js?v=20261104-hide-2026-renewal-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20261105-unit-key4-name-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
 
     help_page_path = root / "help.html"
@@ -773,6 +773,11 @@ def main() -> int:
             if element_id not in key3_page.elements_by_id:
                 errors.append(f"key3-status.html: missing required element #{element_id}")
         key3_page_source = key3_page_path.read_text(encoding="utf-8")
+        for required in ("<title>Unit Key 4 Coverage - Council Dashboard Summary</title>", "<h1>Unit Key 4 Coverage"):
+            if required not in key3_page_source:
+                errors.append(f"key3-status.html: missing reader-facing Key 4 page name {required!r}")
+        if "Unit Key 3 Coverage" in key3_page_source:
+            errors.append("key3-status.html: outdated reader-facing Key 3 page name")
         for required in (
             "Either a Chartered Organization Representative (COR) or Council Unit Representative (CUR)",
             "Summary by Unit Type",
@@ -1008,8 +1013,8 @@ def main() -> int:
             errors.append("help.html: missing Unit Health Funnel PIN-denominator explanation")
         if '<a href="pin-status.html"><strong>PIN Status &amp; Completeness</strong>' not in help_source:
             errors.append("help.html: missing PIN Status & Completeness page directory entry")
-        if '<a href="key3-status.html"><strong>Unit Key 3 Coverage</strong>' not in help_source:
-            errors.append("help.html: missing Unit Key 3 Coverage page directory entry")
+        if '<a href="key3-status.html"><strong>Unit Key 4 Coverage</strong>' not in help_source:
+            errors.append("help.html: missing Unit Key 4 Coverage page directory entry")
         if "Either a current COR or CUR satisfies the third position" not in help_source:
             errors.append("help.html: missing COR-or-CUR Unit Key 3 definition")
         if "turns yellow when due within 90 days and red after expiration" not in help_source:
@@ -1051,7 +1056,7 @@ def main() -> int:
         parsed = parse_page(path)
         if parsed.body_page != page_key:
             errors.append(f"{relative}: expected data-page={page_key!r}, found {parsed.body_page!r}")
-        if not any("site-navigation.js?v=20261104-hide-2026-renewal-1" in src for src in parsed.scripts):
+        if not any("site-navigation.js?v=20261105-unit-key4-name-1" in src for src in parsed.scripts):
             errors.append(f"{relative}: missing discrete-page navigation reference")
         if relative in REQUIRED_PARENT_LINKS:
             expected_href, expected_label = REQUIRED_PARENT_LINKS[relative]
@@ -1202,10 +1207,10 @@ def main() -> int:
                 errors.append(f"{relative}: missing PIN completeness documentation contract {phrase!r}")
 
     key3_documentation_contracts = {
-        "README.md": ("Unit Key 3 Coverage", "Either a current COR or CUR", "A date due within 90 days is yellow", "an expired date is red", "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, Missing 4, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days"),
-        "DASHBOARD_DATA_DICTIONARY.md": ("Unit Key 3 Coverage page", "COR / CUR", "dates due within 90 days are yellow and expired dates are red", "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, Missing 4, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days"),
-        "IMPLEMENTATION_RUNBOOK.md": ("Persistent Unit Key 3 Coverage Contract", "COR or CUR", "dates due within 90 days of the viewer's current date in yellow", "expired dates in red", "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, Missing 4, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days"),
-        "tools/build_human_data_guide.py": ("Unit Key 3 Coverage", "Either a current COR or CUR", "Dates due within 90 days are yellow and expired dates are red", "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, Missing 4, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days"),
+        "README.md": ("Unit Key 4 Coverage", "Either a current COR or CUR", "A date due within 90 days is yellow", "an expired date is red", "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, Missing 4, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days"),
+        "DASHBOARD_DATA_DICTIONARY.md": ("Unit Key 4 Coverage page", "COR / CUR", "dates due within 90 days are yellow and expired dates are red", "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, Missing 4, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days"),
+        "IMPLEMENTATION_RUNBOOK.md": ("Persistent Unit Key 4 Coverage Contract", "COR or CUR", "dates due within 90 days of the viewer's current date in yellow", "expired dates in red", "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, Missing 4, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days"),
+        "tools/build_human_data_guide.py": ("Unit Key 4 Coverage", "Either a current COR or CUR", "Dates due within 90 days are yellow and expired dates are red", "Status offers All statuses, Complete, Missing 1, Missing 2, Missing 3, Missing 4, 1 or more expired SYTs, and 1 or more SYTs expiring within 90 days"),
     }
     for relative, required_phrases in key3_documentation_contracts.items():
         source = (root / relative).read_text(encoding="utf-8")
@@ -1266,6 +1271,8 @@ def main() -> int:
         for reader_page in ("unit-health.html", "unit-metrics.html", "help.html"):
             if 'href="renewal-board/index.html"' in (root / reader_page).read_text():
                 errors.append(f"{reader_page}: the 2026 renewal entry point must remain hidden")
+        if 'label: "Unit Key 4 Coverage", path: "key3-status.html"' not in navigation:
+            errors.append("site-navigation.js: Unit Key 4 Coverage page label must match its heading")
         for key, route in NAVIGATION_ROUTES.items():
             route_pattern = rf'key:\s*"{re.escape(key)}"[\s\S]{{0,240}}?path:\s*"{re.escape(route)}"'
             overview_pattern = rf'data-nav-key="{re.escape(key)}"[^\n]*href="\$\{{destination\("{re.escape(route)}"\)\}}"'

@@ -312,7 +312,7 @@ On `districts.html`, Service Area rows continue to expand into district scorecar
 
 `pin-status.html` is a District Performance child page. It combines the shared PIN display-state classification with the Required PIN Details metric, supports the master program filter plus Service Area and District filters, and offers follow-up focuses for Stale, Inactive, details gaps, and no matched PIN. Every displayed percentage uses all tracked units in the selected view as its denominator. District PIN Detail rows expand to privacy-safe individual-unit rows showing program type, PIN Status, Last Updated, Required PIN Details state, missing categories, and a Unit-Level Detail link. Last Updated is the normalized `pin_last_updated` calendar date, appears between PIN Status and Required PIN Details, displays `Not recorded` for a matched PIN with a blank or unusable date, and displays `n/a` for an unmatched unit. Expanded units follow the active filters and are prioritized as unmatched, Stale, Inactive, incomplete, then complete Active. The page does not expose the raw timestamp or the private source values used to calculate the completion flags.
 
-### Unit Key 3 Coverage page
+### Unit Key 4 Coverage page
 
 `key3-status.html` is a Unit Health & Renewal child page. It reads `dashboard.unit_key3_statuses`, which contains one row for every tracked unit, and identifies current coverage for three roles: the program-specific Unit Leader, Committee Chair, and COR / CUR. Either a Chartered Organization Representative or Council Unit Representative satisfies the third Key 3 role. A holder counts only when the Training roster position matches the role and the registration expiration is on or after the dashboard report date.
 
@@ -712,7 +712,7 @@ The active behavior is implemented by `panel-help.js` and shared CSS. The script
 
 ## Membership Follow-up (2026-10-05)
 
-`membership-followup.html` publishes `dashboard.membership_operations` from the same Dashboard workbook as the Council snapshot. Its Units population retains every source unit (298 on October 5; never a fixed count). Missing Key 3 uses the Units `Missing Key3` Yes/blank flag, matching the workbook Training Dive queue; it is distinct from training-derived Unit Key 3 Coverage. Zero Total Youth means the recorded Units count equals zero, not missing information.
+`membership-followup.html` publishes `dashboard.membership_operations` from the same Dashboard workbook as the Council snapshot. Its Units population retains every source unit (298 on October 5; never a fixed count). Missing Key 3 uses the Units `Missing Key3` Yes/blank flag, matching the workbook Training Dive queue; it is distinct from training-derived Unit Key 4 Coverage. Zero Total Youth means the recorded Units count equals zero, not missing information.
 
 Renewal Prep is scoped to the workbook renewal window or grace period. Units absent from it are not classified as ready. `Fix before Renewal` must reconcile to Youth and all R/S/N role flags. Only unit identities and Boolean issue flags are published; names, member IDs, registration dates, and PIN values are excluded from this feature. All unit renewal cohorts reconcile to the filtered Units population, including unknown dates. Program, Service Area, District, and Search filters combine across all four panels.
 

@@ -387,3 +387,8 @@ start and separate stable-PDF publisher remain under their existing owners.
 ## November 4 renewal-page visibility
 
 Peter asked to hide the 2026 Renewal Status page while the 2027 Unit Registration Review replacement remains an unpublished local draft. Remove the 2026 navigation item and links from Unit Health, Unit Metrics and Dashboard Guide. Preserve the existing 2026 URL and sources for bookmarks; do not publish the 2027 draft or change other monday.com renewal metrics. Keep cache versions and the structural visibility guard synchronized.
+
+
+## November 5 Unit Key 4 page name
+
+Use **Unit Key 4 Coverage** for the page title, heading, navigation, entry links and Dashboard Guide. Keep existing `key3-status.html`, CSS/JavaScript filenames and `dashboard.unit_key3_statuses` identifiers for compatibility. The workbook's distinct `Missing Key3` queue and imported Key 3 terminology remain unchanged. Retain the hidden 2026 navigation and unpublished 2027 draft contract.
