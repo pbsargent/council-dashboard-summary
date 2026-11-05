@@ -1,5 +1,10 @@
 # Council Dashboard Summary Implementation Runbook
 
+## Current daily source from November 5 2026
+
+CAC and Unit-Level Detail use Ranger’s receipt-verified `CAC_Dashboard_Working_Copy.xlsx`. Its native refresh, 23 independent checks, closed ownership, exact workbook/source hashes and ten same-day source dates must pass before capture. Metrics, training and renewal detail share that captured generation. Unmatched renewal keys remain unassigned; coverage is reported separately. OneDrive remains authorized for CST7 only. Earlier dated workbook/scorecard examples below describe the previous acquisition path.
+
+
 Last reviewed: 2026-08-23
 
 This runbook is for a technical handoff. It explains what another analyst or engineer needs to acquire data, recreate a similar static dashboard, run the daily refresh, validate outputs, and publish through GitHub Pages.

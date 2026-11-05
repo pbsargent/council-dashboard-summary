@@ -2,6 +2,9 @@
 set -euo pipefail
 
 ROOT="${CAC_DASHBOARD_ROOT:-/Users/petersargent/CACDashboardPlatform}"
+if [[ -z "${CAC_FROZEN_BUNDLE:-}" && -f "$ROOT/config/production.env" ]]; then
+  source "$ROOT/config/production.env"
+fi
 PYTHON="${AUTOMATION_PYTHON:-${ROOT}/.venv/bin/python}"
 NODE="${AUTOMATION_NODE:-/Users/petersargent/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node}"
 SUMMARY_REPO="${COUNCIL_DASHBOARD_SUMMARY_REPO:-${ROOT}/sites/council-dashboard-summary}"
@@ -195,6 +198,13 @@ log "Validating Unit Profile PIN status, Last Updated, completeness, and privacy
 "$PYTHON" "${SUMMARY_REPO}/tools/test_beascout_links.py"
 
 LAST_STEP="verify private joins inputs before site artifact work"
+if [[ "${CAC_DASHBOARD_SOURCE_MODE:-}" == "working_copy" && -z "${CAC_DASHBOARD_SOURCE:-}" ]]; then
+  WORKING_STAGE="$ROOT/outputs/working-copy-source-stage/$(TZ=America/Chicago /bin/date '+%Y-%m-%d')-summary-$$"
+  "$PYTHON" "$ROOT/tools/working_copy_source.py" --date "$(TZ=America/Chicago /bin/date '+%Y-%m-%d')" --stage "$WORKING_STAGE"
+  export CAC_DASHBOARD_SOURCE="$WORKING_STAGE/CAC_Dashboard_Working_Copy.xlsx"
+  export CAC_WORKING_COPY_SOURCE_RECEIPT="$WORKING_STAGE/receipt.json"
+  export DASHBOARD_SOURCE_DIR="$WORKING_STAGE"
+fi
 if [[ -z "${CAC_JOINS_STAGE_RECEIPT:-}" ]]; then
   export CAC_JOINS_STAGE_RECEIPT="${ROOT}/outputs/joins-source-stage/$(TZ=America/Chicago /bin/date '+%Y-%m-%d')-summary-$$/receipt.json"
   "$PYTHON" "$JOINS_BUILDER" --prepare-stage "${CAC_JOINS_STAGE_RECEIPT:h}"
@@ -272,9 +282,17 @@ log "Building joins dashboards from the newest dated workbooks"
 FALL_RECRUITMENT_STATUS="updated both joins pages from same-day workbooks"
 
 LAST_STEP="build Unit Level Dashboard data"
-UNIT_LEVEL_SOURCE="$(latest_valid_workbook "$UNIT_LEVEL_SOURCE_DIR" "*_CAC - Unit Metric Scorecard.xlsx")"
+typeset -a UNIT_LEVEL_SOURCE_ARGS
+UNIT_LEVEL_SOURCE_ARGS=()
+if [[ -n "${CAC_DASHBOARD_SOURCE:-}" ]]; then
+  UNIT_LEVEL_SOURCE="$CAC_DASHBOARD_SOURCE"
+  UNIT_LEVEL_SOURCE_ARGS=(--working-copy-receipt "$CAC_WORKING_COPY_SOURCE_RECEIPT")
+else
+  UNIT_LEVEL_SOURCE="$(latest_valid_workbook "$UNIT_LEVEL_SOURCE_DIR" "*_CAC - Unit Metric Scorecard.xlsx")"
+fi
 log "Building Unit Level Dashboard data from ${UNIT_LEVEL_SOURCE}"
 "$PYTHON" "$UNIT_LEVEL_BUILDER" "$UNIT_LEVEL_SOURCE" \
+  "${UNIT_LEVEL_SOURCE_ARGS[@]}" \
   --council-snapshot "${SITE_STAGE}/data/latest.json" \
   --beascout-pin-report "${BEASCOUT_PIN_REPORT:-/Volumes/MacProData/Capitol Area Council Dashboard/Capitol Area Council/PinDataReport.csv}" \
   --beascout-audit "${BUILD_DIR}/beascout-link-audit.json" \

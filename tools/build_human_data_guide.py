@@ -493,16 +493,18 @@ def build_doc():
         [3000, 6360],
     )
 
+    add_callout(doc, "Imported Unit Metrics continuation value", "The source field is named Retention in the official Unit Metrics extract. It is preserved for compatibility. The extract does not supply a distinct-person cohort, exact cohort dates or qualifying-status coverage, so this imported value is not a validated annual cohort-retention measure.")
+
     add_heading(doc, "2. Where The Data Comes From", 1)
-    add_body(doc, "The dashboard has six main source lanes.")
+    add_body(doc, "The CAC dashboard and Unit-Level Detail use one verified Ranger working copy. OneDrive remains the source for CST7 comparisons. The source lanes are listed below.")
     add_table(
         doc,
         ["Source lane", "Used for", "Published as"],
         [
-            ["Council dashboard workbook", "Membership, unit health, district training rates, commissioner objectives, person-level training, and commissioner roster.", "`data/latest.json`"],
+            ["Ranger verified working copy", "Membership, unit health, district training rates, commissioner objectives, person-level training, and commissioner roster.", "`data/latest.json`"],
             ["CST comparison workbook", "Service Territory comparison metrics and Capitol Area Council comparison fields.", "`data/latest.json`"],
             ["monday.com daily workbook", "Hot prospects, 2026 renewal status, schools, Total Available Youth, and Popcorn commitments/readiness.", "`data/monday-latest.json`"],
-            ["Unit Level Metrics workbook", "Unit-level youth, health, growth, training, SYT, and commissioner-assignment detail by program.", "`data/unit-level-latest.*`"],
+            ["Same Ranger working copy", "Unit-level youth, health, growth, training, SYT, and commissioner-assignment detail by program.", "`data/unit-level-latest.*`"],
             ["New-youth joins workbooks", "New youth joins by district, unit and roster age, including zero joins and coverage review flags.", "`data/joins-latest.js`"],
             ["Service Areas board", "Authoritative Service Area hierarchy, Field Directors, district professionals, Volunteer Chairs, and District Commissioners.", "`data/latest.json`"],
         ],
@@ -510,7 +512,7 @@ def build_doc():
     )
     add_body(
         doc,
-        "The monday.com daily workbook is preferred because it contains richer detail rows. If that workbook is not available, the automation can fall back to the monday.com API, but the API fallback is less detailed than the workbook export. The Council Dashboard Reports drive also contains Unit Level Metrics captures; those are used only for Unit Level detail and must not be selected as the main Dashboard - CAC workbook.",
+        "The monday.com daily workbook is preferred because it contains richer detail rows. If that workbook is not available, the automation can fall back to the monday.com API, but the API fallback is less detailed than the workbook export. Ranger publishes CAC_Dashboard_Working_Copy.xlsx after native Excel refresh and independent validation. The daily platform verifies same-day completion, all 23 checks, closed ownership, workbook and CSV hashes, and all ten source dates. CAC and Unit-Level Detail use the same captured workbook; neither falls back to a OneDrive dashboard or scorecard. Renewal rows without an exact unit key remain unassigned, with aggregate coverage reported separately.",
     )
     add_callout(
         doc,
@@ -525,8 +527,8 @@ def build_doc():
     )
     for step in [
         "Capture the current monday.com Service Areas hierarchy and district leadership fields for this run.",
-        "Find the newest `*_Dashboard - CAC.xlsx` Council dashboard workbook in the Council Dashboard Reports shared drive.",
-        "Ignore `*_CAC - Unit Metric Scorecard.xlsx` for the CAC dashboard source selection, even if that Unit Level Metrics workbook is the newest workbook in the same shared drive.",
+        "Accept Ranger’s same-day CAC_Dashboard_Working_Copy.xlsx through its bound completion, publication and native-validation receipts; capture the workbook with its original name.",
+        "Use that same captured working copy for Council and Unit-Level metrics, training and renewal detail. Missing or changed proof blocks publication.",
         "Find the newest CST7 workbook in the Council Metric Reports shared drive.",
         "Build `data/latest.json`, including Service Area rollups and a dated working archive outside the Pages source tree.",
         "Find the newest monday.com export workbook in the Council monday.com Reports shared drive.",
@@ -570,8 +572,8 @@ def build_doc():
         ["Requirement", "What must be available"],
         [
             ["Runtime", "Python with openpyxl for Excel parsing and python-docx for guide generation."],
-            ["Google Drive access", "Shared drives named Council Dashboard Reports, Council Metric Reports, and Council monday.com Reports. Council Dashboard Reports contains both the Dashboard - CAC workbook and the Unit Level Metrics workbook."],
-            ["Workbook patterns", "Use `*_Dashboard - CAC.xlsx` only for the council dashboard source, `*_CAC - Unit Metric Scorecard.xlsx` only for Unit Level detail, `*_CST7.xlsx` for CST metrics, and `*monday-export.xlsx` for monday.com detail."],
+            ["Google Drive access", "Shared drives named Council Dashboard Reports, Council Metric Reports, and Council monday.com Reports. Ranger supplies the CAC and Unit-Level working copy; OneDrive supplies CST7 only."],
+            ["Workbook patterns", "Use receipt-verified CAC_Dashboard_Working_Copy.xlsx for CAC and Unit-Level Detail, `*_CST7.xlsx` for CST metrics, and `*monday-export.xlsx` for monday.com detail. Working-copy dates come from validated receipts and all ten workbook source dates, never filesystem modification time."],
             ["monday.com access", "Daily export workbook preferred; API token fallback requires read access to the configured boards."],
             ["Publishing", "GitHub Pages repository on main branch with static HTML, CSS, JavaScript, assets, and JSON data."],
             ["Automation", "One LaunchAgent that refreshes source data and deploys generated data as verified Pages artifacts. Ordinary linear Git commits are reserved for source changes."],

@@ -1,5 +1,16 @@
 # Council Dashboard Summary project instructions
 
+## November 5 verified Ranger workbook source
+
+The configured CAC daily source is Ranger's receipt-verified working copy.
+Use its exact original identity and validated report date, never mtime or a
+renamed alias. Unit-Level metrics, training readiness and renewal rows must
+come from that same frozen workbook. Preserve exact unit-key joins, duplicate
+rejection, unmatched coverage, all tracked units, PIN privacy and completion
+rules. Require the working-copy regression in the read-only daily preflight.
+OneDrive remains authorized for CST7 only in this mode; never fall back to a
+OneDrive CAC dashboard/scorecard after failed Ranger acceptance.
+
 ## New-youth joins pages — October 26, 2026 replacement
 
 Peter replaced Cub Scout JSN with `cubs-joins.html` (Cub Scout Joins) and

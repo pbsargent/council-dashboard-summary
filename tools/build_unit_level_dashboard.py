@@ -11,6 +11,8 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import os
+import sys
 from collections import defaultdict
 from datetime import date, datetime
 from pathlib import Path
@@ -40,6 +42,46 @@ def records(sheet, header_row=1):
         if not any(value not in (None, "") for value in values):
             continue
         yield {str(headers[index]).strip(): value for index, value in enumerate(values) if index < len(headers) and headers[index]}
+
+
+def working_copy_rows(workbook):
+    """Map the working copy's native tables without mixing another generation."""
+    required = {'Units', 'Unit Metrics', 'MembersDueToRenew'}
+    if not required <= set(workbook.sheetnames):
+        raise ValueError('Working copy is missing required Unit-Level source tabs')
+    unit_rows = list(records(workbook['Units']))
+    keys = {}
+    for row in unit_rows:
+        uid, key = row.get('Unit_ID'), clean(row.get('Unique_ID'))
+        if not isinstance(uid, (int, float)) or not key or key in keys:
+            raise ValueError('Working-copy Units requires unique unit IDs and exact join keys')
+        keys[key] = int(uid)
+    if len(set(keys.values())) != len(keys):
+        raise ValueError('Working-copy Units contains duplicate unit IDs')
+    training = [{**row, 'UnitID': row['Unit_ID'], 'BALOO Trained': row.get('Baloo Trained'),
+                 'SYT 0-30': row.get('SYT\n0-30'), 'SYT 31-90': row.get('SYT\n31-90')}
+                for row in unit_rows]
+    metric_rows = []
+    for row in records(workbook['Unit Metrics'], header_row=2):
+        metric_rows.append({**row, 'Youth Prev Yr': row.get('Youth Prev_Yr'),
+                            'Exceed Small Unit Threshold': row.get('Exceed_Small Unit_Threshold'),
+                            'Connection': row.get('Connect Date'),
+                            'Chartered Organization': row.get('Chartered_Organization')})
+    # Read only the native query table's first 12 columns. Later calculated
+    # columns repeat the Renewal header and must not overwrite its source date.
+    source = workbook['MembersDueToRenew'].iter_rows(values_only=True)
+    headers = list(next(source))[:12]
+    due_rows = []
+    unmatched = 0
+    for values in source:
+        row = dict(zip(headers, values[:12]))
+        if not any(v not in (None, '') for v in values[:12]): continue
+        uid = keys.get(clean(row.get('Key')))
+        if uid is None:
+            unmatched += 1
+            continue  # Retain unavailable unit coverage; never guess a join.
+        due_rows.append({**row, 'UnitID': uid})
+    return training, metric_rows, due_rows, unmatched
 
 
 def unit_name(row):
@@ -99,6 +141,7 @@ def main():
     parser.add_argument("--council-snapshot", type=Path, help="Same-day Council JSON with complete source Units identities")
     parser.add_argument("--beascout-pin-report", type=Path, help="Same-day raw PIN CSV used only to resolve public listing URLs")
     parser.add_argument("--beascout-audit", type=Path, help="Private link-resolution audit outside the public site")
+    parser.add_argument('--working-copy-receipt', type=Path, help='Verified Ranger source receipt for this exact workbook')
     args = parser.parse_args()
     if args.council_snapshot and not args.beascout_pin_report:
         parser.error("Council builds require --beascout-pin-report")
@@ -106,13 +149,23 @@ def main():
         parser.error("BeAScout audit must remain outside the public staging tree")
 
     workbook = load_workbook(args.workbook, read_only=True, data_only=True)
-    required = {"Unit_Metrics", "Units", "MembersDueToRenew"}
+    working = args.working_copy_receipt is not None
+    if working:
+        sys.path.insert(0, str(Path(os.environ['CAC_DASHBOARD_ROOT']) / 'tools'))
+        from working_copy_source import validate_captured
+        proof = validate_captured(args.workbook, args.working_copy_receipt)
+        training_rows, metric_rows, due_rows, unmatched_due = working_copy_rows(workbook)
+    else:
+        training_rows = records(workbook['Units']) if 'Units' in workbook.sheetnames else []
+        metric_rows = records(workbook['Unit_Metrics']) if 'Unit_Metrics' in workbook.sheetnames else []
+        due_rows = records(workbook['MembersDueToRenew']) if 'MembersDueToRenew' in workbook.sheetnames else []
+    required = {"Unit Metrics" if working else "Unit_Metrics", "Units", "MembersDueToRenew"}
     missing = sorted(required.difference(workbook.sheetnames))
     if missing:
         raise RuntimeError(f"Workbook is missing required sheets: {', '.join(missing)}")
 
     training_by_id = {}
-    for row in records(workbook["Units"]):
+    for row in training_rows:
         unit_id = row.get("UnitID")
         if unit_id in (None, ""):
             continue
@@ -126,7 +179,7 @@ def main():
         }
 
     renewals = defaultdict(lambda: {"records": 0, "youth": 0, "adults": 0, "opt_outs": 0, "dates": defaultdict(int), "members": []})
-    for row in records(workbook["MembersDueToRenew"]):
+    for row in due_rows:
         unit_id = row.get("UnitID")
         if not isinstance(unit_id, (int, float)):
             continue
@@ -151,7 +204,7 @@ def main():
         })
 
     units = []
-    for row in records(workbook["Unit_Metrics"]):
+    for row in metric_rows:
         unit_id = row.get("Unit_ID")
         metric = row.get("Unit Metric")
         if not isinstance(unit_id, (int, float)) or not isinstance(metric, (int, float)):
@@ -197,7 +250,7 @@ def main():
             },
         })
 
-    snapshot_date = workbook_report_date(args.workbook)
+    snapshot_date = proof['report_date'] if working else workbook_report_date(args.workbook)
     if args.council_snapshot:
         council = json.loads(args.council_snapshot.read_text())
         complete_unit_population(units, council, snapshot_date, training_by_id, renewals)
@@ -208,12 +261,15 @@ def main():
         "source": {
             "name": args.workbook.name,
             "method": "openpyxl read_only=True, data_only=True; compact JSON snapshot",
-            "sheets": ["Unit_Metrics", "Units", "MembersDueToRenew"],
+            "sheets": ["Unit Metrics" if working else "Unit_Metrics", "Units", "MembersDueToRenew"],
             "population_source": "Same-day Council Units via membership_operations" if args.council_snapshot else "Scorecard metric rows only",
         },
         "default_unit_id": 258381 if any(row["unit_id"] == 258381 for row in units) else (units[0]["unit_id"] if units else None),
         "units": units,
     }
+    if working:
+        output['source']['generation'] = 'Ranger verified working copy; all Unit-Level fields from the same captured workbook'
+        output['source']['unmatched_renewal_rows'] = unmatched_due
 
     if args.beascout_pin_report:
         expected_ids = expected_source_ids(units, council) if args.council_snapshot else None
@@ -230,6 +286,9 @@ def main():
             args.beascout_audit.write_text(json.dumps(audit, indent=2) + "\n")
         print("BeAScout links: " + json.dumps(summary))
 
+    if working:
+        validate_captured(args.workbook, args.working_copy_receipt, snapshot_date)
+    workbook.close()
     payload = json.dumps(output, indent=2, ensure_ascii=False)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(payload, encoding="utf-8")
