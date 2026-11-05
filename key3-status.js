@@ -82,7 +82,7 @@
 
   function sortUnits(rows) {
     return [...rows].sort((a, b) =>
-      (b.missing_roles?.length || 0) - (a.missing_roles?.length || 0)
+      (b.key4_missing_roles?.length ?? b.missing_roles?.length ?? 0) - (a.key4_missing_roles?.length ?? a.missing_roles?.length ?? 0)
       || String(a.unit).localeCompare(String(b.unit), undefined, { numeric: true })
     );
   }
@@ -112,7 +112,7 @@
   }
 
   function holderSearchText(row) {
-    return [row.unit_leaders, row.committee_chairs, row.cor_cur_holders]
+    return [row.unit_leaders, row.committee_chairs, row.cor_cur_holders, row.executive_officers]
       .flatMap((holders) => holders || [])
       .flatMap((holder) => [holder.name, holder.position])
       .join(" ");
@@ -182,15 +182,27 @@
     }).join("");
   }
 
+  function key4Detail(row) {
+    const available = Array.isArray(row.executive_officers) && Array.isArray(row.key4_missing_roles);
+    return { status: available ? row.key4_status : "Unavailable", missingRoles: available ? row.key4_missing_roles : null };
+  }
+
+  function renderExecutives(row) {
+    if (!Array.isArray(row.executive_officers)) return '<span class="subtle">Unavailable</span>';
+    if (!row.executive_officers.length) return '<span class="key3-missing">No qualifying record found</span>';
+    return row.executive_officers.map((holder) => `<div class="key3-person"><strong>${esc(holder.name)}</strong><span>Recorded as filled</span></div>`).join("");
+  }
+
   function renderUnitTable(rows) {
     return `<div class="key3-unit-table-wrap"><table class="key3-detail-table">
-      <thead><tr><th>Unit</th><th>Program</th><th>Status</th><th>Missing</th><th>Unit Leader</th><th>Committee Chair</th><th>COR / CUR</th><th><span class="visually-hidden">Action</span></th></tr></thead>
+      <thead><tr><th>Unit</th><th>Program</th><th>Key 4 Status</th><th>Missing Key 4</th><th>Unit Leader</th><th>Committee Chair</th><th>COR / CUR</th><th>IH / Executive Officer</th><th><span class="visually-hidden">Action</span></th></tr></thead>
       <tbody>${rows.map((row) => {
-      const complete = row.status === "Complete";
+      const detail = key4Detail(row);
+      const complete = detail.status === "Complete";
       const detailLink = row.unit_id
         ? `<a class="key3-unit-link" href="unit-level.html?unit=${encodeURIComponent(row.unit_id)}">View unit</a>`
         : "";
-      return `<tr><td><strong>${esc(row.unit)}</strong></td><td>${esc(row.unit_type)}</td><td><span class="status ${complete ? "good" : "bad"}">${esc(row.status)}</span></td><td>${row.missing_roles?.length ? `<span class="key3-missing">${esc(row.missing_roles.join(" · "))}</span>` : "None"}</td><td>${renderHolders(row.unit_leaders, "MISSING")}</td><td>${renderHolders(row.committee_chairs, "MISSING")}</td><td>${renderHolders(row.cor_cur_holders, "MISSING")}</td><td>${detailLink}</td></tr>`;
+      return `<tr><td><strong>${esc(row.unit)}</strong></td><td>${esc(row.unit_type)}</td><td><span class="status ${complete ? "good" : "bad"}">${esc(detail.status)}</span></td><td>${detail.missingRoles === null ? "Unavailable" : detail.missingRoles.length ? `<span class="key3-missing">${esc(detail.missingRoles.join(" · "))}</span>` : "None"}</td><td>${renderHolders(row.unit_leaders, "MISSING")}</td><td>${renderHolders(row.committee_chairs, "MISSING")}</td><td>${renderHolders(row.cor_cur_holders, "MISSING")}</td><td>${renderExecutives(row)}</td><td>${detailLink}</td></tr>`;
       }).join("")}</tbody>
     </table></div>`;
   }
@@ -298,7 +310,7 @@
     }
   }
 
-  const api = { summarize, summarizeByUnitType, matchesFocus, holderSytStates, matchesStatus, sortUnits, districtKey, buildHierarchy, parseDateOnly, sytExpirationState };
+  const api = { key4Detail, renderUnitTable, summarize, summarizeByUnitType, matchesFocus, holderSytStates, matchesStatus, sortUnits, districtKey, buildHierarchy, parseDateOnly, sytExpirationState };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (typeof window !== "undefined") window.Key3StatusPage = api;
   if (typeof document !== "undefined") {

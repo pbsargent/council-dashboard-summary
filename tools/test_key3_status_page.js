@@ -66,3 +66,11 @@ assert.deepEqual(page.sytExpirationState(null, new Date(2026, 8, 6)), {
 });
 
 console.log("Unit Key 3 page tests passed.");
+
+const key4 = { ...rows[0], executive_officers: [{ name: "Morgan E.", position: "Executive Officer" }], key4_status: "Complete", key4_missing_roles: [] };
+assert.equal(page.key4Detail(key4).status, "Complete");
+assert.equal(page.key4Detail(rows[0]).status, "Unavailable");
+assert.match(page.renderUnitTable([key4]), /IH \/ Executive Officer/);
+assert.match(page.renderUnitTable([key4]), /Morgan E\./);
+assert.match(page.renderUnitTable([{...key4, executive_officers: [], key4_status: "Missing 1", key4_missing_roles: ["IH / Executive Officer"]}]), /No qualifying record found/);
+assert.match(page.renderUnitTable([rows[0]]), /Unavailable/);

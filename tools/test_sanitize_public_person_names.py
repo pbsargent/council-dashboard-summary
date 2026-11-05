@@ -55,6 +55,7 @@ class PersonNamePrivacyTests(unittest.TestCase):
                         "unit": "Pack 14 F",
                         "unit_leaders": [{"name": "Alexandra Unit Leader", "position": "Cubmaster"}],
                         "committee_chairs": [{"name": "Bailey Committee Chair", "position": "Committee Chair"}],
+                        "executive_officers": [{"name": "Morgan Example", "position": "Executive Officer"}],
                         "cor_cur_holders": [{"name": "Casey Council Representative", "position": "Council Unit Representative"}],
                     }
                 ],
@@ -87,6 +88,7 @@ class PersonNamePrivacyTests(unittest.TestCase):
         self.assertEqual(payload["dashboard"]["unit_key3_statuses"][0]["unit_leaders"][0]["name"], "Alexandra L.")
         self.assertEqual(payload["dashboard"]["unit_key3_statuses"][0]["committee_chairs"][0]["name"], "Bailey C.")
         self.assertEqual(payload["dashboard"]["unit_key3_statuses"][0]["cor_cur_holders"][0]["name"], "Casey R.")
+        self.assertEqual(payload["dashboard"]["unit_key3_statuses"][0]["executive_officers"][0]["name"], "Morgan E.")
         self.assertEqual(payload["units"][0]["name"], "Crew 3")
         self.assertEqual(payload["units"][0]["renewal_records"]["members"][0]["name"], "Audrey E.")
         self.assertEqual(payload["rows"][0]["name"], "Troop 0003")

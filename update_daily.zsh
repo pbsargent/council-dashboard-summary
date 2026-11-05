@@ -224,6 +224,9 @@ log "Preparing isolated GitHub Pages staging tree"
 
 copy_file "${BUILD_DIR}/renewal-outreach-latest.js" "${SITE_STAGE}/data/renewal-outreach-latest.js"
 
+LAST_STEP="test Unit Key 4 source validation"
+"$PYTHON" "${SUMMARY_REPO}/tools/test_unit_key4.py"
+
 LAST_STEP="build council and CST data snapshot"
 log "Building fresh council and CST data snapshot"
 cd /Users/petersargent
@@ -233,6 +236,7 @@ SERVICE_HIERARCHY_SNAPSHOT="${BUILD_DIR}/service_area_hierarchy.json"
   --output "$SERVICE_HIERARCHY_SNAPSHOT"
 SERVICE_HIERARCHY_CACHE="$SERVICE_HIERARCHY_SNAPSHOT" \
   "$PYTHON" "$BUILDER" --output-dir "$BUILD_DIR"
+"$PYTHON" "${SUMMARY_REPO}/tools/enrich_unit_key4.py" --snapshot "${BUILD_DIR}/data/latest.json"
 COUNCIL_STATUS="built fresh source snapshot"
 
 require_file "${BUILD_DIR}/data/latest.json"

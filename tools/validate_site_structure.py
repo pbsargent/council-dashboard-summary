@@ -274,6 +274,21 @@ def validate_unit_key3_snapshot(payload: dict, expected_unit_count: int | None =
                             datetime.fromisoformat(syt_expires.replace("Z", "+00:00"))
                         except ValueError:
                             errors.append(f"{holder_label}.syt_expires must be an ISO date string or null")
+        executives = row.get("executive_officers")
+        if not isinstance(executives, list):
+            errors.append(f"{label}.executive_officers must be a list")
+        else:
+            for holder in executives:
+                if (not isinstance(holder, dict) or set(holder) != {"name", "position"}
+                        or not isinstance(holder.get("name"), str) or not holder["name"].strip()
+                        or holder.get("position") != "Executive Officer"):
+                    errors.append(f"{label}.executive_officers has invalid or private fields")
+            key4_missing = list(missing_roles) + ([] if executives else ["IH / Executive Officer"])
+            if row.get("key4_missing_roles") != key4_missing:
+                errors.append(f"{label}.key4_missing_roles disagrees with holder coverage")
+            key4_status = "Complete" if not key4_missing else f"Missing {len(key4_missing)}"
+            if row.get("key4_status") != key4_status:
+                errors.append(f"{label}.key4_status disagrees with holder coverage")
         for key in row:
             if any(fragment in key.casefold() for fragment in forbidden_fragments):
                 errors.append(f"{label} exposes forbidden private field {key!r}")
@@ -762,6 +777,8 @@ def main() -> int:
         for required in (
             "Either a Chartered Organization Representative (COR) or Council Unit Representative (CUR)",
             "Summary by Unit Type",
+            "Unit Key 4 Detail",
+            "IH/Executive Officer",
             "Public names use First Name, Last Initial",
             "Expand a Service Area, then a district",
             "SYT expiration appears beneath their name",
@@ -773,8 +790,8 @@ def main() -> int:
             '<option value="Missing 3">Missing 3</option>',
             '<option value="expired-syt">1 or more expired SYTs</option>',
             '<option value="expiring-syt">1 or more SYTs expiring within 90 days</option>',
-            "key3-status.js?v=20260906-key3-status-filter-1",
-            "key3-status.css?v=20260906-key3-syt-colors-1",
+            "key3-status.js?v=20261104-key4-detail-1",
+            "key3-status.css?v=20261104-key4-detail-1",
         ):
             if required not in key3_page_source:
                 errors.append(f"key3-status.html: missing Unit Key 3 contract {required!r}")
