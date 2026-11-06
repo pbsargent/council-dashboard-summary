@@ -262,7 +262,7 @@ def main():
             "name": args.workbook.name,
             "method": "openpyxl read_only=True, data_only=True; compact JSON snapshot",
             "sheets": ["Unit Metrics" if working else "Unit_Metrics", "Units", "MembersDueToRenew"],
-            "population_source": "Same-day Council Units via membership_operations" if args.council_snapshot else "Scorecard metric rows only",
+            "population_source": "Same-day Council Units via membership_operations" if args.council_snapshot else "Unit Health Metric rows only",
         },
         "default_unit_id": 258381 if any(row["unit_id"] == 258381 for row in units) else (units[0]["unit_id"] if units else None),
         "units": units,

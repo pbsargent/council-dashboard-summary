@@ -28,7 +28,7 @@
       <header class="hero detail-hero">
         <div>
           <p class="eyebrow">Operational detail</p>
-          <h1>Unit Metric Compare <span class="title-data-date" id="titleDataDate"></span></h1>
+          <h1>Unit Health Metrics <span class="title-data-date" id="titleDataDate"></span></h1>
           <p class="lede">District and unit-type performance from the workbook Unit Metric Compare tab.</p>
           <p class="lede"><strong>Retention:</strong> current members minus members new in the prior 12 months, divided by same-month prior-year members. Valid results can exceed 100%; displayed retention is rounded to the nearest whole percent.</p>
         </div>
@@ -38,6 +38,7 @@
         </div>
       </header>
 
+      <section class="panel" aria-label="Unit Health Metric population"><p id="metricCoverageNote" role="status">Loading council unit coverage…</p><p class="subtle">Units with no usable Unit Health Metric remain in Overview and <a href="https://pbsargent.github.io/council-commissioner-dashboard/unit-support.html">Unit Review</a>. They are excluded from metric bands and averages, never treated as zero. The cards below follow the selected section and filters.</p></section>
       <section class="kpi-grid" id="metricKpis" aria-label="Unit metric KPIs"></section>
 
       <section class="detail-toolbar unit-metric-toolbar" aria-label="Unit metric filters">
@@ -87,7 +88,7 @@
               <p class="section-kicker">Signals</p>
               <div class="panel-title-row">
                 <h2 id="signalsTitle">Operational Watch Points</h2>
-                <button class="panel-help" type="button" aria-label="Operational Watch Points source help" title="Source: computed from Unit Metric Compare rows after filters. Highlights districts with high low-score concentration, low training, or weak outdoor signals.">?</button>
+                <button class="panel-help" type="button" aria-label="Operational Watch Points source help" title="Source: computed from Unit Metric Compare rows after filters. Highlights districts with high concentration of Unit Health Metrics 0–2, low training, or weak outdoor signals.">?</button>
               </div>
             </div>
           </div>
@@ -136,7 +137,7 @@
   <script src="program-filter.js?v=20260717-master-filter-3"></script>
   <script src="panel-help.js?v=20260630-active-help"></script>
   <script src="report-problem.js?v=20260712"></script>
-  <script src="unit-metrics-detail.js?v=20260803-retention-whole"></script>
+  <script src="unit-metrics-detail.js?v=20261105-population-terms-1"></script>
   <script src="back-context.js?v=20260627-back-context"></script>
 </body>
 </html>

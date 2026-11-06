@@ -125,6 +125,15 @@ function sortedRows() {
   return rows;
 }
 
+function metricCoverageText(coverage) {
+  const keys = ['tracked_units', 'metric_units', 'units_without_usable_metric'];
+  if (!coverage || !keys.every(key => Number.isSafeInteger(coverage[key]) && coverage[key] >= 0)
+      || coverage.tracked_units !== coverage.metric_units + coverage.units_without_usable_metric) {
+    return 'Council unit coverage is unavailable in this snapshot. Selected-section counts include only units with a usable Unit Health Metric.';
+  }
+  return `Council source coverage before filters: ${coverage.tracked_units.toLocaleString('en-US')} tracked units; ${coverage.metric_units.toLocaleString('en-US')} with a usable Unit Health Metric; ${coverage.units_without_usable_metric.toLocaleString('en-US')} metric unavailable.`;
+}
+
 function renderMeta() {
   document.getElementById("generatedDate").textContent = viewerTimestampLabel(state.data.generated_at) || state.data.generated_date;
   const dataDate = new Date(`${state.data.generated_date}T00:00:00`);
@@ -132,6 +141,7 @@ function renderMeta() {
     ? state.data.generated_date
     : dataDate.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
   document.getElementById("titleDataDate").textContent = `Data current as of ${dateLabel}`;
+  document.getElementById("metricCoverageNote").textContent = metricCoverageText(state.data.dashboard.unit_population_coverage);
 }
 
 function renderControls() {
@@ -180,7 +190,7 @@ function forceOpenGroups() {
 function renderKpis() {
   const summary = summarize(currentRows());
   const tiles = [
-    ["Units", n(summary.units), "Units in selected section", "teal"],
+    ["Units with metric", n(summary.units), "Selected section; unavailable metrics excluded", "teal"],
     ["Avg Metric", metric(summary.avgMetric), "Weighted by units", "good"],
     ["0-2 Units", n(summary.risk), `${p(summary.risk / Math.max(1, summary.units))} at risk`, summary.risk ? "danger" : "good"],
     ["4-5 Units", n(summary.healthy), `${p(summary.healthy / Math.max(1, summary.units))} healthy`, "good"],

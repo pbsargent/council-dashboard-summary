@@ -512,7 +512,7 @@ def build_doc():
     )
     add_body(
         doc,
-        "The monday.com daily workbook is preferred because it contains richer detail rows. If that workbook is not available, the automation can fall back to the monday.com API, but the API fallback is less detailed than the workbook export. Ranger publishes CAC_Dashboard_Working_Copy.xlsx after native Excel refresh and independent validation. The daily platform verifies same-day completion, all 23 checks, closed ownership, workbook and CSV hashes, and all ten source dates. CAC and Unit-Level Detail use the same captured workbook; neither falls back to a OneDrive dashboard or scorecard. Renewal rows without an exact unit key remain unassigned, with aggregate coverage reported separately.",
+        "The monday.com daily workbook is preferred because it contains richer detail rows. If that workbook is not available, the automation can fall back to the monday.com API, but the API fallback is less detailed than the workbook export. Ranger publishes CAC_Dashboard_Working_Copy.xlsx after native Excel refresh and independent validation. The daily platform verifies same-day completion, all 23 checks, closed ownership, workbook and CSV hashes, and all ten source dates. CAC and Unit-Level Detail use the same captured workbook; neither falls back to a OneDrive dashboard or unit-metric workbook. Renewal rows without an exact unit key remain unassigned, with aggregate coverage reported separately.",
     )
     add_callout(
         doc,
@@ -876,7 +876,7 @@ def build_doc():
     add_callout(
         doc,
         "Important interpretation",
-        "The Membership Intelligence priority score is not an official workbook metric. It is a dashboard sorting aid that highlights districts where low TAY penetration, membership decline, unit health risk, stuck prospects, and renewal follow-up overlap.",
+        "The Membership Intelligence priority indicator is not an official workbook metric. It is a dashboard sorting aid that highlights districts where low TAY penetration, membership decline, unit health risk, stuck prospects, and renewal follow-up overlap.",
     )
 
     add_heading(doc, "11. Commissioner Coverage", 1)
