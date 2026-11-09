@@ -80,8 +80,8 @@ console.log('Renewal Outreach: weighted rates, cohort/district scope, all-panel 
 
 // Council-wide totals follow cohorts but never inherit a district denominator.
 const councilCode = fs.readFileSync(path.join(__dirname,'../movo-council-due.js'),'utf8');
-function councilRun(data) {
-  const nodes = {};
+function councilRun(data, outreach) {
+  const nodes = {movoCouncilDueTable:{hidden:true}};
   const node = () => ({
     value:'', hidden:true, textContent:'', children:[], handlers:{},
     addEventListener(name, fn) { this.handlers[name] = fn; },
@@ -92,23 +92,33 @@ function councilRun(data) {
     getElementById(id) { return nodes[id] ||= node(); },
     createElement: node
   };
-  vm.runInNewContext(councilCode, {window:{CAC_MOVO_COUNCIL_DUE:data},document,Intl,Date});
+  vm.runInNewContext(councilCode, {window:{CAC_MOVO_COUNCIL_DUE:data, CAC_RENEWAL_OUTREACH:outreach},document,Intl,Date});
   return nodes;
 }
-const council = councilRun({
+const councilData = {
   report_date:'2026-11-09', observed_at:'2026-11-09T07:40:00-06:00',
-  cohorts:[{month:'2026-11',due:10,renewed:2},{month:'2026-12',due:90,renewed:9}],
-  combined:{due:100,renewed:11}
-});
-const displayed = () => council.movoCouncilDueRows.children.map(row => row.children.map(cell => cell.textContent));
-assert.deepEqual(displayed()[2], ['Both months','100','11','11.0%']);
-assert.match(council.movoCouncilDueStatus.textContent, /Movo Performance observed/);
+  cohorts:[{month:'2026-11',due:294,renewed:65},{month:'2026-12',due:4441,renewed:12}],
+  combined:{due:4735,renewed:77}
+};
+const outreach = {snapshots:[{council:{
+  '2026-11':{due:293,renewed:65}, '2026-12':{due:52,renewed:12}
+}}]};
+const council = councilRun(councilData, outreach);
+const displayed = nodes => nodes.movoCouncilDueRows.children.map(row => row.children.map(cell => cell.textContent));
+assert.deepEqual(displayed(council), [
+  ['November 2026','22.2% (65 of 293)','22.1% (65 of 294)'],
+  ['December 2026','23.1% (12 of 52)','0.3% (12 of 4,441)'],
+  ['Both months','22.3% (77 of 345)','1.6% (77 of 4,735)']
+]);
+assert.match(council.movoCouncilDueStatus.textContent, /Council-wide totals observed/);
 council.outreachCohort.value='2026-12';
 council.outreachCohort.handlers.change();
-assert.deepEqual(displayed(), [['December 2026','90','9','10.0%']]);
+assert.deepEqual(displayed(council), [['December 2026','23.1% (12 of 52)','0.3% (12 of 4,441)']]);
 assert.equal(council.outreachDistrict, undefined);
 council.outreachCohort.value='';
 council.outreachReset.handlers.click();
-assert.equal(displayed().length, 3);
-assert.equal(councilRun(null).movoCouncilDueTable.hidden, true);
-console.log('Council-wide Movo panel: separate denominator, cohort, reset and missing data passed.');
+assert.equal(displayed(council).length, 3);
+assert.equal(displayed(councilRun(null, outreach))[0][2], 'Unavailable');
+assert.equal(displayed(councilRun(councilData, null))[0][1], 'Unavailable');
+assert.equal(councilRun(null, null).movoCouncilDueTable.hidden, true);
+console.log('Movo comparison: separate denominators, cohort, reset and missing data passed.');
