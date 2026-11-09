@@ -579,6 +579,12 @@ def main() -> int:
         except (OSError, ValueError, TypeError, KeyError) as error:
             errors.append(f"Renewal Outreach data: {error}")
         try:
+            from build_movo_council_due import validate_public as validate_movo_council
+            validate_movo_council((root / "data/movo-council-due-latest.js").read_text(),
+                                  datetime.now(ZoneInfo("America/Chicago")).date())
+        except (OSError, ValueError, TypeError, KeyError, AttributeError) as error:
+            errors.append(f"Council-wide Movo data: {error}")
+        try:
             from build_join_dashboards import validate_public_bundle, service_area_mapping
             joins = validate_public_bundle(root / 'data/joins-latest.js')
             mapping = service_area_mapping(root / 'data/latest.json', joins, date.fromisoformat(joins['cubs']['report_date']))
@@ -1467,10 +1473,10 @@ def main() -> int:
                 errors.append(f"Movo population scope disclosure is missing: {required}")
         if outreach_html.find('id="outreachPopulationTitle"') > outreach_html.find('id="outreachCohort"'):
             errors.append('Movo population scope must appear before filters and metrics')
-        for required in ("outreachCoverageTitle", "Cohort and District apply to every data panel", "outreachCohort", "outreachDistrict", "outreachFreshness", "outreachHistory", "outreachExport", "both cohorts", "Movo checked", "Data through", "Sheet updated"):
+        for required in ("outreachCoverageTitle", "Cohort and District apply to every outreach data panel", "outreachCohort", "outreachDistrict", "outreachFreshness", "outreachHistory", "outreachExport", "both cohorts", "Movo checked", "Data through", "Sheet updated"):
             if required not in outreach_html:
                 errors.append(f"Renewal Outreach is missing {required}")
-        for required in ("renewal-outreach.js?v=20261101-verification-1", "renewal-outreach.css?v=20261031-scope-1", "data/renewal-outreach-latest.js?v=20261031-1"):
+        for required in ("movoCouncilDueTitle", "movo-council-due.js?v=20261109-1", "data/movo-council-due-latest.js?v=20261109-1", "renewal-outreach.js?v=20261101-verification-1", "renewal-outreach.css?v=20261109-council-due-1", "data/renewal-outreach-latest.js?v=20261031-1"):
             if required not in outreach_html:
                 errors.append(f"Renewal Outreach is missing {required}")
     try:
@@ -1487,7 +1493,7 @@ def main() -> int:
     except (OSError, ET.ParseError) as error:
         errors.append(f'Movo full-logo validation failed: {error}')
 
-    for name in ("renewal-outreach.js", "renewal-outreach.css", "tools/build_renewal_outreach.py", "tools/movo_verification.py", "tools/test_renewal_outreach.py", "tools/test_renewal_outreach_page.js"):
+    for name in ("renewal-outreach.js", "renewal-outreach.css", "movo-council-due.js", "tools/build_movo_council_due.py", "tools/build_renewal_outreach.py", "tools/movo_verification.py", "tools/test_renewal_outreach.py", "tools/test_renewal_outreach_page.js"):
         if not (root / name).is_file():
             errors.append(f"Missing Renewal Outreach asset: {name}")
     if 'renewal-outreach.html' not in (root / 'index.html').read_text() or 'renewalOutreachGuide' not in (root / 'help.html').read_text():

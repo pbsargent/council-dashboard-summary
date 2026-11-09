@@ -77,3 +77,38 @@ const injection=run({...data,snapshots:[{...snapshot,rows:[row('<img onerror=bad
 assert.doesNotMatch(injection.outreachRows.innerHTML,/<img/);
 assert.match(injection.outreachRows.innerHTML,/&lt;img/);
 console.log('Renewal Outreach: weighted rates, cohort/district scope, all-panel cohort filtering and unavailable source breakdowns, CSV, missing/zero/stale states and escaping passed.');
+
+// Council-wide totals follow cohorts but never inherit a district denominator.
+const councilCode = fs.readFileSync(path.join(__dirname,'../movo-council-due.js'),'utf8');
+function councilRun(data) {
+  const nodes = {};
+  const node = () => ({
+    value:'', hidden:true, textContent:'', children:[], handlers:{},
+    addEventListener(name, fn) { this.handlers[name] = fn; },
+    append(child) { this.children.push(child); },
+    replaceChildren() { this.children = []; }
+  });
+  const document = {
+    getElementById(id) { return nodes[id] ||= node(); },
+    createElement: node
+  };
+  vm.runInNewContext(councilCode, {window:{CAC_MOVO_COUNCIL_DUE:data},document,Intl,Date});
+  return nodes;
+}
+const council = councilRun({
+  report_date:'2026-11-09', observed_at:'2026-11-09T07:40:00-06:00',
+  cohorts:[{month:'2026-11',due:10,renewed:2},{month:'2026-12',due:90,renewed:9}],
+  combined:{due:100,renewed:11}
+});
+const displayed = () => council.movoCouncilDueRows.children.map(row => row.children.map(cell => cell.textContent));
+assert.deepEqual(displayed()[2], ['Both months','100','11','11.0%']);
+assert.match(council.movoCouncilDueStatus.textContent, /Movo Performance observed/);
+council.outreachCohort.value='2026-12';
+council.outreachCohort.handlers.change();
+assert.deepEqual(displayed(), [['December 2026','90','9','10.0%']]);
+assert.equal(council.outreachDistrict, undefined);
+council.outreachCohort.value='';
+council.outreachReset.handlers.click();
+assert.equal(displayed().length, 3);
+assert.equal(councilRun(null).movoCouncilDueTable.hidden, true);
+console.log('Council-wide Movo panel: separate denominator, cohort, reset and missing data passed.');

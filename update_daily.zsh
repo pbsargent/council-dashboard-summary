@@ -233,6 +233,14 @@ log "Preparing isolated GitHub Pages staging tree"
 "$SITE_STAGER" "$SUMMARY_REPO" "$SITE_STAGE" >/dev/null
 
 copy_file "${BUILD_DIR}/renewal-outreach-latest.js" "${SITE_STAGE}/data/renewal-outreach-latest.js"
+MOVO_COUNCIL_DUE_RECEIPTS="/Volumes/MacProData/Patrol/Tracker/Movo/Evidence/${MOVO_CHECK_DATE}-total-due"
+typeset -a council_due_args
+council_due_args=(--date "$MOVO_CHECK_DATE" --evidence "$MOVO_COUNCIL_DUE_RECEIPTS" --output "${SITE_STAGE}/data/movo-council-due-latest.js")
+if [[ -n "${CAC_FROZEN_BUNDLE:-}" ]]; then
+  council_due_args+=(--private-copy "${CAC_FROZEN_BUNDLE}/derived/movo-council-due")
+fi
+"$PYTHON" "${SUMMARY_REPO}/tools/build_movo_council_due.py" "${council_due_args[@]}"
+
 
 LAST_STEP="test Unit Key 4 source validation"
 "$PYTHON" "${SUMMARY_REPO}/tools/test_unit_key4.py"
