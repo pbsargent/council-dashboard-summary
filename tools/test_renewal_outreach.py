@@ -7,6 +7,10 @@ import tempfile
 import unittest
 
 from build_renewal_outreach import BASE, CENTRAL, build, parse_source, validate_bundle
+from build_movo_council_due import (
+    BOARD_ID, DUE_COLUMN, GROUP_ID, PREFIX, RATE_COLUMN, RENEWED_COLUMN,
+    build as build_council_due, validate_comparison, validate_public as validate_council_due,
+)
 from movo_verification import SHEET_ID, PARENT_ID, create_receipt, table_hashes, verify_receipt
 
 
@@ -211,6 +215,48 @@ class MovoTests(unittest.TestCase):
             text=(root/'public.js').read_text()
             bad=text.replace('"district":"Example"','"email":"private@example.invalid","district":"Example"',1)
             with self.assertRaisesRegex(ValueError,'Unapproved public fields'):validate_bundle(bad)
+
+
+class MovoComparisonTests(unittest.TestCase):
+    def test_council_receipt_checks_counts_and_paired_cohorts(self):
+        now = datetime.now(CENTRAL)
+        receipt = {
+            'board_id': BOARD_ID, 'group_id': GROUP_ID,
+            'source': now.strftime('Movo Performance page at %I:%M %p %Z %b %d, %Y'),
+            'new_value_mismatches': 0, 'other_cell_differences': 0, 'values_written': [],
+        }
+        items = []
+        for month, due, renewed, rate in (
+            ('2026-11', 294, 65, 22.1), ('2026-12', 4441, 12, 0.3), ('both cohorts', 4735, 77, 1.6),
+        ):
+            name = f'Council total — {month}'
+            receipt['values_written'].append({
+                'item_id': month, 'name': name, 'total_due': due, 'note': f'{renewed} of {due}',
+                'renewed_pct_of_total_due': rate,
+            })
+            items.append({'id': month, 'name': name, 'column_values': [
+                {'id': key, 'text': str(value)}
+                for key, value in ((DUE_COLUMN, due), (RENEWED_COLUMN, renewed), (RATE_COLUMN, rate))
+            ]})
+        board = {'data': {'boards': [{'id': BOARD_ID, 'groups': [
+            {'id': GROUP_ID, 'items_page': {'items': items}}
+        ]}]}}
+        council = build_council_due(receipt, board, now.date())
+        self.assertEqual(validate_council_due(PREFIX + json.dumps(council) + ';', now.date()), council)
+        with self.assertRaisesRegex(ValueError, 'Missing verified'):
+            validate_council_due(PREFIX + 'null;', now.date())
+        with self.assertRaisesRegex(ValueError, 'metadata'):
+            validate_council_due(PREFIX + json.dumps(council) + ';', now.date() + timedelta(days=1))
+        outreach = {'snapshots': [{'council': {'2026-11': {'due': 293}, '2026-12': {'due': 52}}}]}
+        validate_comparison(outreach, council)
+        with self.assertRaisesRegex(ValueError, 'cohort months differ'):
+            validate_comparison({'snapshots': [{'council': {'2026-12': {'due': 52}}}]}, council)
+        outreach['snapshots'][0]['council']['2026-11']['due'] = 295
+        with self.assertRaisesRegex(ValueError, 'outreach due exceeds'):
+            validate_comparison(outreach, council)
+        items[0]['column_values'][1]['text'] = '64'
+        with self.assertRaisesRegex(ValueError, 'renewed count does not reconcile'):
+            build_council_due(receipt, board, now.date())
 
 
 if __name__ == '__main__':unittest.main()

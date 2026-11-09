@@ -408,3 +408,15 @@ Use **Unit Key 4 Coverage** for the page title, heading, navigation, entry links
 ## November 5 consistent missing-position label
 
 On Unit Key 4 Coverage, display **MISSING** for every position without a qualifying holder, including IH/Executive Officer. Keep unavailable source coverage distinct as **Unavailable**. Missing source evidence alone does not prove a vacancy. Preserve calculations, source fields, qualifying rules, the hidden 2026 page and the unpublished 2027 draft.
+
+## November 9 paired Movo renewal publication
+
+Tracker's existing morning Movo routine supplies the same-day, hash-bound
+outreach Sheet receipt and the dated aggregate council-wide readback pair.
+The daily Council Summary publisher requires both before deploying. Compare
+the council-wide due and renewed integers to the board readback, recompute its
+reported rate and reconcile both-month totals. Preserve the existing outreach
+district/Sheet count checks. Require matching cohort months and an outreach
+denominator no larger than the council denominator for each cohort. A missing,
+stale or mismatched handoff must leave the previous site live. Keep both
+sources, their observation times and their population definitions separate.

@@ -233,6 +233,7 @@ log "Preparing isolated GitHub Pages staging tree"
 "$SITE_STAGER" "$SUMMARY_REPO" "$SITE_STAGE" >/dev/null
 
 copy_file "${BUILD_DIR}/renewal-outreach-latest.js" "${SITE_STAGE}/data/renewal-outreach-latest.js"
+LAST_STEP="verify Tracker council-wide Movo handoff"
 MOVO_COUNCIL_DUE_RECEIPTS="/Volumes/MacProData/Patrol/Tracker/Movo/Evidence/${MOVO_CHECK_DATE}-total-due"
 typeset -a council_due_args
 council_due_args=(--date "$MOVO_CHECK_DATE" --evidence "$MOVO_COUNCIL_DUE_RECEIPTS" --output "${SITE_STAGE}/data/movo-council-due-latest.js")

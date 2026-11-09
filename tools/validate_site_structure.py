@@ -569,6 +569,7 @@ def main() -> int:
     errors: list[str] = []
 
     if "--require-data" in sys.argv:
+        movo = None
         try:
             from build_renewal_outreach import validate_bundle, timestamp
             movo = validate_bundle((root / "data/renewal-outreach-latest.js").read_text())
@@ -579,9 +580,11 @@ def main() -> int:
         except (OSError, ValueError, TypeError, KeyError) as error:
             errors.append(f"Renewal Outreach data: {error}")
         try:
-            from build_movo_council_due import validate_public as validate_movo_council
-            validate_movo_council((root / "data/movo-council-due-latest.js").read_text(),
-                                  datetime.now(ZoneInfo("America/Chicago")).date())
+            from build_movo_council_due import validate_comparison, validate_public as validate_movo_council
+            council = validate_movo_council((root / "data/movo-council-due-latest.js").read_text(),
+                                           datetime.now(ZoneInfo("America/Chicago")).date())
+            if movo is not None:
+                validate_comparison(movo, council)
         except (OSError, ValueError, TypeError, KeyError, AttributeError) as error:
             errors.append(f"Council-wide Movo data: {error}")
         try:

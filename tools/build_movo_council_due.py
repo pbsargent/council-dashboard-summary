@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 CENTRAL = ZoneInfo("America/Chicago")
 BOARD_ID = "18437939750"
 GROUP_ID = "group_mm8n8m45"
+RENEWED_COLUMN = "numeric_mm8nt56y"
 DUE_COLUMN = "numeric_mm8yr4yk"
 RATE_COLUMN = "numeric_mm8yza0g"
 PREFIX = "window.CAC_MOVO_COUNCIL_DUE = "
@@ -63,7 +64,10 @@ def build(receipt, snapshot, day):
         match = re.fullmatch(r"([0-9,]+) of ([0-9,]+)", source["note"])
         require(type(due) is int and due >= 0 and match is not None, "Invalid source counts")
         renewed, denominator = (int(value.replace(",", "")) for value in match.groups())
-        require(0 <= renewed <= due == denominator and int(columns[DUE_COLUMN]) == due, "Council counts do not reconcile")
+        require(0 <= renewed <= due == denominator
+                and Decimal(columns[DUE_COLUMN]) == due
+                and Decimal(columns[RENEWED_COLUMN]) == renewed,
+                f"Council due or renewed count does not reconcile for {label}")
         expected = rate(renewed, due)
         supplied = source["renewed_pct_of_total_due"]
         require((supplied is None and columns[RATE_COLUMN] in (None, "") if expected is None
@@ -81,8 +85,7 @@ def build(receipt, snapshot, day):
 def validate_public(text, day):
     require(text.startswith(PREFIX) and text.rstrip().endswith(";"), "Invalid council-wide Movo payload")
     data = json.loads(text[len(PREFIX):].rstrip()[:-1])
-    if data is None:
-        return
+    require(isinstance(data, dict), "Missing verified council-wide Movo totals")
     require(set(data) == {"report_date", "observed_at", "cohorts", "combined"}
             and data["report_date"] == day.isoformat(), "Invalid council-wide Movo metadata")
     observed = datetime.fromisoformat(data["observed_at"])
@@ -99,6 +102,18 @@ def validate_public(text, day):
     require(rows[0]["month"] < rows[1]["month"] and set(combined) == {"due", "renewed"}
             and all(type(combined[k]) is int and combined[k] == sum(row[k] for row in rows) for k in combined),
             "Council totals do not reconcile")
+    return data
+
+
+def validate_comparison(outreach, council):
+    outreach_counts = outreach["snapshots"][-1]["council"]
+    council_counts = {row["month"]: row for row in council["cohorts"]}
+    require(outreach_counts.keys() == council_counts.keys(),
+            "Movo outreach and council-wide cohort months differ")
+    for month, total in council_counts.items():
+        extract = outreach_counts[month]
+        require(extract["due"] <= total["due"],
+                f"Movo outreach due exceeds council-wide due for {month}")
 
 
 def main():
@@ -108,25 +123,25 @@ def main():
     p.add_argument("--private-copy", type=Path)
     p.add_argument("--output", type=Path, required=True)
     a = p.parse_args()
-    data = None
     names = ("readback.json", "after-snapshot.json")
-    if a.evidence.is_dir() and not a.evidence.is_symlink():
-        try:
-            raw = [read_evidence(a.evidence, name) for name in names]
-            data = build(*(json.loads(value) for value in raw), a.date)
-            require(raw == [read_evidence(a.evidence, name) for name in names], "Tracker evidence changed during capture")
-        except (ValueError, KeyError, TypeError, OSError, ArithmeticError) as error:
-            print(f"Council-wide Movo totals unavailable: {type(error).__name__}")
-        else:
-            if a.private_copy is not None:
-                a.private_copy.mkdir(mode=0o700, parents=True)
-                for name, value in zip(names, raw):
-                    with (a.private_copy / name).open("xb") as file:
-                        file.write(value)
-    payload = PREFIX + json.dumps(data, ensure_ascii=True, separators=(",", ":")) + ";\n"
-    validate_public(payload, a.date)
-    a.output.write_text(payload)
-    print("Council-wide Movo totals verified" if data is not None else "Council-wide Movo totals unavailable")
+    try:
+        require(a.evidence.is_dir() and not a.evidence.is_symlink(), "Missing Tracker total-due evidence folder")
+        raw = [read_evidence(a.evidence, name) for name in names]
+        data = build(*(json.loads(value) for value in raw), a.date)
+        require(raw == [read_evidence(a.evidence, name) for name in names], "Tracker evidence changed during capture")
+        payload = PREFIX + json.dumps(data, ensure_ascii=True, separators=(",", ":")) + ";\n"
+        validate_public(payload, a.date)
+        if a.private_copy is not None:
+            a.private_copy.mkdir(mode=0o700, parents=True)
+            for name, value in zip(names, raw):
+                with (a.private_copy / name).open("xb") as file:
+                    file.write(value)
+        a.output.write_text(payload)
+    except (ValueError, KeyError, TypeError, OSError, ArithmeticError) as error:
+        raise SystemExit(f"Council-wide Movo handoff failed for {a.date}: {error}") from error
+    counts = ", ".join(f"{row['month']} {row['renewed']}/{row['due']}" for row in data["cohorts"])
+    print(f"Council-wide Movo totals verified: {counts}")
+
 
 
 if __name__ == "__main__":
