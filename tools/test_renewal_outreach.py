@@ -8,7 +8,8 @@ import unittest
 
 from build_renewal_outreach import BASE, CENTRAL, build, parse_source, validate_bundle
 from build_movo_council_due import (
-    BOARD_ID, DUE_COLUMN, GROUP_ID, PREFIX, RATE_COLUMN, RENEWED_COLUMN,
+    BOARD_ID, DUE_COLUMN, GROUP_ID, PERFORMANCE_SOURCE, PREFIX, RATE_COLUMN,
+    RENEWED_COLUMN, SHEET_SCHEMA, TOTAL_DUE_HEADERS,
     build as build_council_due, validate_comparison, validate_public as validate_council_due,
 )
 from movo_verification import SHEET_ID, PARENT_ID, create_receipt, table_hashes, verify_receipt
@@ -218,6 +219,45 @@ class MovoTests(unittest.TestCase):
 
 
 class MovoComparisonTests(unittest.TestCase):
+    def test_total_due_sheet_preserves_distinct_numerators(self):
+        now = datetime.now(CENTRAL)
+        read_at = (now - timedelta(seconds=4)).isoformat()
+        updated = (now - timedelta(seconds=3)).isoformat()
+        captured = (now - timedelta(seconds=2)).isoformat()
+        identity = dict(sheet_id=SHEET_ID, parent_id=PARENT_ID)
+        receipt = dict(schema=SHEET_SCHEMA, report_date=now.date().isoformat(), **identity,
+                       performance=dict(source=PERFORMANCE_SOURCE, council=564, cohorts=[
+                           dict(cohort='2026-11', due_date='2026-11-30', read_at=read_at,
+                                total_due=300, renewed=75),
+                           dict(cohort='2026-12', due_date='2026-12-31', read_at=read_at,
+                                total_due=4500, renewed=300),
+                       ]))
+        snapshot = dict(tab='Total due', equals_written=True, captured_at=captured,
+                        source_updated_at=updated, **identity, readback=[
+                            TOTAL_DUE_HEADERS,
+                            ['November 2026', '2026-11-30', 300, 75, 25.0, 290, 10, 10, read_at],
+                            ['December 2026', '2026-12-31', 4500, 300, 6.7, 60, 4440, 0, read_at],
+                            ['Both cohorts', '', 4800, 375, 7.8, 350, 4450, 10, f'{read_at} / {read_at}'],
+                        ])
+        council = build_council_due(receipt, snapshot, now.date())
+        outreach = {'snapshots': [{'council': {'2026-11': {'due': 290, 'renewed': 70},
+                                               '2026-12': {'due': 60, 'renewed': 15}}}]}
+        validate_comparison(outreach, council)
+        self.assertEqual(council['cohorts'][1], dict(month='2026-12', due=4500, renewed=300))
+        self.assertEqual(council['combined'], dict(due=4800, renewed=375))
+        changes = [
+            (1, 3, 70, 'counts differ'),
+            (2, 4, 7.0, 'rate does not reconcile'),
+            (3, 3, 90, 'Combined council counts'),
+        ]
+        for row, col, value, error in changes:
+            changed = deepcopy(snapshot)
+            changed['readback'][row][col] = value
+            with self.subTest(row=row, col=col), self.assertRaisesRegex(ValueError, error):
+                build_council_due(receipt, changed, now.date())
+        with self.assertRaisesRegex(ValueError, 'stale or future'):
+            build_council_due(receipt, dict(snapshot, captured_at=(now - timedelta(days=1)).isoformat()), now.date())
+
     def test_council_receipt_checks_counts_and_paired_cohorts(self):
         now = datetime.now(CENTRAL)
         receipt = {

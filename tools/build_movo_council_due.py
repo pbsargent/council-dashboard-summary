@@ -8,6 +8,8 @@ from pathlib import Path
 import re
 from zoneinfo import ZoneInfo
 
+from movo_verification import PARENT_ID, SHEET_ID
+
 CENTRAL = ZoneInfo("America/Chicago")
 BOARD_ID = "18437939750"
 GROUP_ID = "group_mm8n8m45"
@@ -15,6 +17,14 @@ RENEWED_COLUMN = "numeric_mm8nt56y"
 DUE_COLUMN = "numeric_mm8yr4yk"
 RATE_COLUMN = "numeric_mm8yza0g"
 PREFIX = "window.CAC_MOVO_COUNCIL_DUE = "
+SHEET_SCHEMA = "cac-movo-council-due-sheet-v1"
+PERFORMANCE_SOURCE = ("Movo Performance page, Renewing view, Due selector, no other filters "
+                      "(https://app.trymovo.ai/performance?side=renewing)")
+TOTAL_DUE_HEADERS = [
+    "Cohort", "Due date", "Total due (Scouting file)", "Renewed (Performance page)",
+    "Renewed % of total due", "In Movo outreach", "Not yet in Movo outreach",
+    "Said no (Performance page)", "Read at (America/Chicago)",
+]
 
 
 def require(condition, message):
@@ -35,6 +45,8 @@ def rate(renewed, due):
 
 
 def build(receipt, snapshot, day):
+    if receipt.get("schema") == SHEET_SCHEMA:
+        return build_from_sheet(receipt, snapshot, day)
     require(receipt["board_id"] == BOARD_ID and receipt["group_id"] == GROUP_ID
             and receipt["new_value_mismatches"] == 0 and receipt["other_cell_differences"] == 0,
             "Tracker board readback did not reconcile")
@@ -80,6 +92,68 @@ def build(receipt, snapshot, day):
             "Combined total does not reconcile to both cohorts")
     return {"report_date": day.isoformat(), "observed_at": observed.isoformat(),
             "cohorts": [{"month": month, **rows[month]} for month in months], "combined": combined}
+
+
+def current_clock(value, day):
+    parsed = datetime.fromisoformat(value)
+    require(parsed.tzinfo is not None and parsed.astimezone(CENTRAL).date() == day
+            and parsed <= datetime.now(CENTRAL), "Council-wide Movo evidence is stale or future")
+    return parsed
+
+
+def build_from_sheet(receipt, snapshot, day):
+    for evidence in (receipt, snapshot):
+        require(evidence["sheet_id"] == SHEET_ID and evidence["parent_id"] == PARENT_ID,
+                "Wrong council-wide Movo Sheet identity")
+    require(receipt["report_date"] == day.isoformat(), "Wrong Tracker report date")
+    performance = receipt["performance"]
+    require(performance["source"] == PERFORMANCE_SOURCE and performance["council"] == 564,
+            "Wrong Movo Performance council, view or filters")
+    require(snapshot["tab"] == "Total due" and snapshot["equals_written"] is True,
+            "Tracker did not verify the council-wide Sheet tab")
+    headers, *table = snapshot["readback"]
+    require(headers == TOTAL_DUE_HEADERS and len(table) == 3
+            and all(len(row) == len(headers) for row in table), "Unexpected Total due tab layout")
+    captured = current_clock(snapshot["captured_at"], day)
+    updated = current_clock(snapshot["source_updated_at"], day)
+    require(updated <= captured, "Movo Sheet capture predates the Sheet update")
+    cohorts = performance["cohorts"]
+    require(len(cohorts) == 2, "Expected two council-wide Performance cohorts")
+    results, observed, clocks = [], [], []
+    for source, sheet in zip(cohorts, table[:2]):
+        month = source["cohort"]
+        due_date = date.fromisoformat(source["due_date"])
+        require(due_date.isoformat()[:7] == month
+                and (due_date + timedelta(days=1)).month != due_date.month,
+                "Council-wide Performance date does not close its cohort month")
+        read_at = current_clock(source["read_at"], day)
+        require(read_at <= updated and sheet[8] == source["read_at"],
+                "Total due tab observation does not match Performance")
+        observed.append(read_at)
+        clocks.append(source["read_at"])
+        due, renewed = source["total_due"], source["renewed"]
+        require(type(due) is int and type(renewed) is int and 0 <= renewed <= due,
+                "Invalid council-wide Performance counts")
+        require(sheet[0] == due_date.strftime("%B %Y") and sheet[1] == source["due_date"]
+                and all(type(value) is int for value in sheet[2:4]) and sheet[2:4] == [due, renewed],
+                f"Council-wide Performance and Total due counts differ for {month}")
+        supplied_rate = sheet[4]
+        require(supplied_rate in (None, "") if due == 0
+                else Decimal(str(supplied_rate)) == rate(renewed, due),
+                "Total due renewal rate does not reconcile")
+        results.append(dict(month=month, due=due, renewed=renewed))
+    require(results[0]["month"] < results[1]["month"], "Duplicate or out-of-order council cohorts")
+    combined = {key: sum(row[key] for row in results) for key in ("due", "renewed")}
+    total = table[-1]
+    require(total[0] == "Both cohorts" and total[1] in (None, "")
+            and all(type(value) is int for value in total[2:4])
+            and total[2:4] == [combined["due"], combined["renewed"]]
+            and total[8] == " / ".join(clocks), "Combined council counts do not reconcile")
+    require(total[4] in (None, "") if combined["due"] == 0
+            else Decimal(str(total[4])) == rate(combined["renewed"], combined["due"]),
+            "Combined council rate does not reconcile")
+    return dict(report_date=day.isoformat(), observed_at=max(observed).astimezone(CENTRAL).isoformat(),
+                cohorts=results, combined=combined)
 
 
 def validate_public(text, day):

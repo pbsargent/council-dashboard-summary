@@ -414,8 +414,11 @@ On Unit Key 4 Coverage, display **MISSING** for every position without a qualify
 Tracker's existing morning Movo routine supplies the same-day, hash-bound
 outreach Sheet receipt and the dated aggregate council-wide readback pair.
 The daily Council Summary publisher requires both before deploying. Compare
-the council-wide due and renewed integers to the board readback, recompute its
-reported rate and reconcile both-month totals. Preserve the existing outreach
+the council-wide due and renewed integers to the Total due Sheet readback,
+recompute its reported rate and reconcile both-month totals. Tracker's
+`cac-movo-council-due-sheet-v1` receipt binds the Council 564 Performance
+cohorts and their observation clocks to that dedicated tab. Historical
+board-based receipts remain readable. Preserve the existing outreach
 district/Sheet count checks. Require matching cohort months and an outreach
 denominator no larger than the council denominator for each cohort. A missing,
 stale or mismatched handoff must leave the previous site live. Keep both
