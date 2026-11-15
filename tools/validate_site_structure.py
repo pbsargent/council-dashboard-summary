@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import hashlib
 import json
 import math
 import re
@@ -570,19 +571,36 @@ def main() -> int:
 
     if "--require-data" in sys.argv:
         movo = None
+        now = datetime.now(ZoneInfo('America/Chicago'))
+        movo_date = now.date()
+        prior_movo = os.environ.get('CAC_PRIOR_MOVO_BUNDLE')
+        if prior_movo:
+            try:
+                seal = json.loads((Path(prior_movo) / 'sealed.json').read_text())
+                report_date = json.loads((root / 'data/latest.json').read_text())['generated_date']
+                prior_date = date.fromisoformat(seal['report_date'])
+                if report_date != now.date().isoformat() or not 1 <= (now.date() - prior_date).days <= 7:
+                    raise ValueError('Movo carry-forward requires today’s dashboard and evidence within seven days')
+                for name in ('data/renewal-outreach-latest.js', 'data/movo-council-due-latest.js'):
+                    data = (root / name).read_bytes()
+                    expected = seal['public'][name]
+                    if len(data) != expected['size'] or hashlib.sha256(data).hexdigest() != expected['sha256']:
+                        raise ValueError(f'Movo payload differs from verified seal: {name}')
+                movo_date = prior_date
+            except (OSError, ValueError, TypeError, KeyError) as error:
+                errors.append(f'Movo carry-forward: {error}')
         try:
             from build_renewal_outreach import validate_bundle, timestamp
             movo = validate_bundle((root / "data/renewal-outreach-latest.js").read_text())
             freshness = movo.get('verification', {}).get('verified_at', movo['snapshots'][-1]['source_updated_at'])
-            now = datetime.now(ZoneInfo('America/Chicago'))
-            if timestamp(freshness).astimezone(ZoneInfo('America/Chicago')).date() != now.date() or timestamp(freshness) > now:
+            if timestamp(freshness).astimezone(ZoneInfo('America/Chicago')).date() != movo_date or timestamp(freshness) > now:
                 raise ValueError('Movo daily verification is stale or future; prior publication must be preserved')
         except (OSError, ValueError, TypeError, KeyError) as error:
             errors.append(f"Renewal Outreach data: {error}")
         try:
             from build_movo_council_due import validate_comparison, validate_public as validate_movo_council
             council = validate_movo_council((root / "data/movo-council-due-latest.js").read_text(),
-                                           datetime.now(ZoneInfo("America/Chicago")).date())
+                                           movo_date)
             if movo is not None:
                 validate_comparison(movo, council)
         except (OSError, ValueError, TypeError, KeyError, AttributeError) as error:
