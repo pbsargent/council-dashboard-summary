@@ -433,3 +433,13 @@ for the selected November, December or combined deadlines. Calculate rates
 and outstanding from the same counts as the comparison. Keep the original
 outreach extract in the existing evidence and remove its display from this
 page. Keep internal evidence validation and publication source checks.
+
+### Daily Movo Performance workbook handoff
+
+The November 15 Performance model supplies the published Movo page. Tracker
+refreshes the pinned workbook in place and marks About → Website handoff
+verified after full readback. Require the same Central day, stable export
+metadata, reconciled populations and trend endpoints. Freeze the validated
+Performance asset before publication and retain it only after live readback.
+Unavailable or invalid new input retains the last live-verified snapshot and
+its original date. The archived Ask-based extract remains historical evidence.

@@ -211,55 +211,14 @@ if [[ -z "${CAC_JOINS_STAGE_RECEIPT:-}" ]]; then
 fi
 "$PYTHON" "$JOINS_BUILDER" --verify-stage "$CAC_JOINS_STAGE_RECEIPT"
 
-if [[ -z "${CAC_PRIOR_MOVO_BUNDLE:-}" ]]; then
-  LAST_STEP="capture and validate daily Movo source"
-  MOVO_SOURCE_STAGE="${CAC_FROZEN_MOVO_SOURCE:-${ROOT}/outputs/movo-renewal-outreach/source.json}"
-  MOVO_HISTORY="${CAC_MOVO_HISTORY_DIR:-/Volumes/MacProData/Patrol/Scout/CAC-Dashboard-Platform/Evidence/movo-daily-snapshots}"
-  if [[ -z "${CAC_MOVO_HISTORY_DIR:-}" ]]; then
-    "$PYTHON" -c 'import os; import sys; sys.exit(0 if os.path.ismount("/Volumes/MacProData") else "Canonical Scout storage is unavailable; Movo refresh blocked")'
-  fi
-  require_dir "${MOVO_HISTORY:h}"
-  if [[ -n "${CAC_FROZEN_BUNDLE:-}" ]]; then
-    "$PYTHON" "${ROOT}/tools/frozen_daily_bundle.py" verify --bundle "$CAC_FROZEN_BUNDLE"
-  else
-    "$PYTHON" "${ROOT}/tools/refresh_movo_source.py" --output "$MOVO_SOURCE_STAGE"
-  fi
-  MOVO_CHECK_DATE="$(TZ=America/Chicago /bin/date '+%Y-%m-%d')"
-  MOVO_RECEIPT="${CAC_MOVO_VERIFICATION_RECEIPT:-/Volumes/MacProData/Patrol/Tracker/Movo/Evidence/${MOVO_CHECK_DATE}/verification-receipt.json}"
-  mkdir -p "$BUILD_DIR"
-  "$PYTHON" "${SUMMARY_REPO}/tools/build_renewal_outreach.py" --source "$MOVO_SOURCE_STAGE" --history-dir "$MOVO_HISTORY" --verification-receipt "$MOVO_RECEIPT" --output "${BUILD_DIR}/renewal-outreach-latest.js"
-else
-  [[ -n "${CAC_FROZEN_BUNDLE:-}" ]] || exit 1
-fi
-
 LAST_STEP="stage source-only GitHub Pages site"
 log "Preparing isolated GitHub Pages staging tree"
 "$SITE_STAGER" "$SUMMARY_REPO" "$SITE_STAGE" >/dev/null
 
-if [[ -n "${CAC_PRIOR_MOVO_BUNDLE:-}" ]]; then
-  LAST_STEP="stage last verified Movo payloads with their original dates"
-  for movo_asset in renewal-outreach-latest.js movo-council-due-latest.js; do
-    copy_file "$CAC_PRIOR_MOVO_BUNDLE/public/data/$movo_asset" "$SITE_STAGE/data/$movo_asset"
-  done
-else
-  copy_file "${BUILD_DIR}/renewal-outreach-latest.js" "${SITE_STAGE}/data/renewal-outreach-latest.js"
-  LAST_STEP="verify Tracker council-wide Movo handoff"
-  MOVO_COUNCIL_DUE_RECEIPTS="/Volumes/MacProData/Patrol/Tracker/Movo/Evidence/${MOVO_CHECK_DATE}-total-due"
-  typeset -a council_due_args
-  council_due_args=(--date "$MOVO_CHECK_DATE" --evidence "$MOVO_COUNCIL_DUE_RECEIPTS" --output "${SITE_STAGE}/data/movo-council-due-latest.js")
-  if [[ -n "${CAC_FROZEN_BUNDLE:-}" ]]; then
-    council_due_args+=(--private-copy "${CAC_FROZEN_BUNDLE}/derived/movo-council-due")
-  fi
-  "$PYTHON" "${SUMMARY_REPO}/tools/build_movo_council_due.py" "${council_due_args[@]}"
-fi
-
-
 LAST_STEP="stage validated Movo Performance observation"
-MOVO_PERFORMANCE_ASSET="/Volumes/MacProData/Patrol/Scout/CAC Dashboard Platform/Evidence/movo-performance/movo-performance-latest.js"
-if [[ -f "$MOVO_PERFORMANCE_ASSET" ]]; then
-  copy_file "$MOVO_PERFORMANCE_ASSET" "${SITE_STAGE}/data/movo-performance-latest.js"
-  "$PYTHON" "${SUMMARY_REPO}/tools/build_movo_performance.py" "${SITE_STAGE}/data/movo-performance-latest.js"
-fi
+MOVO_PERFORMANCE_ASSET="${CAC_FROZEN_MOVO_PERFORMANCE:-/Volumes/MacProData/Patrol/Scout/CAC Dashboard Platform/Evidence/movo-performance/movo-performance-latest.js}"
+copy_file "$MOVO_PERFORMANCE_ASSET" "${SITE_STAGE}/data/movo-performance-latest.js"
+"$PYTHON" "${SUMMARY_REPO}/tools/build_movo_performance.py" "${SITE_STAGE}/data/movo-performance-latest.js" --page "$SITE_STAGE/renewal-outreach.html"
 
 LAST_STEP="test Unit Key 4 source validation"
 "$PYTHON" "${SUMMARY_REPO}/tools/test_unit_key4.py"

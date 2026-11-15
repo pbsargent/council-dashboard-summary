@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import os
-import hashlib
 import json
 import math
 import re
@@ -570,48 +569,11 @@ def main() -> int:
     errors: list[str] = []
 
     if "--require-data" in sys.argv:
-        performance = root / "data/movo-performance-latest.js"
-        if performance.exists():
-            try:
-                from build_movo_performance import validate_asset
-                validate_asset(performance)
-            except (OSError, ValueError, TypeError, KeyError, IndexError) as error:
-                errors.append(f"Movo Performance data: {error}")
-        movo = None
-        now = datetime.now(ZoneInfo('America/Chicago'))
-        movo_date = now.date()
-        prior_movo = os.environ.get('CAC_PRIOR_MOVO_BUNDLE')
-        if prior_movo:
-            try:
-                seal = json.loads((Path(prior_movo) / 'sealed.json').read_text())
-                report_date = json.loads((root / 'data/latest.json').read_text())['generated_date']
-                prior_date = date.fromisoformat(seal['report_date'])
-                if report_date != now.date().isoformat() or not 1 <= (now.date() - prior_date).days <= 7:
-                    raise ValueError('Movo carry-forward requires today’s dashboard and evidence within seven days')
-                for name in ('data/renewal-outreach-latest.js', 'data/movo-council-due-latest.js'):
-                    data = (root / name).read_bytes()
-                    expected = seal['public'][name]
-                    if len(data) != expected['size'] or hashlib.sha256(data).hexdigest() != expected['sha256']:
-                        raise ValueError(f'Movo payload differs from verified seal: {name}')
-                movo_date = prior_date
-            except (OSError, ValueError, TypeError, KeyError) as error:
-                errors.append(f'Movo carry-forward: {error}')
         try:
-            from build_renewal_outreach import validate_bundle, timestamp
-            movo = validate_bundle((root / "data/renewal-outreach-latest.js").read_text())
-            freshness = movo.get('verification', {}).get('verified_at', movo['snapshots'][-1]['source_updated_at'])
-            if timestamp(freshness).astimezone(ZoneInfo('America/Chicago')).date() != movo_date or timestamp(freshness) > now:
-                raise ValueError('Movo daily verification is stale or future; prior publication must be preserved')
-        except (OSError, ValueError, TypeError, KeyError) as error:
-            errors.append(f"Renewal Outreach data: {error}")
-        try:
-            from build_movo_council_due import validate_comparison, validate_public as validate_movo_council
-            council = validate_movo_council((root / "data/movo-council-due-latest.js").read_text(),
-                                           movo_date)
-            if movo is not None:
-                validate_comparison(movo, council)
-        except (OSError, ValueError, TypeError, KeyError, AttributeError) as error:
-            errors.append(f"Council-wide Movo data: {error}")
+            from build_movo_performance import validate_asset
+            validate_asset(root / "data/movo-performance-latest.js")
+        except (OSError, ValueError, TypeError, KeyError, IndexError) as error:
+            errors.append(f"Movo Performance data: {error}")
         try:
             from build_join_dashboards import validate_public_bundle, service_area_mapping
             joins = validate_public_bundle(root / 'data/joins-latest.js')
@@ -1499,7 +1461,7 @@ def main() -> int:
         for required in (
             'id="performance-title"', 'id="performance-kpis"', 'id="performance-cohort"',
             "Movo renewal audience", "Council-wide", "movo-performance.js?v=20261115-kpis-1",
-            "renewal-outreach.css?v=20261115-kpis-1", "data/movo-performance-latest.js?v=20261115-1",
+            "renewal-outreach.css?v=20261115-kpis-1", "data/movo-performance-latest.js?v=",
         ):
             if required not in outreach_html:
                 errors.append(f"Renewal Outreach is missing {required}")

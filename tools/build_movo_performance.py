@@ -1,6 +1,7 @@
 """Reconcile Tracker's Performance workbook before generating public aggregates."""
 import argparse
 from datetime import date, datetime, timedelta
+from hashlib import sha256
 import json
 from pathlib import Path
 import re
@@ -33,6 +34,10 @@ def unique_rows(rows, label):
 
 
 def source_date(value):
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
     if type(value) is int:
         return date(1899, 12, 30) + timedelta(days=value)
     return date.fromisoformat(value)
@@ -53,11 +58,19 @@ def build(tabs):
             and about["Note: data through"][0] == 'Movo shows no "data through" date.',
             "Unexpected Performance source, council, or data-through metadata")
     require(tabs["Summary"][0][:3] == ["View", "Total due", "Renewed"]
-            and tabs["By program"][0] == ["View", "Program", "Audience", "Youth %", "Youth renewed",
+            and tabs["By program"][0][:11] == ["View", "Program", "Audience", "Youth %", "Youth renewed",
                                         "Youth of", "Adult %", "Adult renewed", "Adult of", "All %", "All renewed"]
             and tabs["Districts"][0][:4] == ["View", "District", "In outreach", "Renewed"],
             "Unexpected Performance count columns")
 
+    program_header = tabs["By program"][0]
+    require(len(program_header) == 11 or program_header[11:] == ["All of"],
+            "Unexpected program audience columns")
+    district_rows = tabs["Districts"][1:]
+    for i, row in enumerate(district_rows):
+        if row and row[0] == "District dot plot (% / members in outreach)":
+            district_rows = district_rows[:i]
+            break
     summary = unique_rows(tabs["Summary"][1:4], "Summary")
     cohorts = []
     for label in COHORTS:
@@ -69,6 +82,8 @@ def build(tabs):
 
         def program_count(row):
             total = counts(row[0], row[8])
+            if len(program_header) == 12:
+                require(row[9] == row[0], "Program audience denominators disagree")
             youth = counts(row[3], row[2])
             adults = counts(row[6], row[5])
             require(sum_counts([youth, adults]) == total, "Program age counts disagree")
@@ -77,7 +92,7 @@ def build(tabs):
         audience = program_count(totals)
         require(sum_counts([program_count(row) for row in programs.values()]) == audience,
                 f"{label} program totals disagree")
-        districts = unique_rows([row[1:] for row in tabs["Districts"][1:] if len(row) >= 7 and row[0] == label],
+        districts = unique_rows([row[1:] for row in district_rows if len(row) >= 7 and row[0] == label],
                                 f"{label} district")
         district_total = counts(*districts.pop("All districts")[:2])
         require(district_total == audience
@@ -111,10 +126,15 @@ def build(tabs):
         require(sum_counts([row[key] for row in cohorts[:2]]) == cohorts[2][key], f"Combined {key} disagrees")
 
     outreach = []
-    for row in tabs["Outreach status"][1:3]:
+    status_rows = tabs["Outreach status"][1:3]
+    require([row[0] for row in status_rows] == list(COHORTS[:2]), "Missing outreach status cohorts")
+    for row in status_rows:
         cohort = next(entry for entry in cohorts if entry["label"] == row[0])
         require(row[1] == cohort["audience"][0], "Outreach status coverage differs from audience")
-        outreach.append([row[0], row[6], row[8], row[10]])
+        estimates = [row[6], row[8], row[10]]
+        require(all(type(value) is int and 0 <= value <= row[1] for value in estimates),
+                "Invalid approximate outreach status")
+        outreach.append([row[0], *estimates])
     pin = unique_rows(tabs["Pin data"][1:6], "PIN metric")
     pin_counts = [pin[name][0] for name in ("Reachable units", "Units contacted", "Updated their pin")]
     require(all(type(value) is int for value in pin_counts) and 0 <= pin_counts[2] <= pin_counts[1] <= pin_counts[0],
@@ -129,8 +149,11 @@ def build(tabs):
             "pin": pin_counts, "joining": joining}
 
 
-def validate_asset(path):
-    text = path.read_text()
+def render_asset(payload):
+    return PREFIX + json.dumps(payload, ensure_ascii=True, allow_nan=False).replace("<", "\\u003c") + ";\n"
+
+
+def validate_asset_text(text):
     require(text.startswith(PREFIX) and text.endswith(";\n"), "Invalid Performance data script")
     payload = json.loads(text[len(PREFIX):-2])
     end = datetime.fromisoformat(payload["observed_end"])
@@ -152,14 +175,28 @@ def validate_asset(path):
         require(sum_counts([row[key] for row in cohorts[:2]]) == tuple(cohorts[2][key]),
                 f"Published combined {key} disagrees")
 
+    return payload
+
+
+def validate_asset(path):
+    return validate_asset_text(path.read_text())
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("asset", type=Path)
     parser.add_argument("--workbook", type=Path)
+    parser.add_argument("--page", type=Path, help="Set the staged page’s data URL to the verified asset hash")
     args = parser.parse_args()
     if args.workbook:
         result = build(json.loads(args.workbook.read_text()))
-        args.asset.write_text(PREFIX + json.dumps(result, ensure_ascii=True, allow_nan=False).replace("<", "\\u003c") + ";\n")
+        args.asset.write_text(render_asset(result))
     validate_asset(args.asset)
+    if args.page:
+        revision = sha256(args.asset.read_bytes()).hexdigest()[:16]
+        page = args.page.read_text()
+        page, replacements = re.subn(r"(data/movo-performance-latest\.js\?v=)[a-zA-Z0-9-]+",
+                                     rf"\g<1>{revision}", page)
+        require(replacements == 1, "Expected one Movo Performance data script URL")
+        args.page.write_text(page)
     print("Validated Movo Performance comparison, program/district counts, and trend endpoints")

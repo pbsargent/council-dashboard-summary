@@ -799,3 +799,31 @@ The source’s before/after message timing has no cohort breakdown. For a single
 
 
 Unit Key 4 Detail adds IH/Executive Officer from the same-day dated council roster, joined by authoritative Unit ID with effective and expiration dates covering the report date. MISSING is used for all four positions when no qualifying current holder is found in the available source; it does not prove an actual vacancy. Key 4 KPIs, Summary by Unit Type, hierarchy totals, completion rates, Status and Focus filters include all four roles. The summary includes Missing IH / Executive Officer, and Status includes Missing 4. IH holder names use First Name, Last Initial; no IH SYT eligibility conclusion is made.
+
+## Movo Performance renewal figures
+
+The current page uses Tracker’s Movo Performance workbook for Capitol Area
+Council 564. Council-wide **Due** and **Renewed** come from the Summary tiles.
+Due is everyone in Scouting’s source file who is due at the selected deadline.
+For the Movo renewal audience, the corresponding counts come from the
+**All programs** row in By program. Movo reports renewed counts within each
+population. The source gives no detailed audience inclusion or renewal-status
+rules and no Scouting file refresh date.
+
+**Renewal rate** is renewed divided by due. A zero due count displays
+Unavailable. **Outstanding** is due minus renewed and includes people
+reported as won’t renew. **Both deadlines** combines the counts before
+calculating the rate. Select a district or program to filter its respective
+Movo audience table. Outreach follow-up estimates are approximate.
+
+**Observed** records when Tracker read Movo in Central time. **Data through**
+means an explicit source coverage date. The current Movo view supplies no
+coverage date. A trend point represents the plotted day.
+
+The scheduled site build reads the pinned native workbook using existing
+read-only Drive access. It verifies the Central observation date and the
+verified Website handoff marker, a stable export, cohort counts, district and
+program totals and trend endpoints. It freezes the checked asset before
+publication. Failed refreshes reuse the last live-verified asset with its
+original observation time. The saved snapshot advances after exact live
+readback.
