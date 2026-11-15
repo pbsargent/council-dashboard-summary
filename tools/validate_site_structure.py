@@ -1496,17 +1496,15 @@ def main() -> int:
         for required in ('<title>Renewal Outreach by Movo', 'class="outreach-title-logo"', 'src="assets/movo-logo-white.svg"', 'alt="Movo"'):
             if required not in outreach_html:
                 errors.append(f"Renewal Outreach by Movo must preserve the full accessible logo heading: {required}")
-        for required in ('id="outreachPopulationTitle"', 'Movo outreach population only', 'do not represent all Capitol Area Council members due to renew', 'before that month’s outreach campaign begins', 'inclusion in this extract alone does not establish contact', 'Members due (Movo)', 'Renewal rate (Movo)'):
-            if required not in outreach_html:
-                errors.append(f"Movo population scope disclosure is missing: {required}")
-        if outreach_html.find('id="outreachPopulationTitle"') > outreach_html.find('id="outreachCohort"'):
-            errors.append('Movo population scope must appear before filters and metrics')
-        for required in ("outreachCoverageTitle", "Cohort and District apply to every outreach data panel", "outreachCohort", "outreachDistrict", "outreachFreshness", "outreachHistory", "outreachExport", "both cohorts", "Movo checked", "Data through", "Sheet updated"):
-            if required not in outreach_html:
-                errors.append(f"Renewal Outreach is missing {required}")
-        for required in ("performance-title", "outreach-extract-history", "movo-performance.js?v=20261115-1", "movoCouncilDueTitle", "Movo outreach renewal rate", "Council-wide renewal rate", "movo-council-due.js?v=20261109-comparison-1", "data/movo-council-due-latest.js?v=20261109-1", "renewal-outreach.js?v=20261101-verification-1", "renewal-outreach.css?v=20261115-performance-1", "data/renewal-outreach-latest.js?v=20261031-1"):
+        for required in (
+            'id="performance-title"', 'id="performance-kpis"', 'id="performance-cohort"',
+            "Movo renewal audience", "Council-wide", "movo-performance.js?v=20261115-kpis-1",
+            "renewal-outreach.css?v=20261115-kpis-1", "data/movo-performance-latest.js?v=20261115-1",
+        ):
             if required not in outreach_html:
                 errors.append(f"Renewal Outreach is missing {required}")
+        if 'id="outreach-extract-history"' in outreach_html or 'data/renewal-outreach-latest.js' in outreach_html:
+            errors.append("Renewal Outreach must display Performance data only")
     try:
         original_logo = ET.fromstring((root / 'assets/movo-logo.svg').read_text())
         white_logo = ET.fromstring((root / 'assets/movo-logo-white.svg').read_text())

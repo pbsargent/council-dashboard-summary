@@ -3,7 +3,7 @@
   const node = id => document.getElementById(id);
   const source = window.MOVO_PERFORMANCE;
   if (!source) {
-    node('performance-status').textContent = 'See the original outreach extract below.';
+    node('performance-status').textContent = 'Movo Performance is currently unavailable.';
     return;
   }
 
@@ -75,10 +75,32 @@
       .map(([name, total, renewed, youth, youthTotal, adult, adultTotal]) =>
         [name, rate(total, renewed), rate(youthTotal, youth), rate(adultTotal, adult)]));
   }
+  function renderKpis({audience, council}) {
+    const populations = [['Movo renewal audience', audience], ['Council-wide', council]];
+    const measures = [
+      ['Due', total => number.format(total)],
+      ['Renewed', (total, renewed) => number.format(renewed)],
+      ['Renewal rate', (total, renewed) => total ? percent.format(renewed / total) : 'Unavailable'],
+      ['Outstanding', (total, renewed) => number.format(total - renewed)],
+    ];
+    node('performance-kpis').replaceChildren(...measures.map(([title, format]) => {
+      const card = element('article');
+      card.className = 'kpi performance-kpi';
+      const values = element('dl');
+      for (const [population, counts] of populations) {
+        const column = element('div');
+        column.append(element('dt', population), element('dd', format(...counts)));
+        values.append(column);
+      }
+      card.append(element('h3', title), values);
+      return card;
+    }));
+  }
   const select = node('performance-cohort');
   const selected = () => source.cohorts.find(cohort => cohort.label === select.value);
   function render() {
     const cohort = selected();
+    renderKpis(cohort);
     fillTable(node('performance-summary'), source.cohorts
       .filter(row => cohort.label === 'All' || row === cohort)
       .map(row => [label(row.label), rate(...row.audience), rate(...row.council)]));
@@ -102,5 +124,4 @@
       `${percent.format(replied)} (${percent.format(replyReference)})`]));
   render();
   node('performance').hidden = false;
-  node('outreach-extract-history').open = false;
 })();

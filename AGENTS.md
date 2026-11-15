@@ -423,3 +423,13 @@ district/Sheet count checks. Require matching cohort months and an outreach
 denominator no larger than the council denominator for each cohort. A missing,
 stale or mismatched handoff must leave the previous site live. Keep both
 sources, their observation times and their population definitions separate.
+
+## November 15 Movo Performance KPI display
+
+Use the validated Movo Performance snapshot on Renewal Outreach by Movo.
+Show Due, Renewed, Renewal rate and Outstanding above the comparison table.
+Each card shows the Movo renewal audience alongside the council-wide count
+for the selected November, December or combined deadlines. Calculate rates
+and outstanding from the same counts as the comparison. Keep the original
+outreach extract in the existing evidence and remove its display from this
+page. Keep internal evidence validation and publication source checks.

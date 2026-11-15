@@ -14,3 +14,21 @@
 .performance-trend { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: 1rem; }
 .performance-trend meter { width: 100%; min-width: 4rem; accent-color: #1764ab; }
 .performance-trend .table-wrap { max-height: 20rem; overflow: auto; }
+
+#performance-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem;
+  margin: 0 0 1.25rem;
+}
+.performance-kpi h3 { margin: 0 0 .7rem; }
+.performance-kpi dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: end;
+  gap: .65rem;
+  margin: 0;
+}
+.performance-kpi dl > div + div { border-inline-start: 1px solid currentColor; padding-inline-start: .65rem; }
+.performance-kpi dt { line-height: 1.25; font-size: .8rem; }
+.performance-kpi dd { margin: .25rem 0 0; font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
