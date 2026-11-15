@@ -254,6 +254,13 @@ else
 fi
 
 
+LAST_STEP="stage validated Movo Performance observation"
+MOVO_PERFORMANCE_ASSET="/Volumes/MacProData/Patrol/Scout/CAC Dashboard Platform/Evidence/movo-performance/movo-performance-latest.js"
+if [[ -f "$MOVO_PERFORMANCE_ASSET" ]]; then
+  copy_file "$MOVO_PERFORMANCE_ASSET" "${SITE_STAGE}/data/movo-performance-latest.js"
+  "$PYTHON" "${SUMMARY_REPO}/tools/build_movo_performance.py" "${SITE_STAGE}/data/movo-performance-latest.js"
+fi
+
 LAST_STEP="test Unit Key 4 source validation"
 "$PYTHON" "${SUMMARY_REPO}/tools/test_unit_key4.py"
 
