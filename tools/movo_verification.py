@@ -26,10 +26,29 @@ def stamp(value):
     require(result.tzinfo is not None, 'Verification timestamp requires timezone')
     return result
 
+def as_table(rows):
+    """Return a table as a 2D array.
+
+    Movo's structured JSON may send each table either as a 2D array (header
+    row first) or, since 2026-11-16, as a list of row objects keyed by header.
+    Row objects become [headers] + rows in the first object's key order, so an
+    object table and the same table read back from the Sheet hash identically.
+    Every object must carry exactly the same header keys; mixed shapes fail.
+    """
+    require(isinstance(rows, list), 'Empty verification table')
+    if all(isinstance(row, list) for row in rows):
+        return rows
+    require(all(isinstance(row, dict) for row in rows), 'Invalid verification row')
+    headers = list(rows[0])
+    require(headers and all(isinstance(key, str) for key in headers), 'Invalid verification header')
+    require(all(len(row) == len(headers) and set(row) == set(headers) for row in rows), 'Inconsistent verification row keys')
+    return [headers] + [[row[key] for key in headers] for row in rows]
+
 def table_hashes(tabs):
     require(isinstance(tabs, dict) and set(tabs) == TABS, 'Verification requires exactly five tables')
     result = {}
     for name, rows in tabs.items():
+        rows = as_table(rows)
         require(isinstance(rows, list) and len(rows) >= 2, 'Empty verification table')
         normalized = []
         for row in rows:

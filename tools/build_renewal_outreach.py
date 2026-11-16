@@ -25,6 +25,24 @@ OUTREACH = {'Members in outreach': 'due', 'Messaged by Movo': 'messaged',
             'Not yet messaged': 'not_messaged', 'Replied': 'replied', 'Renewed': 'renewed',
             "Renewed after Movo's first message": 'after_message',
             "Renewed before Movo's first message": 'before_message'}
+# Movo stopped sending 'Not yet messaged' on 2026-11-16. Per Peter (Mon Nov 16
+# 2026, 10:08 AM CST) it is then DERIVED as Members in outreach - Messaged by
+# Movo; if Messaged is unavailable it stays unavailable (None), never zero-filled.
+OUTREACH_OPTIONAL = ('not_messaged',)
+OUTREACH_REQUIRED = tuple(v for v in OUTREACH.values() if v not in OUTREACH_OPTIONAL)
+# Movo stopped sending 'Messaged by Movo' and 'Replied' in Council totals on
+# 2026-11-16. Per Peter (Mon Nov 16 2026, 10:08 AM CST) each cohort's values are
+# then DERIVED from that cohort's 'Council total' row in Outreach replies (only
+# when Outreach replies has per-cohort blocks); otherwise they stay None.
+COUNCIL_REQUIRED = BASE
+# Source notes for derived values. The public bundle schema has no per-value
+# source field, so parse_source(source, provenance=[...]) reports derivations to
+# callers that ask; the public snapshot itself is unchanged.
+DERIVED = {
+    'outreach.not_messaged': "derived: Members in outreach - Messaged by Movo (Movo did not send 'Not yet messaged')",
+    'council.messaged': "derived: Outreach replies per-cohort 'Council total' Messaged by Movo (Council totals did not send it)",
+    'council.replied': "derived: Outreach replies per-cohort 'Council total' Replied (Council totals did not send it)",
+}
 REASONS = {'Said no': 'said_no', 'Adults said no': 'adults_said_no', 'Youth said no': 'youth_said_no',
            'Cost': 'cost', 'Lost interest': 'lost_interest', 'Aged out': 'aged_out', 'Moved': 'moved',
            'Unit problem': 'unit_problem', 'Other': 'other', 'No reason given': 'no_reason'}
@@ -48,7 +66,24 @@ def integer(value):
     return int(value)
 
 
+def as_table(values):
+    """Accept a 2D array or Movo's row-object tables; return a 2D array.
+
+    Row objects are mapped by header name: the header row is the first object's
+    key order and every object must carry exactly the same keys.
+    """
+    require(isinstance(values, list), 'Missing Movo table')
+    if all(isinstance(row, list) for row in values):
+        return values
+    require(all(isinstance(row, dict) for row in values), 'Invalid Movo table rows')
+    headers = list(values[0])
+    require(headers and all(isinstance(key, str) for key in headers), 'Invalid headers')
+    require(all(len(row) == len(headers) and set(row) == set(headers) for row in values), 'Inconsistent Movo row keys')
+    return [headers] + [[row[key] for key in headers] for row in values]
+
+
 def records(values):
+    values = as_table(values)
     require(isinstance(values, list) and len(values) >= 2, 'Missing Movo table')
     headers = values[0]
     require(all(isinstance(x, str) and x.strip() == x and x for x in headers), 'Invalid headers')
@@ -103,7 +138,7 @@ def reconcile(rows, total, fields):
             require(sum(row[key] for row in rows) == total[key], 'Council and district counts differ: ' + key)
 
 
-def parse_source(source):
+def parse_source(source, provenance=None):
     require(set(source) == {'source_name', 'source_updated_at', 'captured_at', 'tabs'}, 'Unexpected source fields')
     updated, captured = timestamp(source['source_updated_at']), timestamp(source['captured_at'])
     require(updated <= captured, 'Source timestamp follows capture')
@@ -140,7 +175,7 @@ def parse_source(source):
         rows.extend(table_rows)
     council, combined = {}, []
     for raw in records(source['tabs']['Council totals']):
-        row = mapped(raw, COUNTS, BASE + ('messaged', 'replied'))
+        row = mapped(raw, COUNTS, COUNCIL_REQUIRED)
         check_rate(raw, 'Renewal rate (%)', row['renewed'], row['due'])
         if raw.get('Cohort') == 'Both cohorts':
             combined.append(row)
@@ -155,16 +190,62 @@ def parse_source(source):
     reconcile(list(council.values()), combined[0], BASE + ('messaged', 'replied'))
     outreach, outreach_total = [], []
     expected_districts = {r['district'] for r in rows}
-    for raw in records(source['tabs']['Outreach replies']):
-        row = dict(district=district(raw), **mapped(raw, OUTREACH, tuple(OUTREACH.values())))
-        require(row['messaged'] + row['not_messaged'] == row['due'], 'Outreach coverage differs')
+    derived_not_messaged, derived_council = False, set()
+    outreach_records = records(source['tabs']['Outreach replies'])
+    by_cohort = 'Cohort' in outreach_records[0]
+    blocks = {}
+    for raw in outreach_records:
+        row = dict(district=district(raw), **mapped(raw, OUTREACH, OUTREACH_REQUIRED))
+        if row['not_messaged'] is not None:
+            require(row['messaged'] + row['not_messaged'] == row['due'], 'Outreach coverage differs')
+        if row['messaged'] is not None:
+            require(row['messaged'] <= row['due'], 'Outreach coverage differs')
+            if row['not_messaged'] is None:
+                row['not_messaged'] = row['due'] - row['messaged']  # see DERIVED['outreach.not_messaged']
+                derived_not_messaged = True
         require(row['replied'] <= row['messaged'] and row['before_message'] + row['after_message'] == row['renewed'] <= row['due'], 'Outreach counts disagree')
         check_rate(raw, 'Reply rate (%)', row['replied'], row['messaged'])
-        (outreach_total if row['district'] == 'Council total' else outreach).append(row)
+        cohort = raw.get('Cohort') if by_cohort else None
+        if by_cohort:
+            require(cohort in cohorts, 'Unknown outreach cohort')
+        block = blocks.setdefault(cohort, ([], []))
+        (block[1] if row['district'] == 'Council total' else block[0]).append(row)
+    if by_cohort:
+        # Since 2026-11-16 Movo sends one row block per cohort, each with its own
+        # Council total. Check each block against its cohort sheet, then sum the
+        # reported counts per district so the public outreach rows keep their
+        # combined, both-cohort meaning. A count missing in any block stays None.
+        require(set(blocks) == cohorts, 'Outreach cohort coverage differs')
+        for cohort, (block_rows, block_total) in blocks.items():
+            cohort_rows = [r for r in rows if r['cohort'] == cohort]
+            require(len(block_total) == 1 and len(block_rows) == len({r['district'] for r in block_rows})
+                    and {r['district'] for r in block_rows} == {r['district'] for r in cohort_rows}, 'Outreach district coverage differs')
+            reconcile(block_rows, block_total[0], tuple(OUTREACH.values()))
+            for row in block_rows:
+                match = [r for r in cohort_rows if r['district'] == row['district']]
+                require(len(match) == 1 and all(row[k] == match[0][k] for k in ('due', 'renewed')), 'Outreach district and cohort counts differ')
+            require(all(block_total[0][k] == totals[cohort][k] for k in ('due', 'renewed')), 'Outreach and cohort totals disagree')
+            for key in ('messaged', 'replied'):
+                value = block_total[0][key]
+                if council[cohort][key] is None:
+                    if value is not None:
+                        require(totals[cohort][key] is None or totals[cohort][key] == value, 'Council summary and cohort sheet differ')
+                        council[cohort][key] = value  # see DERIVED['council.' + key]
+                        derived_council.add(key)
+                else:
+                    require(value is None or council[cohort][key] == value, 'Council and outreach cohort totals disagree')
+        def combine(parts):
+            return {k: (sum(p[k] for p in parts) if all(p[k] is not None for p in parts) else None) for k in OUTREACH.values()}
+        for label in sorted({r['district'] for block_rows, _ in blocks.values() for r in block_rows}):
+            outreach.append(dict(district=label, **combine([r for block_rows, _ in blocks.values() for r in block_rows if r['district'] == label])))
+        outreach_total.append(dict(district='Council total', **combine([block_total[0] for _, block_total in blocks.values()])))
+    else:
+        outreach, outreach_total = blocks.get(None, ([], []))
     require(len(outreach_total) == 1 and len(outreach) == len({r['district'] for r in outreach}) and {r['district'] for r in outreach} == expected_districts, 'Outreach district coverage differs')
     reconcile(outreach, outreach_total[0], tuple(OUTREACH.values()))
     for key in ('due', 'renewed', 'messaged', 'replied'):
-        require(outreach_total[0][key] == combined[0][key], 'Outreach and council totals disagree')
+        if combined[0][key] is not None:
+            require(outreach_total[0][key] == combined[0][key], 'Outreach and council totals disagree')
     for row in outreach:
         matching = [r for r in rows if r['district'] == row['district']]
         require(all(row[k] == sum(r[k] for r in matching) for k in ('due', 'renewed')), 'Outreach district and cohort counts differ')
@@ -189,6 +270,9 @@ def parse_source(source):
         require({r['district'] for r in selected} == {r['district'] for r in rows if r['cohort'] == cohort}, 'Partial reasons coverage')
         reconcile(selected, total, tuple(REASONS.values()))
         require(total['said_no'] == totals[cohort]['said_no'], 'Reasons total differs from cohort')
+    if provenance is not None:
+        fields = (['outreach.not_messaged'] if derived_not_messaged else []) + ['council.' + k for k in sorted(derived_council)]
+        provenance.extend({'field': field, 'source': DERIVED[field]} for field in fields)
     return {'source_updated_at': source['source_updated_at'], 'rows': rows, 'outreach': outreach,
             'reasons': reasons, 'council': council}
 
@@ -285,16 +369,16 @@ def validate_bundle(script):
         key = stamp.astimezone(CENTRAL).date()
         require(key not in seen, 'Duplicate source date')
         seen.add(key)
-        for name, fields in (('rows', {'district', 'cohort', 'due_date', *BASE, *OPTIONAL}),
-                             ('outreach', {'district', *OUTREACH.values()}),
-                             ('reasons', {'district', 'cohort', *REASONS.values()})):
+        for name, fields, optional in (('rows', {'district', 'cohort', 'due_date', *BASE, *OPTIONAL}, OPTIONAL),
+                                       ('outreach', {'district', *OUTREACH.values()}, OUTREACH_OPTIONAL),
+                                       ('reasons', {'district', 'cohort', *REASONS.values()}, ())):
             require(isinstance(snapshot[name], list), 'Invalid public rows')
             for row in snapshot[name]:
                 require(isinstance(row, dict) and set(row) == fields, 'Unapproved public fields')
                 district({'District': row['district']})
                 for field in fields - {'district', 'cohort', 'due_date'}:
                     if row[field] is None:
-                        require(field in OPTIONAL, 'Missing required public count')
+                        require(field in optional, 'Missing required public count')
                     else:
                         integer(row[field])
                 if name == 'rows':
@@ -318,9 +402,10 @@ def validate_bundle(script):
         for row in snapshot['outreach']:
             matching = [r for r in snapshot['rows'] if r['district'] == row['district']]
             require(row['due'] == sum(r['due'] for r in matching) and row['renewed'] == sum(r['renewed'] for r in matching), 'Public outreach cohort counts disagree')
-            require(row['messaged'] + row['not_messaged'] == row['due'] and row['replied'] <= row['messaged'] and row['before_message'] + row['after_message'] == row['renewed'], 'Public outreach counts disagree')
+            require((row['not_messaged'] is None or row['messaged'] + row['not_messaged'] == row['due']) and row['messaged'] <= row['due'] and row['replied'] <= row['messaged'] and row['before_message'] + row['after_message'] == row['renewed'], 'Public outreach counts disagree')
         for key in ('due', 'renewed', 'messaged', 'replied'):
-            require(sum(r[key] for r in snapshot['outreach']) == sum(r[key] for r in snapshot['council'].values()), 'Public council outreach totals disagree')
+            if all(r[key] is not None for r in snapshot['council'].values()):
+                require(sum(r[key] for r in snapshot['outreach']) == sum(r[key] for r in snapshot['council'].values()), 'Public council outreach totals disagree')
         require(len({(r['district'],r['cohort']) for r in snapshot['reasons']}) == len(snapshot['reasons']), 'Duplicate public reasons')
         for row in snapshot['reasons']:
             matches=[r for r in snapshot['rows'] if (r['district'],r['cohort']) == (row['district'],row['cohort'])]
