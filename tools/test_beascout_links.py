@@ -90,6 +90,35 @@ class Links(unittest.TestCase):
         self.assertEqual(self.units, before)
         self.assertNotIn('PRIVATE', json.dumps(caught.exception.audit))
 
+    def test_dated_exception_preserves_units_and_marks_only_unresolved_links(self):
+        self.write([ROW, dict(ROW, unitid='99', unitname='Pack 99')])
+        self.council['dashboard']['unit_pin_statuses'].append({'district': 'North Shore', 'unit': 'Pack 99'})
+
+        def resolver(row):
+            if row['unitid'] == '99':
+                raise ValueError('Generic search redirect')
+            return URL
+
+        expected = expected_source_ids(self.units, self.council)
+        with patch('beascout_links.PARTIAL_PUBLICATION_DATE', self.today):
+            with self.assertRaises(ResolutionFailure):
+                enrich(self.units, self.path, self.today, resolver, expected_ids=expected)
+            summary, _ = enrich(self.units, self.path, self.today, resolver, expected_ids=expected, allow_unresolved=True)
+        self.assertEqual(summary['unresolved_matched'], 1)
+        self.assertEqual([unit['beascout_url'] for unit in self.units], [URL, None])
+        payload = {'units': self.units, 'data_date': self.today, 'source': {'beascout_links': summary}}
+
+        def check():
+            return validate_beascout_bundle(self.council, payload, 'window.UNIT_LEVEL_DATA = ' + json.dumps(payload) + ';')
+
+        with patch('validate_site_structure.PARTIAL_PUBLICATION_DATE', self.today):
+            self.assertEqual(check(), [])
+            summary['unresolved_matched'] = 2
+            self.assertTrue(check())
+            summary['unresolved_matched'] = 1
+        with patch('validate_site_structure.PARTIAL_PUBLICATION_DATE', '2000-01-01'):
+            self.assertTrue(check())
+
     def test_population_mismatch_and_duplicate_destination(self):
         with self.assertRaises(ResolutionFailure): enrich(self.units, self.path, self.today, lambda row: URL, expected_ids={25921, 99})
         with self.assertRaises(ValueError): enrich(self.units + [self.units[0]], self.path, self.today, lambda row: URL)

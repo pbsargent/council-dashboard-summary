@@ -308,6 +308,10 @@ with the master program, Service Area, District, Focus, and Search filters
 without changing Key 3 definitions or denominators.
 
 
+## November 18, 2026 BeAScout publication exception
+
+Peter authorized publishing the November 18 dashboard despite intermittent official BeAScout redirects. Apply this exception only to the November 18 report from the receipt-verified working copy. Preserve every unit, publish only independently validated canonical links, leave unresolved links unavailable, and reconcile the explicit unresolved matched count. Continue all other build, publication and verification gates.
+
 ## BeAScout unit listing publication contract
 
 - Preserve `tools/beascout_links.py`, its offline regression suite, the Unit Profile link, cache versions, and `update_daily.zsh` integration as one release. Resolve numeric internal unit IDs plus ZIP through the official BeAScout resolver; publish only verified canonical `/units/UUID` URLs. Never guess UUIDs or substitute registration/search URLs.

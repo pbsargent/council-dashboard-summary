@@ -11,7 +11,7 @@ import sys
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
-from beascout_links import URL_PATTERN, expected_source_ids
+from beascout_links import PARTIAL_PUBLICATION_DATE, URL_PATTERN, expected_source_ids
 from html.parser import HTMLParser
 from pathlib import Path
 from validate_monday_snapshot import validate_snapshot
@@ -313,6 +313,9 @@ def validate_beascout_bundle(council: dict, payload: dict, script: str) -> list[
         units = payload["units"]
         meta = payload["source"]["beascout_links"]
         fields = {"version", "verified", "unavailable", "matched_source_units", "verified_at", "source_sha256"}
+        partial = payload["data_date"] == PARTIAL_PUBLICATION_DATE and isinstance(meta, dict) and "unresolved_matched" in meta
+        if partial:
+            fields.add("unresolved_matched")
         if not isinstance(meta, dict) or set(meta) != fields:
             raise ValueError("BeAScout verification metadata is missing or outside its public schema")
         if type(meta["version"]) is not int or meta["version"] != 1:
@@ -337,7 +340,13 @@ def validate_beascout_bundle(council: dict, payload: dict, script: str) -> list[
                     raise ValueError("Invalid canonical BeAScout unit URL")
                 linked.add(unit["unit_id"])
                 urls.append(url)
-        if linked != expected or len(urls) != len(set(urls)) or len(linked) != len(urls):
+        if len(urls) != len(set(urls)) or len(linked) != len(urls):
+            raise ValueError("BeAScout links must be unique")
+        if partial:
+            unresolved = meta["unresolved_matched"]
+            if not linked or not linked < expected or type(unresolved) is not int or unresolved != len(expected - linked):
+                raise ValueError("BeAScout exception must reconcile the omitted matched links")
+        elif linked != expected:
             raise ValueError("BeAScout links must uniquely cover all authoritative matched PIN units")
         if meta["verified"] != len(linked) or meta["matched_source_units"] != len(expected) or meta["unavailable"] != len(units) - len(linked):
             raise ValueError("BeAScout verification coverage does not reconcile")

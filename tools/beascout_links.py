@@ -17,6 +17,7 @@ URL_PATTERN = r'https://beascout\.scouting\.org/units/[0-9a-fA-F]{8}(?:-[0-9a-fA
 SOURCE_FIELDS = {'unitid', 'unitname', 'councilname', 'districtname', 'zipcode'}
 REQUEST_SECONDS = 25
 RUN_SECONDS = 300
+PARTIAL_PUBLICATION_DATE = "2026-11-18"
 
 
 class ResolutionFailure(ValueError):
@@ -139,7 +140,7 @@ def expected_source_ids(units, council):
     return expected
 
 
-def enrich(units, source, report_date, resolver=resolve, expected_ids=None, budget_seconds=RUN_SECONDS):
+def enrich(units, source, report_date, resolver=resolve, expected_ids=None, budget_seconds=RUN_SECONDS, *, allow_unresolved=False):
     before = fingerprint(source)
     rows, digest = read_source(source, report_date)
     deadline = time.monotonic() + budget_seconds
@@ -186,14 +187,18 @@ def enrich(units, source, report_date, resolver=resolve, expected_ids=None, budg
                 urls[uid] = url
     if hashlib.sha256(Path(source).read_bytes()).hexdigest() != digest or fingerprint(source) != before:
         raise ResolutionFailure('PIN link source changed during resolution', list(audit.values()))
-    if pending or not urls:
+    allow_partial = allow_unresolved and report_date == PARTIAL_PUBLICATION_DATE and expected_ids is not None
+    if not urls or (pending and not allow_partial):
         raise ResolutionFailure(f'{len(pending)} matched BeAScout listings unresolved; publication blocked', list(audit.values()))
     if len(set(urls.values())) != len(urls):
         raise ResolutionFailure('Different unit IDs resolved to the same BeAScout listing', list(audit.values()))
-    # Commit enrichment only after every matched listing and source check pass.
+    # Install only canonical links that passed verification.
     for unit in units:
         unit['beascout_url'] = urls.get(unit['unit_id'])
-    return {'version': 1, 'verified': len(urls), 'unavailable': len(units) - len(urls),
-            'matched_source_units': len(matched),
-            'verified_at': datetime.now(ZoneInfo('America/Chicago')).isoformat(timespec='seconds'),
-            'source_sha256': digest}, list(audit.values())
+    summary = {'version': 1, 'verified': len(urls), 'unavailable': len(units) - len(urls),
+               'matched_source_units': len(matched),
+               'verified_at': datetime.now(ZoneInfo('America/Chicago')).isoformat(timespec='seconds'),
+               'source_sha256': digest}
+    if pending:
+        summary['unresolved_matched'] = len(pending)
+    return summary, list(audit.values())

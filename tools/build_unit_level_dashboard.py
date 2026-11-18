@@ -19,7 +19,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from openpyxl import load_workbook
-from beascout_links import enrich, expected_source_ids
+from beascout_links import PARTIAL_PUBLICATION_DATE, enrich, expected_source_ids
 
 
 def clean(value):
@@ -274,7 +274,10 @@ def main():
     if args.beascout_pin_report:
         expected_ids = expected_source_ids(units, council) if args.council_snapshot else None
         try:
-            summary, audit = enrich(units, args.beascout_pin_report, snapshot_date, expected_ids=expected_ids)
+            summary, audit = enrich(
+                units, args.beascout_pin_report, snapshot_date, expected_ids=expected_ids,
+                allow_unresolved=snapshot_date == PARTIAL_PUBLICATION_DATE and args.working_copy_receipt is not None,
+            )
         except Exception as error:
             if args.beascout_audit:
                 args.beascout_audit.parent.mkdir(parents=True, exist_ok=True)
