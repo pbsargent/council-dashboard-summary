@@ -220,6 +220,51 @@ MOVO_PERFORMANCE_ASSET="${CAC_FROZEN_MOVO_PERFORMANCE:-/Volumes/MacProData/Patro
 copy_file "$MOVO_PERFORMANCE_ASSET" "${SITE_STAGE}/data/movo-performance-latest.js"
 "$PYTHON" "${SUMMARY_REPO}/tools/build_movo_performance.py" "${SITE_STAGE}/data/movo-performance-latest.js" --page "$SITE_STAGE/renewal-outreach.html"
 
+LAST_STEP="optional v2 renewal-outreach build from Tracker receipt (alongside Performance)"
+# Soft-fail: missing/invalid receipt, age-split, or source skips this step and does not fail publish.
+# Performance path above stays authoritative for the live page (HTML must not reference renewal-outreach-latest.js).
+MOVO_V2_BUILDER="${SUMMARY_REPO}/tools/build_renewal_outreach_v2_20261119.py"
+MOVO_V2_RESOLVER="${SUMMARY_REPO}/tools/resolve_movo_v2_paths.py"
+MOVO_CHECK_DATE="$(TZ=America/Chicago /bin/date '+%Y-%m-%d')"
+MOVO_EVIDENCE_DIR="${CAC_MOVO_EVIDENCE_DIR:-/Volumes/MacProData/Patrol/Tracker/Movo/Evidence/${MOVO_CHECK_DATE}}"
+MOVO_RECEIPT="${CAC_MOVO_VERIFICATION_RECEIPT:-${MOVO_EVIDENCE_DIR}/verification-receipt.json}"
+MOVO_HISTORY="${CAC_MOVO_HISTORY_DIR:-/Volumes/MacProData/Patrol/Scout/CAC-Dashboard-Platform/Evidence/movo-daily-snapshots}"
+MOVO_V2_OUT="${BUILD_DIR}/renewal-outreach-latest.js"
+MOVO_V2_SOURCE_NORM="${BUILD_DIR}/movo-v2-source-normalized.json"
+MOVO_V2_SKIP_REASON=""
+MOVO_AGE_SPLIT=""
+MOVO_SOURCE_STAGE=""
+if [[ ! -f "$MOVO_V2_BUILDER" || ! -f "$MOVO_V2_RESOLVER" ]]; then
+  MOVO_V2_SKIP_REASON="v2 builder or path resolver missing"
+elif [[ ! -f "$MOVO_RECEIPT" ]]; then
+  MOVO_V2_SKIP_REASON="verification receipt missing"
+else
+  mkdir -p "$BUILD_DIR"
+  eval "$("$PYTHON" "$MOVO_V2_RESOLVER" "$MOVO_RECEIPT" "$MOVO_EVIDENCE_DIR" "$MOVO_V2_SOURCE_NORM")"
+fi
+if [[ -n "${MOVO_V2_SKIP_REASON:-}" ]]; then
+  log "Skipping v2 renewal-outreach build: $MOVO_V2_SKIP_REASON"
+elif [[ ! -d "$MOVO_HISTORY" ]]; then
+  log "Skipping v2 renewal-outreach build: history dir unavailable"
+else
+  mkdir -p "$BUILD_DIR"
+  if "$PYTHON" "$MOVO_V2_BUILDER" \
+      --source "$MOVO_SOURCE_STAGE" \
+      --history-dir "$MOVO_HISTORY" \
+      --verification-receipt "$MOVO_RECEIPT" \
+      --age-split "$MOVO_AGE_SPLIT" \
+      --output "$MOVO_V2_OUT"
+  then
+    if [[ -d "${SITE_STAGE}/data" ]]; then
+      copy_file "$MOVO_V2_OUT" "${SITE_STAGE}/data/renewal-outreach-latest.js"
+    fi
+    log "v2 renewal-outreach build wrote ${MOVO_V2_OUT} (Performance path unchanged)"
+  else
+    log "v2 renewal-outreach build failed; continuing with Performance path only"
+  fi
+fi
+
+
 LAST_STEP="test Unit Key 4 source validation"
 "$PYTHON" "${SUMMARY_REPO}/tools/test_unit_key4.py"
 
