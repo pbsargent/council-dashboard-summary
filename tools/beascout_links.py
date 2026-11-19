@@ -163,7 +163,11 @@ def enrich(units, source, report_date, resolver=resolve, expected_ids=None, budg
     matched = set(pending)
     if expected_ids is not None and matched != set(expected_ids):
         raise ResolutionFailure('Raw PIN link coverage differs from authoritative workbook PIN matches', list(audit.values()))
-    for workers in (3, 1):
+    # A short parallel pass bounds normal publication time.  Public listing pages
+    # can briefly reject a burst yet resolve immediately afterwards, so retain two
+    # single-request recovery passes before failing closed.  Each request remains
+    # subject to the existing per-request and whole-run deadlines.
+    for workers in (3, 1, 1):
         def attempt(uid):
             if time.monotonic() + REQUEST_SECONDS + 2 > deadline:
                 return uid, None, 'Run deadline reached'

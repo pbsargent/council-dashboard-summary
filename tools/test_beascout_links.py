@@ -78,6 +78,17 @@ class Links(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertEqual(self.units[0]['beascout_url'], URL)
 
+    def test_two_transient_failures_get_bounded_serial_recovery(self):
+        calls = []
+        def resolver(row):
+            calls.append(1)
+            if len(calls) < 3:
+                raise ValueError('Transient')
+            return URL
+        enrich(self.units, self.path, self.today, resolver)
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(self.units[0]['beascout_url'], URL)
+
     def test_partial_outage_preserves_destination_and_redacts_failure_audit(self):
         self.write([ROW, dict(ROW, unitid='99', unitname='Pack 99')])
         self.units[0]['beascout_url'] = URL
@@ -132,7 +143,7 @@ class Links(unittest.TestCase):
         self.assertEqual(before, self.units)
 
     def test_deadline_exhaustion_does_not_start_requests(self):
-        with patch('beascout_links.time.monotonic', side_effect=[0, 1000, 1000]):
+        with patch('beascout_links.time.monotonic', side_effect=[0, 1000, 1000, 1000]):
             with self.assertRaises(ResolutionFailure): enrich(self.units, self.path, self.today, lambda row: self.fail('Request started after deadline'))
         self.assertNotIn('beascout_url', self.units[0])
 
