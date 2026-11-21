@@ -122,3 +122,31 @@ assert.equal(displayed(councilRun(null, outreach))[0][2], 'Unavailable');
 assert.equal(displayed(councilRun(councilData, null))[0][1], 'Unavailable');
 assert.equal(councilRun(null, null).movoCouncilDueTable.hidden, true);
 console.log('Movo comparison: separate denominators, cohort, reset and missing data passed.');
+
+// Missing Performance numbers remain visibly unknown rather than becoming zero.
+const performanceCode = fs.readFileSync(path.join(__dirname, '../movo-performance.js'), 'utf8');
+function performanceRun() {
+  const nodes = {};
+  const make = () => ({textContent:'', value:'', children:[], handlers:{},
+    append(...children){this.children.push(...children);},
+    replaceChildren(...children){this.children=children;},
+    setAttribute(){}, addEventListener(name, fn){this.handlers[name]=fn;},
+    createTHead(){const head=make(); this.append(head); head.insertRow=()=>{const row=make();head.append(row);return row;};return head;},
+    createTBody(){const body=make();this.append(body);return body;}});
+  nodes['performance-cohort'] = Object.assign(make(), {value:'All'});
+  const document={getElementById(id){return nodes[id] ||= make();},createElement:make};
+  const cohorts=['Nov 30','Dec 31','All'].map(label=>({label,audience:[10,2],council:[20,4],
+    programs:[['Test',10,2,2,10,0,0]],districts:[['Test',10,2]],
+    history:label==='All'?[]:[['2026-11-20',null],['2026-11-21',4]]}));
+  const source={observed_end:'2026-11-21T07:07:00-06:00',cohorts,
+    approximate_status:[['Nov 30',null,1,2]],pin:[3,2,1],joining:[],not_stated:['Nov 30 said they will']};
+  vm.runInNewContext(performanceCode,{window:{MOVO_PERFORMANCE:source},document,Intl,Date,
+    Option:function(text,value){return {textContent:text,value};}});
+  return nodes;
+}
+const performance = performanceRun();
+const texts = node => [node.textContent,...node.children.flatMap(child=>texts(child))].join(' ');
+assert.match(texts(performance['performance-trend']), /Not stated Not checkable/);
+assert.match(texts(performance['performance-approximate']), /Not stated ≈1 ≈2/);
+assert.match(performance['performance-status'].textContent, /Not stated: Nov 30 said they will/);
+console.log('Movo Performance: missing history/status remain Not stated, with no zero meter or invented count.');

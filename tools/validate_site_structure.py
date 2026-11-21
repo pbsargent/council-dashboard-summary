@@ -1469,7 +1469,7 @@ def main() -> int:
                 errors.append(f"Renewal Outreach by Movo must preserve the full accessible logo heading: {required}")
         for required in (
             'id="performance-title"', 'id="performance-kpis"', 'id="performance-cohort"',
-            "Movo renewal audience", "Council-wide", "movo-performance.js?v=20261115-kpis-1",
+            "Movo renewal audience", "Council-wide", "movo-performance.js?v=20261121-missing",
             "renewal-outreach.css?v=20261115-kpis-1", "data/movo-performance-latest.js?v=",
         ):
             if required not in outreach_html:

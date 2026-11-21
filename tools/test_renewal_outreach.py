@@ -299,4 +299,57 @@ class MovoComparisonTests(unittest.TestCase):
             build_council_due(receipt, board, now.date())
 
 
+from datetime import date
+
+
+class PerformanceMissingNumbers(unittest.TestCase):
+    def fixture(self):
+        from build_movo_performance import CENTRAL
+        now = datetime.now(CENTRAL)
+        observed = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        tabs = {
+            'About': [['Field', 'Value'], ['Capture date', observed.strftime('%A, %b %d, %Y')],
+                      ['Capture window (CST)', '12:00–12:00 AM ' + observed.tzname()],
+                      ['Council', 'Capitol Area Council, Scouting America (Round Rock, TX)'],
+                      ['Source', 'https://app.trymovo.ai/performance'],
+                      ['Note: data through', 'Movo shows no "data through" date.']],
+            'Summary': [['View', 'Total due', 'Renewed'], ['Nov 30', 10, 2], ['Dec 31', 20, 4], ['All deadlines', 30, 6]],
+            'By program': [['View', 'Program', 'Audience', 'Youth %', 'Youth renewed', 'Youth of', 'Adult %', 'Adult renewed', 'Adult of', 'All %', 'All renewed']],
+            'Districts': [['View', 'District', 'In outreach', 'Renewed']],
+            'Daily history': [[], ['Date', 'Days left', 'Renewed %', 'Renewed', '+Day', '+7 days', 'Note', None, 'Date', 'Days left', 'Renewed %', 'Renewed', '+Day', '+7 days', 'Note']],
+            'Outreach status': [['Month'], ['Nov 30', 10, .2, 2, 'not stated', .5, 5, .1, 1, .2, 2], ['Dec 31', 20, .2, 4, 'not stated', .5, 'not stated', .1, 2, .2, 4]],
+            'Pin data': [['Metric', 'Count'], ['Reachable units', 3], ['Units contacted', 2], ['Updated their pin', 1]],
+            'Joining': [['Source'], ['National', 10, .2, .2, .2, .2], ['Council', 5, .2, .2, .2, .2]],
+        }
+        for label, total, renewed in [('Nov 30', 10, 2), ('Dec 31', 20, 4), ('All', 30, 6)]:
+            for name in ['All programs', 'Test program']:
+                tabs['By program'].append([label, name, total, .2, renewed, total, 0, 0, 0, .2, renewed])
+            for name in ['All districts', 'Test district']:
+                tabs['Districts'].append([label, name, total, renewed, None, None, None])
+        for day, november, december in [(observed.date() - timedelta(days=1), 'not stated', None), (observed.date(), 2, 4)]:
+            tabs['Daily history'].append([day.isoformat(), (date(observed.year, 11, 30) - day).days, None, november, None, None, '', None,
+                                         day.isoformat(), (date(observed.year, 12, 31) - day).days, None, december, None, None, ''])
+        return tabs
+
+    def test_missing_history_and_status_publish_as_null_not_zero(self):
+        from build_movo_performance import build, render_asset, validate_asset_text
+        payload = build(self.fixture())
+        self.assertIsNone(payload['cohorts'][0]['history'][0][1])
+        self.assertIsNone(payload['approximate_status'][1][1])
+        self.assertEqual(len(payload['not_stated']), 2)
+        self.assertEqual(validate_asset_text(render_asset(payload)), json.loads(json.dumps(payload)))
+
+    def test_present_contradictions_and_bad_numbers_still_refuse(self):
+        from build_movo_performance import build
+        tabs = self.fixture()
+        tabs['Summary'][1][2] = 3
+        with self.assertRaises(ValueError): build(tabs)
+        tabs = self.fixture()
+        tabs['Outreach status'][1][6] = -1
+        with self.assertRaises(ValueError): build(tabs)
+        tabs = self.fixture()
+        tabs['Daily history'][-1][3] = 'not stated'
+        with self.assertRaisesRegex(ValueError, 'endpoint'): build(tabs)
+
+
 if __name__ == '__main__':unittest.main()

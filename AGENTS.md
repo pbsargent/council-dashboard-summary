@@ -447,3 +447,17 @@ metadata, reconciled populations and trend endpoints. Freeze the validated
 Performance asset before publication and retain it only after live readback.
 Unavailable or invalid new input retains the last live-verified snapshot and
 its original date. The archived Ask-based extract remains historical evidence.
+
+
+## November 21 Movo source wording and missing numbers
+
+Peter authorized automatic acceptance of observed Movo wording/layout changes.
+Unprinted numeric values and unreadable individual history days remain not stated,
+never zero or invented estimates. Dependent arithmetic is not checkable; other
+verified figures still publish. Preserve recorded history, actual observation
+clocks, source-page dates, distinct populations, council identity, complete
+section coverage, printed-number contradiction, privacy and access checks.
+The current-day verified trend endpoint and required population totals remain
+validated. Preserve the existing acquisition owner/schedule and no duplicate
+downloads/emails. Keep parser, null-aware rendering, guide, regression tests
+and maintained/production copies synchronized.

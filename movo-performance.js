@@ -15,6 +15,8 @@
   const stale = day.format(end) !== day.format(new Date());
   node('performance-status').textContent = `Observed ${clock.format(end)} Central · Data through not supplied${stale ? ' · Last verified Performance snapshot' : ''}`;
 
+  if (source.not_stated?.length) node('performance-status').textContent += ` · Not stated: ${source.not_stated.join('; ')}`;
+
   const label = value => ({'Nov 30': 'November 30', 'Dec 31': 'December 31', All: 'Both deadlines'})[value];
   const rate = (total, renewed) => total ? `${percent.format(renewed / total)} (${number.format(renewed)} of ${number.format(total)})` : 'Unavailable';
   function element(tag, value) {
@@ -56,6 +58,7 @@
     }));
     fillTable(table.createTBody(), [...cohort.history].reverse().map(([date, renewed]) => {
       const total = cohort.council[0];
+      if (renewed === null) return [date, 'Not stated', 'Not checkable'];
       const meter = element('meter');
       meter.max = total || 1;
       meter.value = renewed;
@@ -111,7 +114,7 @@
     renderBreakdowns(cohort);
     fillTable(node('performance-approximate'), source.approximate_status
       .filter(row => cohort.label === 'All' || row[0] === cohort.label)
-      .map(([name, ...values]) => [label(name), ...values.map(value => `≈${number.format(value)}`)]));
+      .map(([name, ...values]) => [label(name), ...values.map(value => value === null ? 'Not stated' : `≈${number.format(value)}`)]));
   }
   select.addEventListener('change', render);
   for (const id of ['performance-district', 'performance-program']) {

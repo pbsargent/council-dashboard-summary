@@ -23,6 +23,14 @@ def counts(total, renewed):
     return total, renewed
 
 
+def missing_number(value):
+    return value is None or (isinstance(value, str) and value.strip().lower() in ("", "not stated"))
+
+
+def optional_count(total, value):
+    return None if missing_number(value) else counts(total, value)[1]
+
+
 def sum_counts(rows):
     return tuple(map(sum, zip(*rows, strict=True)))
 
@@ -110,7 +118,7 @@ def build(tabs):
                 if len(row) <= i or row[i] is None:
                     continue
                 day = source_date(row[i])
-                renewed = counts(council[0], row[i + 3])[1]
+                renewed = optional_count(council[0], row[i + 3])
                 require(day <= observed_date and row[i + 1] == (due - day).days
                         and (not history or day > date.fromisoformat(history[-1][0])),
                         "History date, ordering, or deadline disagrees")
@@ -126,13 +134,17 @@ def build(tabs):
         require(sum_counts([row[key] for row in cohorts[:2]]) == cohorts[2][key], f"Combined {key} disagrees")
 
     outreach = []
+    not_stated = []
     status_rows = tabs["Outreach status"][1:3]
     require([row[0] for row in status_rows] == list(COHORTS[:2]), "Missing outreach status cohorts")
     for row in status_rows:
         cohort = next(entry for entry in cohorts if entry["label"] == row[0])
         require(row[1] == cohort["audience"][0], "Outreach status coverage differs from audience")
+        if missing_number(row[4]):
+            not_stated.append(f"{row[0]} said they will")
         estimates = [row[6], row[8], row[10]]
-        require(all(type(value) is int and 0 <= value <= row[1] for value in estimates),
+        estimates = [optional_count(row[1], value) for value in estimates]
+        require(all(value is None or type(value) is int and 0 <= value <= row[1] for value in estimates),
                 "Invalid approximate outreach status")
         outreach.append([row[0], *estimates])
     pin = unique_rows(tabs["Pin data"][1:6], "PIN metric")
@@ -146,7 +158,7 @@ def build(tabs):
                 for row in joining), "Invalid Joining summary")
     return {"observed_start": start.isoformat(), "observed_end": end.isoformat(),
             "data_through": None, "cohorts": cohorts, "approximate_status": outreach,
-            "pin": pin_counts, "joining": joining}
+            "pin": pin_counts, "joining": joining, "not_stated": not_stated}
 
 
 def render_asset(payload):
@@ -160,6 +172,8 @@ def validate_asset_text(text):
     start = datetime.fromisoformat(payload["observed_start"])
     require(start.tzinfo and end.tzinfo and start <= end <= datetime.now(CENTRAL)
             and payload["data_through"] is None, "Invalid observed date")
+    require(all(label in ("Nov 30 said they will", "Dec 31 said they will")
+                for label in payload.get("not_stated", [])), "Invalid missing-field labels")
     cohorts = payload["cohorts"]
     require(tuple(row["label"] for row in cohorts) == COHORTS, "Missing comparison cohorts")
     for row in cohorts:
@@ -171,6 +185,21 @@ def validate_asset_text(text):
         if row["label"] != "All":
             require(row["history"][-1] == [end.astimezone(CENTRAL).date().isoformat(), council[1]],
                     "Published history endpoint differs")
+    for row in cohorts:
+        last_day = None
+        for day, renewed in row["history"]:
+            parsed = date.fromisoformat(day)
+            require(parsed <= end.astimezone(CENTRAL).date() and (last_day is None or parsed > last_day),
+                    "Published history dates disagree")
+            if renewed is not None:
+                counts(row["council"][0], renewed)
+            last_day = parsed
+    for row in payload["approximate_status"]:
+        require(len(row) == 4 and row[0] in COHORTS[:2], "Invalid published approximate status")
+        maximum = next(cohort["audience"][0] for cohort in cohorts if cohort["label"] == row[0])
+        for value in row[1:]:
+            if value is not None:
+                counts(maximum, value)
     for key in ("audience", "council"):
         require(sum_counts([row[key] for row in cohorts[:2]]) == tuple(cohorts[2][key]),
                 f"Published combined {key} disagrees")
