@@ -461,3 +461,10 @@ The current-day verified trend endpoint and required population totals remain
 validated. Preserve the existing acquisition owner/schedule and no duplicate
 downloads/emails. Keep parser, null-aware rendering, guide, regression tests
 and maintained/production copies synchronized.
+
+
+## November 23 approved Movo file-source release
+
+The approved file model is a distinct source type alongside the Performance-page model. Preserve the installed v3 verifier/parser hashes bound by Tracker’s acceptance receipt, the original posted workbook bytes and separate observation/post/data-through clocks. Missing fields remain unavailable, not zero; source-type-specific missing coverage and not-checkable labels are explicit. Preserve stated-count reconciliation and original historical dates; never relabel a retained snapshot current. The approved history policy and Post/Exploring coverage treatment must remain explicit in the guide and tests. No private rows, receipt paths or posted-file contents enter public bundles.
+
+Release the reader, null-aware renderer, cache version, source guide, v3 helper/parser, tests and parity coverage together in maintained and production copies. A passing old release manifest does not cover a new unlisted dependency. Both website source checkouts must also have no tracked changes before the daily build. Preserve approved edits as binary patches and named stashes, review against upstream in an isolated checkout and install the same ordinary source commit; do not bypass source cleanliness or commit runtime data. The standalone v3 file helper is for Tracker’s hash-bound Sheet evidence; the web’s frozen Performance asset remains its existing authoritative presentation path. All previous source, privacy, no-replay and publication checks remain.

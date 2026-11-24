@@ -13,12 +13,18 @@
   const day = new Intl.DateTimeFormat('en-US', {timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit'});
   const end = new Date(source.observed_end);
   const stale = day.format(end) !== day.format(new Date());
-  node('performance-status').textContent = `Observed ${clock.format(end)} Central · Data through not supplied${stale ? ' · Last verified Performance snapshot' : ''}`;
+  // DRAFT 2026-11-23: a MOVO FILE snapshot names its data-as-of and post clocks.
+  node('performance-status').textContent = source.source_kind === 'movo_file'
+    ? `Movo file data as of ${clock.format(end)} Central · posted ${clock.format(new Date(source.posted_at))} Central · Data through not stated${stale ? ' · Last verified Performance snapshot' : ''}`
+    : `Observed ${clock.format(end)} Central · Data through not supplied${stale ? ' · Last verified Performance snapshot' : ''}`;
 
   if (source.not_stated?.length) node('performance-status').textContent += ` · Not stated: ${source.not_stated.join('; ')}`;
+  if (source.not_checkable?.length) node('performance-status').textContent += ` · Not checkable: ${source.not_checkable.join('; ')}`;
 
   const label = value => ({'Nov 30': 'November 30', 'Dec 31': 'December 31', All: 'Both deadlines'})[value];
   const rate = (total, renewed) => total ? `${percent.format(renewed / total)} (${number.format(renewed)} of ${number.format(total)})` : 'Unavailable';
+  const statedRate = (total, renewed) => total === null || renewed === null ? 'Not stated' : rate(total, renewed);
+  const share = value => value === null ? 'not stated' : percent.format(value);
   function element(tag, value) {
     const el = document.createElement(tag);
     if (value !== undefined) el.textContent = value;
@@ -74,9 +80,10 @@
     const program = node('performance-program').value;
     fillTable(node('performance-districts'), cohort.districts.filter(row => !district || row[0] === district)
       .map(([name, total, renewed]) => [name, rate(total, renewed)]));
-    fillTable(node('performance-programs'), cohort.programs.filter(row => !program || row[0] === program)
+    const programs = cohort.programs.filter(row => !program || row[0] === program)
       .map(([name, total, renewed, youth, youthTotal, adult, adultTotal]) =>
-        [name, rate(total, renewed), rate(youthTotal, youth), rate(adultTotal, adult)]));
+        [name, rate(total, renewed), statedRate(youthTotal, youth), statedRate(adultTotal, adult)]);
+    fillTable(node('performance-programs'), programs.length ? programs : [['Programs', 'Not stated', 'Not stated', 'Not stated']]);
   }
   function renderKpis({audience, council}) {
     const populations = [['Movo renewal audience', audience], ['Council-wide', council]];
@@ -123,8 +130,8 @@
   const [reachable, contacted, updated] = source.pin.map(value => number.format(value));
   node('performance-pin').textContent = `${contacted} of ${reachable} reachable units were contacted. ${updated} units updated their PIN.`;
   fillTable(node('performance-joining'), source.joining.map(([name, count, registered, reference, replied, replyReference]) =>
-    [name, number.format(count), `${percent.format(registered)} (${percent.format(reference)})`,
-      `${percent.format(replied)} (${percent.format(replyReference)})`]));
+    [name, number.format(count), `${percent.format(registered)} (${share(reference)})`,
+      `${percent.format(replied)} (${share(replyReference)})`]));
   render();
   node('performance').hidden = false;
 })();
