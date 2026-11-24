@@ -78,6 +78,28 @@ class Links(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertEqual(self.units[0]['beascout_url'], URL)
 
+    def test_unchanged_prior_link_is_reused_with_bounded_health_sample(self):
+        cache = Path(self.temp.name) / 'prior.json'
+        cache.write_text(json.dumps({'units': [{**self.units[0], 'beascout_url': URL}]}))
+        calls = []
+        def resolver(row):
+            calls.append(row['unitid']); return URL
+        summary, audit = enrich(self.units, self.path, self.today, resolver, expected_ids={25921}, cache=cache)
+        self.assertEqual(calls, ['25921'])  # one deterministic health probe, not an unbounded refresh
+        self.assertEqual(summary['verified'], 1)
+        self.assertEqual(summary['reused_prior_verified'], 0)
+        self.assertEqual(summary['health_sampled'], 1)
+        self.assertEqual(next(row for row in audit if row['unit_id'] == 25921)['result'], 'Health verified')
+
+    def test_cached_unchanged_link_survives_unavailable_health_probe(self):
+        cache = Path(self.temp.name) / 'prior.json'
+        cache.write_text(json.dumps({'units': [{**self.units[0], 'beascout_url': URL}]}))
+        summary, audit = enrich(self.units, self.path, self.today, lambda row: (_ for _ in ()).throw(RuntimeError()), expected_ids={25921}, cache=cache)
+        self.assertEqual(summary['verified'], 1)
+        self.assertEqual(summary['live_verified'], 0)
+        self.assertEqual(summary['reused_prior_verified'], 1)
+        self.assertEqual(next(row for row in audit if row['unit_id'] == 25921)['result'], 'Health check unavailable; reused prior verified link')
+
     def test_two_transient_failures_get_bounded_serial_recovery(self):
         calls = []
         def resolver(row):
@@ -96,10 +118,11 @@ class Links(unittest.TestCase):
         def resolver(row):
             if row['unitid'] == '99': raise RuntimeError('PRIVATE CONTACT OR SERVER BODY')
             return URL
-        with self.assertRaises(ResolutionFailure) as caught:
-            enrich(self.units, self.path, self.today, resolver)
-        self.assertEqual(self.units, before)
-        self.assertNotIn('PRIVATE', json.dumps(caught.exception.audit))
+        summary, audit = enrich(self.units, self.path, self.today, resolver)
+        self.assertEqual(self.units[0]['beascout_url'], URL)
+        self.assertIsNone(self.units[1]['beascout_url'])
+        self.assertEqual(summary['unresolved_matched'], 1)
+        self.assertNotIn('PRIVATE', json.dumps(audit))
 
     def test_dated_exception_preserves_units_and_marks_only_unresolved_links(self):
         self.write([ROW, dict(ROW, unitid='99', unitname='Pack 99')])
@@ -112,9 +135,7 @@ class Links(unittest.TestCase):
 
         expected = expected_source_ids(self.units, self.council)
         with patch('beascout_links.PARTIAL_PUBLICATION_DATE', self.today):
-            with self.assertRaises(ResolutionFailure):
-                enrich(self.units, self.path, self.today, resolver, expected_ids=expected)
-            summary, _ = enrich(self.units, self.path, self.today, resolver, expected_ids=expected, allow_unresolved=True)
+            summary, _ = enrich(self.units, self.path, self.today, resolver, expected_ids=expected)
         self.assertEqual(summary['unresolved_matched'], 1)
         self.assertEqual([unit['beascout_url'] for unit in self.units], [URL, None])
         payload = {'units': self.units, 'data_date': self.today, 'source': {'beascout_links': summary}}
@@ -122,13 +143,10 @@ class Links(unittest.TestCase):
         def check():
             return validate_beascout_bundle(self.council, payload, 'window.UNIT_LEVEL_DATA = ' + json.dumps(payload) + ';')
 
-        with patch('validate_site_structure.PARTIAL_PUBLICATION_DATE', self.today):
-            self.assertEqual(check(), [])
-            summary['unresolved_matched'] = 2
-            self.assertTrue(check())
-            summary['unresolved_matched'] = 1
-        with patch('validate_site_structure.PARTIAL_PUBLICATION_DATE', '2000-01-01'):
-            self.assertTrue(check())
+        self.assertEqual(check(), [])
+        summary['unresolved_matched'] = 2
+        self.assertTrue(check())
+        summary['unresolved_matched'] = 1
 
     def test_population_mismatch_and_duplicate_destination(self):
         with self.assertRaises(ResolutionFailure): enrich(self.units, self.path, self.today, lambda row: URL, expected_ids={25921, 99})
@@ -144,8 +162,9 @@ class Links(unittest.TestCase):
 
     def test_deadline_exhaustion_does_not_start_requests(self):
         with patch('beascout_links.time.monotonic', side_effect=[0, 1000, 1000, 1000]):
-            with self.assertRaises(ResolutionFailure): enrich(self.units, self.path, self.today, lambda row: self.fail('Request started after deadline'))
-        self.assertNotIn('beascout_url', self.units[0])
+            summary, _ = enrich(self.units, self.path, self.today, lambda row: self.fail('Request started after deadline'))
+        self.assertEqual(summary['unresolved_matched'], 1)
+        self.assertIsNone(self.units[0]['beascout_url'])
 
     def test_changed_and_restored_source_is_rejected(self):
         before = copy.deepcopy(self.units)
@@ -181,7 +200,7 @@ class Links(unittest.TestCase):
         council['dashboard'].update(report_date=self.today, membership_operations={'units': [
             {'unit_id': '25921', 'district': 'North Shore', 'unit': 'Pack 2', 'unit_type': 'Pack', 'youth': 1}]})
         council_path = folder / 'council.json'; council_path.write_text(json.dumps(council))
-        self.write([dict(ROW, zipcode='')])  # Invalid before any network request.
+        self.path.write_text('unitid,unitid\\n1,1\\n')  # Invalid source schema remains a hard failure.
         output, script, audit = [folder / name for name in ('unit.json', 'unit.js', 'audit.json')]
         output.write_text('prior JSON'); script.write_text('prior JS')
         result = subprocess.run([sys.executable, str(Path(__file__).with_name('build_unit_level_dashboard.py')),
@@ -193,11 +212,12 @@ class Links(unittest.TestCase):
         self.assertEqual(script.read_text(), 'prior JS')
         self.assertTrue(json.loads(audit.read_text()))
 
-    def test_daily_refresh_requires_lookup_and_private_audit(self):
+    def test_daily_refresh_uses_prior_links_and_private_audit(self):
         root = Path(__file__).resolve().parents[1]
         script = (root / 'update_daily.zsh').read_text()
         build = script.split('"$PYTHON" "$UNIT_LEVEL_BUILDER" "$UNIT_LEVEL_SOURCE"', 1)[1].split('UNIT_LEVEL_STATUS=', 1)[0]
         self.assertIn('--beascout-pin-report', build)
+        self.assertIn('--beascout-cache', build)
         self.assertIn('--beascout-audit "${BUILD_DIR}/beascout-link-audit.json"', build)
         self.assertIn('BEASCOUT_COVERAGE', build)
 

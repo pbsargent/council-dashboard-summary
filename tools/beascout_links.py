@@ -4,6 +4,7 @@ import csv
 import hashlib
 import html
 import io
+import json
 import re
 import subprocess
 import tempfile
@@ -18,6 +19,7 @@ SOURCE_FIELDS = {'unitid', 'unitname', 'councilname', 'districtname', 'zipcode'}
 REQUEST_SECONDS = 25
 RUN_SECONDS = 300
 PARTIAL_PUBLICATION_DATE = "2026-11-18"
+HEALTH_SAMPLE_SIZE = 12
 
 
 class ResolutionFailure(ValueError):
@@ -140,7 +142,42 @@ def expected_source_ids(units, council):
     return expected
 
 
-def enrich(units, source, report_date, resolver=resolve, expected_ids=None, budget_seconds=RUN_SECONDS, *, allow_unresolved=False):
+def cached_links(path, units):
+    """Return prior canonical links only for unchanged public unit identities."""
+    if path is None:
+        return {}, None
+    raw = Path(path).read_bytes()
+    payload = json.loads(raw)
+    prior = payload.get('units')
+    if not isinstance(prior, list):
+        raise ValueError('Prior BeAScout cache has no unit list')
+    current = {unit['unit_id']: unit for unit in units}
+    links = {}
+    for row in prior:
+        if not isinstance(row, dict):
+            raise ValueError('Prior BeAScout cache has malformed unit')
+        uid, url = row.get('unit_id'), row.get('beascout_url')
+        if uid not in current or url is None:
+            continue
+        if not isinstance(uid, int) or not isinstance(url, str) or not re.fullmatch(URL_PATTERN, url):
+            raise ValueError('Prior BeAScout cache has invalid canonical link')
+        # A unit name, district, or program/gender change is a new public identity
+        # and must be resolved again.  PIN-source identity is validated separately.
+        if (identity(row.get('name', '')) != identity(current[uid]['name']) or
+                district(row.get('district', '')) != district(current[uid]['district']) or
+                row.get('gender') != current[uid].get('gender')):
+            continue
+        if url in links.values():
+            raise ValueError('Prior BeAScout cache maps different unit IDs to one listing')
+        links[uid] = url
+    return links, hashlib.sha256(raw).hexdigest()
+
+
+def health_sample(unit_ids, report_date):
+    return set(sorted(unit_ids, key=lambda uid: hashlib.sha256(f'{report_date}:{uid}'.encode()).digest())[:HEALTH_SAMPLE_SIZE])
+
+
+def enrich(units, source, report_date, resolver=resolve, expected_ids=None, budget_seconds=RUN_SECONDS, *, allow_unresolved=False, cache=None):
     before = fingerprint(source)
     rows, digest = read_source(source, report_date)
     deadline = time.monotonic() + budget_seconds
@@ -163,6 +200,14 @@ def enrich(units, source, report_date, resolver=resolve, expected_ids=None, budg
     matched = set(pending)
     if expected_ids is not None and matched != set(expected_ids):
         raise ResolutionFailure('Raw PIN link coverage differs from authoritative workbook PIN matches', list(audit.values()))
+    cached, cache_digest = cached_links(cache, units)
+    cached = {uid: url for uid, url in cached.items() if uid in matched}
+    urls.update(cached)
+    changed = [uid for uid in pending if uid not in cached]
+    sampled = health_sample(cached, report_date)
+    pending = changed + sorted(sampled)
+    for uid in cached:
+        audit[uid] = {'unit_id': uid, 'url': cached[uid], 'result': 'Reused prior verified link'}
     # A short parallel pass bounds normal publication time.  Public listing pages
     # can briefly reject a burst yet resolve immediately afterwards, so retain two
     # single-request recovery passes before failing closed.  Each request remains
@@ -184,25 +229,39 @@ def enrich(units, source, report_date, resolver=resolve, expected_ids=None, budg
             results = list(pool.map(attempt, pending))
         pending = []
         for uid, url, result in results:
-            audit[uid] = {'unit_id': uid, 'url': url, 'result': result}
+            if uid in sampled and url is None and uid in cached:
+                # A bounded health probe is observability, not a reason to discard
+                # a previously verified, unchanged canonical identity.
+                audit[uid] = {'unit_id': uid, 'url': cached[uid], 'result': 'Health check unavailable; reused prior verified link'}
+                continue
+            audit[uid] = {'unit_id': uid, 'url': url, 'result': 'Health verified' if uid in sampled and url else result}
             if url is None:
                 pending.append(uid)
             else:
                 urls[uid] = url
     if hashlib.sha256(Path(source).read_bytes()).hexdigest() != digest or fingerprint(source) != before:
         raise ResolutionFailure('PIN link source changed during resolution', list(audit.values()))
-    allow_partial = allow_unresolved and report_date == PARTIAL_PUBLICATION_DATE and expected_ids is not None
-    if not urls or (pending and not allow_partial):
-        raise ResolutionFailure(f'{len(pending)} matched BeAScout listings unresolved; publication blocked', list(audit.values()))
+    # Individual official-listing lookups are supplementary public navigation,
+    # not a reason to withhold the complete validated dashboard.  A unit with
+    # no successful current or prior canonical lookup is explicitly published
+    # as Link unavailable.  Source identity, coverage, mutation and duplicate
+    # URL failures above remain publication blockers.
     if len(set(urls.values())) != len(urls):
         raise ResolutionFailure('Different unit IDs resolved to the same BeAScout listing', list(audit.values()))
     # Install only canonical links that passed verification.
     for unit in units:
         unit['beascout_url'] = urls.get(unit['unit_id'])
-    summary = {'version': 1, 'verified': len(urls), 'unavailable': len(units) - len(urls),
-               'matched_source_units': len(matched),
+    health_failed = sum(row['result'] == 'Health check unavailable; reused prior verified link'
+                        for row in audit.values())
+    live_verified = sum(row['result'] in {'Verified', 'Health verified'} for row in audit.values())
+    summary = {'version': 2, 'verified': len(urls), 'unavailable': len(units) - len(urls),
+               'matched_source_units': len(matched), 'live_verified': live_verified,
+               'reused_prior_verified': len(cached) - len(sampled) + health_failed, 'health_sampled': len(sampled),
+               'unresolved_matched': len(pending),
                'verified_at': datetime.now(ZoneInfo('America/Chicago')).isoformat(timespec='seconds'),
                'source_sha256': digest}
+    if cache_digest:
+        summary['prior_bundle_sha256'] = cache_digest
     if pending:
         summary['unresolved_matched'] = len(pending)
     return summary, list(audit.values())

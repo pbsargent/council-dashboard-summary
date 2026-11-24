@@ -141,6 +141,7 @@ def main():
     parser.add_argument("--council-snapshot", type=Path, help="Same-day Council JSON with complete source Units identities")
     parser.add_argument("--beascout-pin-report", type=Path, help="Same-day raw PIN CSV used only to resolve public listing URLs")
     parser.add_argument("--beascout-audit", type=Path, help="Private link-resolution audit outside the public site")
+    parser.add_argument("--beascout-cache", type=Path, help="Prior published public unit-level bundle used only for canonical link reuse")
     parser.add_argument('--working-copy-receipt', type=Path, help='Verified Ranger source receipt for this exact workbook')
     args = parser.parse_args()
     if args.council_snapshot and not args.beascout_pin_report:
@@ -277,6 +278,7 @@ def main():
             summary, audit = enrich(
                 units, args.beascout_pin_report, snapshot_date, expected_ids=expected_ids,
                 allow_unresolved=snapshot_date == PARTIAL_PUBLICATION_DATE and args.working_copy_receipt is not None,
+                cache=args.beascout_cache,
             )
         except Exception as error:
             if args.beascout_audit:

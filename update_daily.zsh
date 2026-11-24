@@ -326,6 +326,7 @@ log "Building Unit Level Dashboard data from ${UNIT_LEVEL_SOURCE}"
   "${UNIT_LEVEL_SOURCE_ARGS[@]}" \
   --council-snapshot "${SITE_STAGE}/data/latest.json" \
   --beascout-pin-report "${BEASCOUT_PIN_REPORT:-/Volumes/MacProData/Capitol Area Council Dashboard/Capitol Area Council/PinDataReport.csv}" \
+  --beascout-cache "${BEASCOUT_LINK_CACHE:-${SUMMARY_REPO}/data/unit-level-latest.json}" \
   --beascout-audit "${BUILD_DIR}/beascout-link-audit.json" \
   --output "${SITE_STAGE}/data/unit-level-latest.json" \
   --js-output "${SITE_STAGE}/data/unit-level-latest.js"
