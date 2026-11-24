@@ -536,7 +536,7 @@ For a similar council or organization:
 
 Renewal Prep is scoped to the workbook renewal window or grace period. Units absent from it are not classified as ready. `Fix before Renewal` must reconcile to Youth and all R/S/N role flags. Only unit identities and Boolean issue flags are published; names, member IDs, registration dates, and PIN values are excluded from this feature. All unit renewal cohorts reconcile to the filtered Units population, including unknown dates. Program, Service Area, District, and Search filters combine across all four panels.
 
-Membership renewal grace ends January 1, 2027, as confirmed by the council user. It is separate from unit renewal dates; this release does not infer new drop deadlines. Recruiting YTD compares the same period in both years; year-end comparisons use the December membership population. These councilwide manual trends are not recalculated by district/program filters.
+The October 31, November 30, and December 31, 2026 expiration cohorts have two months, one month, and zero grace, respectively. All three must renew by December 31, 2026. Unrenewed registrations drop on January 1, 2027. Later expirations have zero grace. Unit charters and individual memberships renew separately. Recruiting YTD compares the same period in both years; year-end comparisons use the December membership population. These councilwide manual trends are not recalculated by district/program filters.
 
 ## 2026 Popcorn sales to date
 

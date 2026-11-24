@@ -396,6 +396,13 @@ if [[ -n "${CAC_FROZEN_BUNDLE:-}" ]]; then
   "$PYTHON" "${SITE_STAGE}/tools/validate_site_structure.py" "$SITE_STAGE" --require-data
 fi
 
+if [[ "${CAC_SUMMARY_WRITE_ONLY:-0}" == "1" ]]; then
+  [[ -n "${CAC_FROZEN_BUNDLE:-}" && -f "$CAC_FROZEN_BUNDLE/sealed.json" ]] || exit 1
+  PUBLISH_STATUS="staged and validated; publication pending"
+  RUN_RESULT="STAGED"
+  exit 0
+fi
+
 LAST_STEP="deploy verified GitHub Pages artifact"
 log "Deploying verified dashboard artifact for ${SNAPSHOT_DATE}"
 "$PAGES_DEPLOYER" "$GITHUB_REPOSITORY" "$SITE_STAGE" "$PUBLIC_URL" "$SNAPSHOT_DATE"

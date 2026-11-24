@@ -1146,7 +1146,7 @@ def main() -> int:
             errors.append('sources.html: preserve native Excel download and fixed-value snapshot disclosure')
         if "data/unit-level-latest.js?v=20261105-working-copy-source-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted verified BeAScout data bundle")
-        if "unit-level-dashboard.js?v=20261026-beascout-links-1" not in unit_level_page:
+        if "unit-level-dashboard.js?v=20261124-renewal-grace-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-context script")
         if "unit-level-dashboard.css?v=20260911-pin-profile-last-updated-1" not in unit_level_page:
             errors.append("unit-level.html: missing cache-busted Unit-Level PIN-detail styles")
@@ -1449,7 +1449,12 @@ def main() -> int:
     else:
         html = followup_page.read_text(encoding="utf-8")
         script = followup_script.read_text(encoding="utf-8")
-        for text in ("Missing Key 3", "Zero Total Youth", "Unit Renewal Readiness", "Unit Renewal Calendar", "January 1, 2027", "followupArea", "followupDistrict", "followupSearch"):
+        for text in (
+            "Missing Key 3", "Zero Total Youth", "Unit Renewal Readiness", "Unit Renewal Calendar",
+            "October 31: two months", "November 30: one month", "December 31: no grace",
+            "Renew by December 31, 2026", "drop January 1, 2027",
+            "followupArea", "followupDistrict", "followupSearch",
+        ):
             if text not in html:
                 errors.append(f"Membership Follow-up is missing {text}")
         for text in ("programfilterchange", "matchesUnitType", "Not in Unit-Level source", "No units match these filters."):
